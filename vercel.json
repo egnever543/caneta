@@ -1,0 +1,6 @@
+{
+  "rewrites": [
+    { "source": "/", "destination": "/landing-page-needle-no-fear.html" },
+    { "source": "/pt", "destination": "/landing-page-caneta-sem-medo.html" }
+  ]
+}
