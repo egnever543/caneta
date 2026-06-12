@@ -12,7 +12,10 @@ module.exports = async (req, res) => {
         {
           price_data: {
             currency: 'usd',
-            product: 'prod_Ugy2V56b2gYeDb',
+            product_data: {
+              name: 'Shot Without Fear',
+              description: 'GLP-1 Muscle & Habit Guide — preserve muscle, avoid rebound',
+            },
             unit_amount: 900, // $9.00
           },
           quantity: 1,
