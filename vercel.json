@@ -1,12 +1,7 @@
 {
-  "functions": {
-    "api/*.js": {
-      "runtime": "nodejs20.x"
-    }
-  },
   "routes": [
     { "src": "/api/(.*)", "dest": "/api/$1" },
-    { "src": "/public/(.*)", "dest": "/public/$1", "headers": { "Content-Disposition": "attachment", "Cache-Control": "private, no-cache" } },
+    { "src": "/public/(.*)", "dest": "/public/$1" },
     { "src": "/pt", "dest": "/landing-page-caneta-sem-medo.html" },
     { "src": "/success", "dest": "/success.html" },
     { "src": "/", "dest": "/landing-page-needle-no-fear.html" }
