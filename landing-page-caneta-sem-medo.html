@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Caneta Sem Medo — Guia para preservar músculo e evitar o efeito sanfona</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #FAF6EF;
+    --bg-soft: #F1EBDF;
+    --ink: #1E2E2C;
+    --ink-soft: #54625F;
+    --teal: #1F4E5A;
+    --teal-deep: #163840;
+    --sage: #5C9C8F;
+    --sage-soft: #DCEDE7;
+    --gold: #CE9B4C;
+    --gold-soft: #F4E6CC;
+    --line: rgba(30,46,44,0.12);
+    --radius: 18px;
+    --maxw: 1080px;
+  }
+  *{ margin:0; padding:0; box-sizing:border-box; }
+  html{ scroll-behavior:smooth; }
+  body{
+    font-family:'Manrope', sans-serif;
+    background:var(--bg);
+    color:var(--ink);
+    line-height:1.6;
+    font-size:17px;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{ font-family:'Fraunces', serif; font-weight:600; color:var(--teal-deep); line-height:1.15; letter-spacing:-0.01em; }
+  .wrap{ max-width:var(--maxw); margin:0 auto; padding:0 24px; }
+  a{ color:inherit; }
+
+  /* ---------- HEADER ---------- */
+  header{ position:sticky; top:0; z-index:50; background:rgba(250,246,239,0.88); backdrop-filter:blur(8px); border-bottom:1px solid var(--line); }
+  .nav{ display:flex; align-items:center; justify-content:space-between; padding:16px 24px; }
+  .logo{ font-family:'Fraunces', serif; font-weight:600; font-size:1.25rem; color:var(--teal-deep); display:flex; align-items:center; gap:10px; }
+  .logo .mark{ width:28px; height:28px; border-radius:50%; background:conic-gradient(var(--gold) 0deg 90deg, var(--sage) 90deg 220deg, var(--teal) 220deg 360deg); flex-shrink:0; }
+  .nav-cta{ display:inline-flex; align-items:center; padding:10px 22px; background:var(--teal-deep); color:#fff; border-radius:999px; font-weight:700; font-size:0.92rem; text-decoration:none; transition:transform .15s ease, background .2s ease; }
+  .nav-cta:hover{ background:var(--teal); transform:translateY(-1px); }
+
+  /* ---------- HERO ---------- */
+  .hero{ padding:64px 0 56px; }
+  .hero-grid{ display:grid; grid-template-columns:1.15fr 0.85fr; gap:56px; align-items:center; }
+  .eyebrow{ display:inline-flex; align-items:center; gap:8px; font-size:0.8rem; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--teal); background:var(--sage-soft); padding:7px 14px; border-radius:999px; margin-bottom:22px; }
+  .eyebrow svg{ width:14px; height:14px; }
+  .hero h1{ font-size:3.1rem; margin-bottom:20px; }
+  .hero h1 em{ font-style:italic; color:var(--sage); }
+  .hero p.lead{ font-size:1.15rem; color:var(--ink-soft); max-width:520px; margin-bottom:28px; }
+  .cta-row{ display:flex; flex-wrap:wrap; align-items:center; gap:16px; }
+  .btn-primary{ display:inline-flex; align-items:center; gap:10px; padding:17px 32px; background:var(--gold); color:var(--teal-deep); border-radius:999px; font-weight:800; font-size:1.02rem; text-decoration:none; box-shadow:0 8px 24px -8px rgba(206,155,76,0.65); transition:transform .15s ease, box-shadow .2s ease; }
+  .btn-primary:hover{ transform:translateY(-2px); box-shadow:0 12px 28px -8px rgba(206,155,76,0.75); }
+  .micro{ font-size:0.85rem; color:var(--ink-soft); }
+  .hero-note{ display:flex; align-items:center; gap:10px; font-size:0.88rem; color:var(--ink-soft); margin-top:18px; }
+  .hero-note svg{ flex-shrink:0; width:18px; height:18px; color:var(--sage); }
+
+  /* ---------- DIAL (signature element) ---------- */
+  .dial-card{ background:#fff; border:1px solid var(--line); border-radius:24px; padding:32px; box-shadow:0 24px 60px -32px rgba(30,46,44,0.25); }
+  .dial-card h3{ font-size:1.05rem; margin-bottom:4px; }
+  .dial-card .sub{ font-size:0.85rem; color:var(--ink-soft); margin-bottom:22px; }
+  .dial-wrap{ position:relative; width:220px; height:220px; margin:0 auto 22px; }
+  .dial-wrap svg{ width:100%; height:100%; transform:rotate(-90deg); }
+  .dial-center{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
+  .dial-center .big{ font-family:'Fraunces', serif; font-size:2.1rem; font-weight:700; color:var(--teal-deep); }
+  .dial-center .small{ font-size:0.78rem; color:var(--ink-soft); max-width:120px; }
+  .dial-legend{ display:grid; grid-template-columns:1fr 1fr; gap:10px 16px; }
+  .dial-legend div{ display:flex; align-items:center; gap:8px; font-size:0.86rem; color:var(--ink-soft); }
+  .dot{ width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+
+  /* ---------- SECTION GENERIC ---------- */
+  section{ padding:64px 0; }
+  .section-head{ max-width:680px; margin:0 auto 44px; text-align:center; }
+  .section-head .eyebrow{ margin-bottom:14px; }
+  .section-head h2{ font-size:2.2rem; margin-bottom:14px; }
+  .section-head p{ color:var(--ink-soft); font-size:1.05rem; }
+
+  /* ---------- PROBLEM ---------- */
+  .problem{ background:var(--teal-deep); color:#F4F1E8; }
+  .problem .section-head h2{ color:#fff; }
+  .problem .section-head p{ color:rgba(244,241,232,0.75); }
+  .problem .eyebrow{ background:rgba(255,255,255,0.1); color:#F4E6CC; }
+  .cards3{ display:grid; grid-template-columns:repeat(3,1fr); gap:24px; }
+  .pcard{ background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.12); border-radius:var(--radius); padding:28px; }
+  .pcard .tag{ display:inline-block; font-size:0.78rem; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--gold); margin-bottom:12px; }
+  .pcard h3{ color:#fff; font-size:1.2rem; margin-bottom:10px; }
+  .pcard p{ color:rgba(244,241,232,0.78); font-size:0.95rem; }
+
+  /* ---------- INSIDE ---------- */
+  .inside-grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .chap{ display:flex; gap:16px; align-items:flex-start; background:#fff; border:1px solid var(--line); border-radius:14px; padding:18px 20px; }
+  .chap .num{ font-family:'Fraunces', serif; font-weight:700; font-size:1.3rem; color:var(--sage); flex-shrink:0; width:34px; }
+  .chap h4{ font-family:'Manrope', sans-serif; font-weight:800; font-size:1rem; color:var(--teal-deep); margin-bottom:4px; }
+  .chap p{ font-size:0.9rem; color:var(--ink-soft); }
+
+  /* ---------- WHO FOR ---------- */
+  .who{ background:var(--bg-soft); }
+  .who-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:18px; }
+  .who-card{ background:#fff; border-radius:14px; padding:22px 18px; text-align:center; border:1px solid var(--line); }
+  .who-card .icon{ width:40px; height:40px; margin:0 auto 14px; color:var(--teal); }
+  .who-card p{ font-size:0.92rem; color:var(--ink-soft); }
+
+  /* ---------- OFFER ---------- */
+  .offer{ padding:70px 0; }
+  .offer-card{ max-width:760px; margin:0 auto; background:linear-gradient(135deg, var(--teal) 0%, var(--teal-deep) 100%); border-radius:28px; padding:48px; color:#fff; text-align:center; position:relative; overflow:hidden; }
+  .offer-card::before{ content:''; position:absolute; top:-60px; right:-60px; width:220px; height:220px; border-radius:50%; background:radial-gradient(circle, rgba(206,155,76,0.35), transparent 70%); }
+  .offer-card h2{ color:#fff; font-size:2rem; margin-bottom:10px; }
+  .offer-card .desc{ color:rgba(255,255,255,0.8); max-width:520px; margin:0 auto 28px; font-size:1rem; }
+  .price-row{ display:flex; align-items:baseline; justify-content:center; gap:14px; margin-bottom:6px; flex-wrap:wrap; }
+  .price-old{ font-size:1.2rem; color:rgba(255,255,255,0.55); text-decoration:line-through; }
+  .price-new{ font-family:'Fraunces', serif; font-size:3rem; font-weight:700; color:var(--gold); }
+  .price-cycle{ font-size:0.9rem; color:rgba(255,255,255,0.7); margin-bottom:30px; }
+  .offer-list{ list-style:none; display:grid; gap:10px; max-width:420px; margin:0 auto 32px; text-align:left; }
+  .offer-list li{ display:flex; gap:10px; align-items:flex-start; font-size:0.95rem; color:rgba(255,255,255,0.92); }
+  .offer-list svg{ flex-shrink:0; width:18px; height:18px; margin-top:2px; color:var(--gold); }
+  .offer .btn-primary{ font-size:1.1rem; padding:18px 40px; }
+  .offer .micro{ color:rgba(255,255,255,0.65); margin-top:14px; }
+
+  /* ---------- FAQ ---------- */
+  .faq-item{ border-bottom:1px solid var(--line); padding:20px 0; }
+  .faq-q{ display:flex; align-items:center; justify-content:space-between; cursor:pointer; font-weight:700; color:var(--teal-deep); font-size:1.02rem; gap:16px; }
+  .faq-q .plus{ flex-shrink:0; width:22px; height:22px; border:1.5px solid var(--sage); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.1rem; color:var(--sage); transition:transform .2s ease; }
+  .faq-item.open .plus{ transform:rotate(45deg); }
+  .faq-a{ max-height:0; overflow:hidden; transition:max-height .25s ease; }
+  .faq-a p{ padding-top:12px; color:var(--ink-soft); font-size:0.96rem; max-width:640px; }
+
+  /* ---------- FOOTER / DISCLAIMER ---------- */
+  footer{ background:var(--bg-soft); padding:48px 0 36px; }
+  .disclaimer{ max-width:760px; margin:0 auto; font-size:0.82rem; color:var(--ink-soft); text-align:center; line-height:1.7; border-top:1px solid var(--line); padding-top:28px; }
+  .footer-cta{ text-align:center; margin-bottom:40px; }
+  .footer-cta h2{ font-size:1.9rem; margin-bottom:18px; }
+
+  /* ---------- RESPONSIVE ---------- */
+  @media (max-width:880px){
+    .hero-grid{ grid-template-columns:1fr; gap:40px; }
+    .hero h1{ font-size:2.3rem; }
+    .cards3{ grid-template-columns:1fr; }
+    .inside-grid{ grid-template-columns:1fr; }
+    .who-grid{ grid-template-columns:1fr 1fr; }
+    .offer-card{ padding:32px 24px; }
+    .price-new{ font-size:2.3rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="nav wrap">
+    <div class="logo"><span class="mark"></span> Caneta Sem Medo</div>
+    <a class="nav-cta" href="https://track.convertedigitais.com.br/t/r/21cce6df-7e75-41f8-8f88-18ba4389f3f2">Quero o guia</a>
+  </div>
+</header>
+
+<!-- ================= HERO ================= -->
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <span class="eyebrow">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+        Para quem usa Ozempic, Mounjaro, Wegovy ou similares
+      </span>
+      <h1>A consulta dura 10 minutos.<br>O tratamento dura meses.<br><em>Esse guia preenche o resto.</em></h1>
+      <p class="lead">Um passo a passo prático — sem jargão médico — para você manter o músculo, atravessar os efeitos colaterais sem sofrimento e não ver o peso voltar quando o tratamento acabar.</p>
+      <div class="cta-row">
+        <a class="btn-primary" href="https://track.convertedigitais.com.br/t/r/21cce6df-7e75-41f8-8f88-18ba4389f3f2">
+          Quero o guia agora
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </a>
+        <span class="micro">Acesso imediato em PDF · Leitura de ~1h</span>
+      </div>
+      <div class="hero-note">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Conteúdo educacional. Não substitui acompanhamento médico — vai te ajudar a aproveitar melhor o que ele já te receitou.
+      </div>
+    </div>
+
+    <div class="dial-card">
+      <h3>O painel de hábitos que sustenta o resultado</h3>
+      <p class="sub">As 4 doses diárias que decidem se o peso que sai é gordura — ou músculo.</p>
+      <div class="dial-wrap">
+        <svg viewBox="0 0 200 200">
+          <circle cx="100" cy="100" r="86" fill="none" stroke="#EFE7D8" stroke-width="16"/>
+          <circle cx="100" cy="100" r="86" fill="none" stroke="#CE9B4C" stroke-width="16" stroke-dasharray="135 405" stroke-linecap="round"/>
+          <circle cx="100" cy="100" r="86" fill="none" stroke="#5C9C8F" stroke-width="16" stroke-dasharray="100 405" stroke-dashoffset="-135" stroke-linecap="round"/>
+          <circle cx="100" cy="100" r="86" fill="none" stroke="#1F4E5A" stroke-width="16" stroke-dasharray="90 405" stroke-dashoffset="-235" stroke-linecap="round"/>
+          <circle cx="100" cy="100" r="86" fill="none" stroke="#A9C9C0" stroke-width="16" stroke-dasharray="80 405" stroke-dashoffset="-325" stroke-linecap="round"/>
+        </svg>
+        <div class="dial-center">
+          <div class="big">9</div>
+          <div class="small">capítulos práticos, direto ao ponto</div>
+        </div>
+      </div>
+      <div class="dial-legend">
+        <div><span class="dot" style="background:#CE9B4C"></span> Proteína por refeição</div>
+        <div><span class="dot" style="background:#5C9C8F"></span> Treino de força (2x/sem)</div>
+        <div><span class="dot" style="background:#1F4E5A"></span> Hidratação e digestão</div>
+        <div><span class="dot" style="background:#A9C9C0"></span> Plano de saída sem sanfona</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= PROBLEM ================= -->
+<section class="problem">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">O que ninguém te conta</span>
+      <h2>O remédio resolve o apetite. Não resolve o resto.</h2>
+      <p>Quem usa essas medicações descobre rápido que a parte mais difícil não é "comer menos" — é o que vem depois disso.</p>
+    </div>
+    <div class="cards3">
+      <div class="pcard">
+        <span class="tag">Risco 1</span>
+        <h3>Perda de massa muscular</h3>
+        <p>Sem ajustar a alimentação, parte significativa do peso perdido pode vir de músculo, não só de gordura — e isso desacelera seu metabolismo a longo prazo.</p>
+      </div>
+      <div class="pcard">
+        <span class="tag">Risco 2</span>
+        <h3>Efeitos colaterais sem manual</h3>
+        <p>Náusea, constipação, refluxo, queda de energia. A bula avisa que existem — mas raramente diz o que fazer no dia a dia para amenizar.</p>
+      </div>
+      <div class="pcard">
+        <span class="tag">Risco 3</span>
+        <h3>O efeito sanfona, de novo</h3>
+        <p>Quando o tratamento termina e o apetite volta, sem hábitos construídos o peso costuma voltar também — e a frustração junto.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= INSIDE ================= -->
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Dentro do guia</span>
+      <h2>9 capítulos. Zero enrolação.</h2>
+      <p>Cada capítulo resolve um problema específico que aparece nas primeiras semanas de tratamento — e nos meses depois dele.</p>
+    </div>
+    <div class="inside-grid">
+      <div class="chap"><span class="num">01</span><div><h4>Como as canetas funcionam</h4><p>O mecanismo explicado sem jargão, e por que ele afeta seu apetite do jeito que afeta.</p></div></div>
+      <div class="chap"><span class="num">02</span><div><h4>O risco real: perda muscular</h4><p>Por que parte do peso que você perde pode ser músculo — e por que isso importa.</p></div></div>
+      <div class="chap"><span class="num">03</span><div><h4>Proteína: a base de tudo</h4><p>Quanto comer, em que ordem, e o que fazer nos dias em que a fome é quase zero.</p></div></div>
+      <div class="chap"><span class="num">04</span><div><h4>O treino mínimo eficaz</h4><p>Um plano de 2x por semana, 30-40 min, sem precisar de academia.</p></div></div>
+      <div class="chap"><span class="num">05</span><div><h4>Efeitos colaterais, na prática</h4><p>Náusea, constipação, refluxo e energia baixa — o que ajuda de verdade.</p></div></div>
+      <div class="chap"><span class="num">06</span><div><h4>Suplementação essencial</h4><p>O que vale considerar (e o que não é necessário) — sempre com seu médico.</p></div></div>
+      <div class="chap"><span class="num">07</span><div><h4>Cardápios modelo</h4><p>Dois modelos prontos para dias de pouco apetite e dias de apetite moderado.</p></div></div>
+      <div class="chap"><span class="num">08</span><div><h4>A estratégia de saída</h4><p>O capítulo que mais evita o efeito sanfona: o que fazer antes, durante e depois do tratamento.</p></div></div>
+      <div class="chap"><span class="num">09</span><div><h4>Mitos e verdades + checklist</h4><p>Separe o que é fato do que é medo — e um checklist semanal para acompanhar seu progresso.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= WHO ================= -->
+<section class="who">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Para quem é</span>
+      <h2>Esse guia é para você se...</h2>
+    </div>
+    <div class="who-grid">
+      <div class="who-card">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2v6m0 0a4 4 0 0 1 4 4v2a4 4 0 0 1-8 0v-2a4 4 0 0 1 4-4z"/><path d="M8 22h8"/></svg>
+        <p>Já está em tratamento e quer aproveitar melhor essa fase</p>
+      </div>
+      <div class="who-card">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M9 12l2 2 4-4"/></svg>
+        <p>Está pensando em começar e quer chegar preparado(a)</p>
+      </div>
+      <div class="who-card">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12a9 9 0 1 0 9-9"/><path d="M3 12l4-2m-4 2l4 2"/></svg>
+        <p>Já terminou e não quer ver o peso voltar</p>
+      </div>
+      <div class="who-card">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg>
+        <p>Quer ajudar alguém da família com as refeições do dia a dia</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= OFFER ================= -->
+<section class="offer">
+  <div class="wrap">
+    <div class="offer-card">
+      <h2>Caneta Sem Medo</h2>
+      <p class="desc">Guia completo em PDF, organizado em 9 capítulos práticos, com tabelas de proteína, modelo de treino, cardápios e o plano de saída para evitar o efeito sanfona.</p>
+      <div class="price-row">
+        <span class="price-old">R$ 97</span>
+        <span class="price-new">R$ 37</span>
+      </div>
+      <p class="price-cycle">pagamento único · acesso vitalício</p>
+      <ul class="offer-list">
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 6"/></svg> E-book completo em PDF (entrega imediata)</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 6"/></svg> Tabelas de proteína e modelo de treino prontos para usar</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 6"/></svg> Cardápios para dias de pouco e de moderado apetite</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 6"/></svg> Checklist semanal de hábitos</li>
+        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 6"/></svg> Garantia incondicional de 7 dias</li>
+      </ul>
+      <a class="btn-primary" href="https://track.convertedigitais.com.br/t/r/21cce6df-7e75-41f8-8f88-18ba4389f3f2">
+        Quero o guia por R$ 37
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </a>
+      <p class="micro">Pagamento processado em ambiente seguro. Acesso liberado na hora.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FAQ ================= -->
+<section>
+  <div class="wrap" style="max-width:760px;">
+    <div class="section-head">
+      <span class="eyebrow">Dúvidas comuns</span>
+      <h2>Perguntas frequentes</h2>
+    </div>
+    <div class="faq-list">
+      <div class="faq-item">
+        <div class="faq-q">Esse guia substitui meu médico ou nutricionista? <span class="plus">+</span></div>
+        <div class="faq-a"><p>Não. É um material educacional para te ajudar a organizar alimentação, treino e expectativas durante o tratamento. Qualquer decisão sobre dose, medicamento ou suplementos deve ser feita com seu médico.</p></div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Funciona para Ozempic, Mounjaro, Wegovy e Saxenda? <span class="plus">+</span></div>
+        <div class="faq-a"><p>Sim. Os princípios de proteína, treino de força, manejo de efeitos colaterais e prevenção do efeito sanfona se aplicam a todos os agonistas de GLP-1 e GLP-1/GIP, independentemente da marca.</p></div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Preciso de academia ou equipamentos? <span class="plus">+</span></div>
+        <div class="faq-a"><p>Não. O capítulo de treino traz um plano de 2 a 3 sessões por semana que pode ser feito em casa, com o peso do próprio corpo ou itens simples como elásticos.</p></div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">Como recebo o e-book? <span class="plus">+</span></div>
+        <div class="faq-a"><p>Depois da confirmação do pagamento, o acesso ao PDF é liberado imediatamente para download.</p></div>
+      </div>
+      <div class="faq-item">
+        <div class="faq-q">E se eu não gostar? <span class="plus">+</span></div>
+        <div class="faq-a"><p>Você tem 7 dias de garantia incondicional. Se não fizer sentido para você, é só solicitar o reembolso.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FOOTER ================= -->
+<footer>
+  <div class="wrap">
+    <div class="footer-cta">
+      <h2>Use a fase em que o apetite colabora com você<br>para construir o que vai durar depois dela.</h2>
+      <a class="btn-primary" href="https://track.convertedigitais.com.br/t/r/21cce6df-7e75-41f8-8f88-18ba4389f3f2">
+        Quero o guia agora
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </a>
+    </div>
+    <div class="disclaimer">
+      Este produto é um material educacional sobre nutrição, treino e hábitos de vida para pessoas em tratamento (ou que pretendem iniciar tratamento) com agonistas de GLP-1. Não é um produto médico, não diagnostica, não trata e não substitui consulta, acompanhamento ou prescrição de profissionais de saúde habilitados. Resultados individuais variam de pessoa para pessoa. Antes de iniciar, ajustar ou interromper qualquer medicamento ou suplemento, ou iniciar um programa de exercícios, consulte um médico, nutricionista e/ou educador físico.
+    </div>
+  </div>
+</footer>
+
+<script>
+  document.querySelectorAll('.faq-item').forEach(item => {
+    const q = item.querySelector('.faq-q');
+    const a = item.querySelector('.faq-a');
+    q.addEventListener('click', () => {
+      const isOpen = item.classList.contains('open');
+      document.querySelectorAll('.faq-item').forEach(i => { i.classList.remove('open'); i.querySelector('.faq-a').style.maxHeight = null; });
+      if (!isOpen) {
+        item.classList.add('open');
+        a.style.maxHeight = a.scrollHeight + 'px';
+      }
+    });
+  });
+</script>
+
+</body>
+</html>
