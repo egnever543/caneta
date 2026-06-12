@@ -1,9 +1,7 @@
 {
-  "routes": [
-    { "src": "/api/(.*)", "dest": "/api/$1" },
-    { "src": "/public/(.*)", "dest": "/public/$1" },
-    { "src": "/pt", "dest": "/landing-page-caneta-sem-medo.html" },
-    { "src": "/success", "dest": "/success.html" },
-    { "src": "/", "dest": "/landing-page-needle-no-fear.html" }
+  "rewrites": [
+    { "source": "/", "destination": "/landing-page-needle-no-fear.html" },
+    { "source": "/pt", "destination": "/landing-page-caneta-sem-medo.html" },
+    { "source": "/success", "destination": "/success.html" }
   ]
 }
