@@ -20,6 +20,7 @@
   "homepage": "https://github.com/egnever543/caneta#readme",
   "dependencies": {
     "docx": "^9.7.1",
+    "resend": "^6.12.4",
     "stripe": "^22.2.0"
   }
 }
