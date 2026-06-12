@@ -38,7 +38,7 @@ module.exports = async (req, res) => {
     if (customerEmail) {
       try {
         await resend.emails.send({
-          from: 'Shot Without Fear <noreply@yourdomain.com>',
+          from: 'Shot Without Fear <onboarding@resend.dev>',
           to: customerEmail,
           subject: 'Your guide is ready — Shot Without Fear',
           html: `
