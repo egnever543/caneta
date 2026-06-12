@@ -1,15 +1,14 @@
 {
-  "rewrites": [
-    { "source": "/", "destination": "/landing-page-needle-no-fear.html" },
-    { "source": "/pt", "destination": "/landing-page-caneta-sem-medo.html" }
-  ],
-  "headers": [
-    {
-      "source": "/public/(.*)",
-      "headers": [
-        { "key": "Content-Disposition", "value": "attachment" },
-        { "key": "Cache-Control", "value": "private, no-cache" }
-      ]
+  "functions": {
+    "api/*.js": {
+      "runtime": "nodejs20.x"
     }
+  },
+  "routes": [
+    { "src": "/api/(.*)", "dest": "/api/$1" },
+    { "src": "/public/(.*)", "dest": "/public/$1", "headers": { "Content-Disposition": "attachment", "Cache-Control": "private, no-cache" } },
+    { "src": "/pt", "dest": "/landing-page-caneta-sem-medo.html" },
+    { "src": "/success", "dest": "/success.html" },
+    { "src": "/", "dest": "/landing-page-needle-no-fear.html" }
   ]
 }
