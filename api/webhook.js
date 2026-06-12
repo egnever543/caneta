@@ -3,7 +3,7 @@ const { Resend } = require('resend');
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-const PDF_DOWNLOAD_URL = process.env.PDF_DOWNLOAD_URL || 'https://YOUR_PDF_LINK_HERE';
+const PDF_DOWNLOAD_URL = process.env.PDF_DOWNLOAD_URL || `${process.env.VERCEL_URL ? 'https://' + process.env.VERCEL_PROJECT_PRODUCTION_URL : ''}/public/Shot_Without_Fear.pdf`;
 
 function getRawBody(req) {
   return new Promise((resolve, reject) => {
