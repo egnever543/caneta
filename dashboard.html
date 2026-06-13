@@ -28,7 +28,7 @@
   .btn-refresh:hover { border-color:var(--teal); }
 
   /* KPI Grid — 6 colunas em desktop */
-  .kpi-grid { display:grid; grid-template-columns:repeat(6, 1fr); gap:16px; margin-bottom:28px; }
+  .kpi-grid { display:grid; grid-template-columns:repeat(7, 1fr); gap:16px; margin-bottom:28px; }
   .kpi { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:24px 22px; }
   .kpi .label { font-size:0.72rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.09em; margin-bottom:10px; }
   .kpi .value { font-size:2.2rem; font-weight:700; color:var(--text); line-height:1; }
@@ -146,6 +146,11 @@
     <div class="value" id="kpi-today">—</div>
     <div class="sub">last 24h</div>
   </div>
+  <div class="kpi highlight">
+    <div class="label">Purchases</div>
+    <div class="value" id="kpi-purchases">—</div>
+    <div class="sub">confirmed sales</div>
+  </div>
 </div>
 
 <!-- Main grid: conteúdo esquerda + eventos direita -->
@@ -250,6 +255,7 @@ async function loadAll() {
   const countries = new Set(all.map(e => e.country).filter(Boolean));
   const today = new Date(); today.setHours(0,0,0,0);
   const todayEvents = all.filter(e => new Date(e.created_at) >= today);
+  const purchases = all.filter(e => e.event_type === 'purchase');
 
   document.getElementById('kpi-visits').textContent = sessions.size;
   document.getElementById('kpi-cta').textContent = ctas.length;
@@ -257,6 +263,7 @@ async function loadAll() {
   document.getElementById('kpi-time').textContent = avgTime + 's';
   document.getElementById('kpi-countries').textContent = countries.size;
   document.getElementById('kpi-today').textContent = todayEvents.length;
+  document.getElementById('kpi-purchases').textContent = purchases.length;
 
   // Visits per day chart
   const byDay = {};
