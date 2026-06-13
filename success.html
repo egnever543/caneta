@@ -34,7 +34,10 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
   h1{ font-family:'Fraunces',serif; font-size:2rem; color:var(--teal-deep); margin-bottom:14px; }
   p{ color:#54625F; font-size:1rem; line-height:1.7; margin-bottom:10px; }
   .note{ font-size:0.88rem; color:#54625F; background:#F1EBDF; border-radius:12px; padding:16px 20px; margin-top:24px; }
-  a.back{ display:inline-flex; align-items:center; gap:8px; margin-top:28px; padding:14px 28px; background:var(--teal-deep); color:#fff; border-radius:999px; font-weight:700; font-size:0.95rem; text-decoration:none; }
+  .btn-download{ display:inline-flex; align-items:center; gap:10px; margin-top:28px; padding:16px 32px; background:var(--gold); color:#fff; border-radius:999px; font-weight:700; font-size:1rem; text-decoration:none; box-shadow:0 4px 20px rgba(206,155,76,0.35); }
+  .btn-download:hover{ background:#b8882e; }
+  a.back{ display:inline-flex; align-items:center; gap:8px; margin-top:14px; padding:12px 24px; background:transparent; color:var(--teal-deep); border:2px solid var(--teal-deep); border-radius:999px; font-weight:700; font-size:0.88rem; text-decoration:none; opacity:0.7; }
+  a.back:hover{ opacity:1; }
 </style>
 </head>
 <body>
@@ -43,10 +46,14 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12l5 5L20 6"/></svg>
     </div>
     <h1>You're all set!</h1>
-    <p>Your payment was confirmed. Check your email for the download link — it should arrive within the next few minutes.</p>
-    <p>If you don't see it, check your spam folder.</p>
-    <div class="note">
-      Questions? Reply to the confirmation email and we'll sort it out right away.
+    <p>Your payment was confirmed. Click below to download your guide instantly.</p>
+    <p style="font-size:0.88rem;color:#7a8fa6;">A copy is also being sent to your email.</p>
+    <a class="btn-download" href="/public/Shot_Without_Fear.pdf" target="_blank">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Download Shot Without Fear — PDF
+    </a>
+    <div class="note" style="margin-top:20px;">
+      If you don't see the email, check your spam folder. Questions? Reply to the confirmation email.
     </div>
     <a class="back" href="/">← Back to the guide page</a>
   </div>
