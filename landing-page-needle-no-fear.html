@@ -467,7 +467,12 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
   const scrollThresholds = [25, 50, 75, 90, 100];
   const firedThresholds = new Set();
   window.addEventListener('scroll', () => {
-    const pct = Math.round((window.scrollY / (document.body.scrollHeight - window.innerHeight)) * 100);
+    const scrollable = Math.max(
+      document.body.scrollHeight,
+      document.documentElement.scrollHeight
+    ) - window.innerHeight;
+    if (scrollable <= 0) return;
+    const pct = Math.round((window.scrollY / scrollable) * 100);
     scrollThresholds.forEach(t => {
       if (pct >= t && !firedThresholds.has(t)) {
         firedThresholds.add(t);
