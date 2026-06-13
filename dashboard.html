@@ -16,73 +16,92 @@
     --muted: #7A8FA6;
   }
   * { margin:0; padding:0; box-sizing:border-box; }
-  body { font-family: 'Inter', system-ui, sans-serif; background:var(--bg); color:var(--text); min-height:100vh; padding:24px; }
-  h1 { font-size:1.4rem; font-weight:700; margin-bottom:4px; }
-  .subtitle { color:var(--muted); font-size:0.85rem; margin-bottom:32px; }
+  body { font-family: 'Inter', system-ui, sans-serif; background:var(--bg); color:var(--text); min-height:100vh; padding:32px 40px; }
+  .page-wrap { max-width:1400px; margin:0 auto; }
+  h1 { font-size:1.6rem; font-weight:700; margin-bottom:4px; }
+  .subtitle { color:var(--muted); font-size:0.88rem; margin-bottom:36px; }
   .header { display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; }
-  .live { display:flex; align-items:center; gap:6px; font-size:0.8rem; color:var(--teal); }
+  .live { display:flex; align-items:center; gap:6px; font-size:0.82rem; color:var(--teal); }
   .live span { width:8px; height:8px; background:var(--teal); border-radius:50%; animation:pulse 2s infinite; }
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
-  .btn-refresh { background:var(--card); border:1px solid var(--border); color:var(--text); padding:8px 16px; border-radius:8px; cursor:pointer; font-size:0.82rem; transition:border-color .2s; }
+  .btn-refresh { background:var(--card); border:1px solid var(--border); color:var(--text); padding:9px 18px; border-radius:8px; cursor:pointer; font-size:0.84rem; transition:border-color .2s; }
   .btn-refresh:hover { border-color:var(--teal); }
 
-  /* KPI Grid */
-  .kpi-grid { display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:16px; margin-bottom:24px; }
-  .kpi { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:20px; }
-  .kpi .label { font-size:0.75rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:8px; }
-  .kpi .value { font-size:2rem; font-weight:700; color:var(--text); line-height:1; }
-  .kpi .sub { font-size:0.78rem; color:var(--muted); margin-top:6px; }
+  /* KPI Grid — 6 colunas em desktop */
+  .kpi-grid { display:grid; grid-template-columns:repeat(6, 1fr); gap:16px; margin-bottom:28px; }
+  .kpi { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:24px 22px; }
+  .kpi .label { font-size:0.72rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.09em; margin-bottom:10px; }
+  .kpi .value { font-size:2.2rem; font-weight:700; color:var(--text); line-height:1; }
+  .kpi .sub { font-size:0.76rem; color:var(--muted); margin-top:8px; }
   .kpi.highlight .value { color:var(--gold); }
   .kpi.teal .value { color:var(--teal); }
 
-  /* Charts row */
-  .charts-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:24px; }
-  .chart-card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:20px; }
-  .chart-card h3 { font-size:0.85rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:16px; }
+  /* Main layout: charts left, events right */
+  .main-grid { display:grid; grid-template-columns:1fr 380px; gap:20px; margin-bottom:20px; align-items:start; }
+  .left-col { display:flex; flex-direction:column; gap:20px; }
 
-  /* Tables row */
-  .tables-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:24px; }
-  .table-card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:20px; }
-  .table-card h3 { font-size:0.85rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:16px; }
+  /* Charts row — 2 colunas dentro da col esquerda */
+  .charts-grid { display:grid; grid-template-columns:2fr 1fr; gap:20px; }
+  .chart-card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:24px; }
+  .chart-card h3 { font-size:0.78rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.09em; margin-bottom:18px; }
+
+  /* Scroll + Tables row */
+  .bottom-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:20px; }
+
+  /* Tables */
+  .table-card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:24px; }
+  .table-card h3 { font-size:0.78rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.09em; margin-bottom:18px; }
   table { width:100%; border-collapse:collapse; }
-  th { font-size:0.72rem; color:var(--muted); text-align:left; padding-bottom:10px; text-transform:uppercase; letter-spacing:0.06em; }
-  td { font-size:0.88rem; padding:8px 0; border-top:1px solid var(--border); color:var(--text); }
+  th { font-size:0.7rem; color:var(--muted); text-align:left; padding-bottom:10px; text-transform:uppercase; letter-spacing:0.06em; }
+  td { font-size:0.86rem; padding:9px 0; border-top:1px solid var(--border); color:var(--text); }
   td.num { text-align:right; color:var(--teal); font-weight:600; }
-  td.bar-cell { padding:8px 0; }
-  .bar { height:6px; background:var(--teal); border-radius:3px; opacity:0.8; }
+  td.bar-cell { padding:9px 0; }
+  .bar { height:5px; background:var(--teal); border-radius:3px; opacity:0.8; }
 
   /* Scroll depth */
-  .scroll-card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:20px; margin-bottom:24px; }
-  .scroll-card h3 { font-size:0.85rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:16px; }
-  .scroll-funnel { display:grid; grid-template-columns:repeat(5,1fr); gap:12px; }
+  .scroll-card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:24px; }
+  .scroll-card h3 { font-size:0.78rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.09em; margin-bottom:18px; }
+  .scroll-funnel { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; }
   .scroll-step { text-align:center; }
-  .scroll-bar-wrap { height:80px; display:flex; align-items:flex-end; justify-content:center; margin-bottom:8px; }
-  .scroll-bar { width:36px; background:linear-gradient(180deg, var(--teal), #3a6b61); border-radius:4px 4px 0 0; min-height:4px; transition:height .5s ease; }
-  .scroll-pct { font-size:1rem; font-weight:700; color:var(--text); }
-  .scroll-label { font-size:0.72rem; color:var(--muted); }
+  .scroll-bar-wrap { height:100px; display:flex; align-items:flex-end; justify-content:center; margin-bottom:8px; }
+  .scroll-bar { width:40px; background:linear-gradient(180deg, var(--teal), #3a6b61); border-radius:4px 4px 0 0; min-height:4px; transition:height .5s ease; }
+  .scroll-pct { font-size:1.05rem; font-weight:700; color:var(--text); }
+  .scroll-label { font-size:0.7rem; color:var(--muted); margin-top:3px; }
 
-  /* Recent events */
-  .events-card { background:var(--card); border:1px solid var(--border); border-radius:14px; padding:20px; }
-  .events-card h3 { font-size:0.85rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:16px; }
-  .event-row { display:flex; align-items:center; gap:12px; padding:8px 0; border-top:1px solid var(--border); font-size:0.84rem; }
+  /* Recent events — sidebar direita */
+  .events-card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:24px; overflow-y:auto; max-height:680px; }
+  .events-card h3 { font-size:0.78rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.09em; margin-bottom:18px; position:sticky; top:0; background:var(--card); padding-bottom:12px; }
+  .event-row { display:flex; align-items:flex-start; gap:10px; padding:10px 0; border-top:1px solid var(--border); font-size:0.82rem; }
   .event-row:first-child { border-top:none; }
-  .event-badge { padding:3px 8px; border-radius:99px; font-size:0.7rem; font-weight:600; white-space:nowrap; }
+  .event-badge { padding:3px 8px; border-radius:99px; font-size:0.68rem; font-weight:600; white-space:nowrap; flex-shrink:0; margin-top:1px; }
   .badge-page_view { background:rgba(92,156,143,0.15); color:var(--teal); }
   .badge-cta_click { background:rgba(206,155,76,0.15); color:var(--gold); }
   .badge-scroll_depth { background:rgba(122,143,166,0.15); color:var(--muted); }
   .badge-section_viewed { background:rgba(92,156,143,0.1); color:#8bbdb6; }
   .badge-page_exit { background:rgba(255,80,80,0.1); color:#ff7070; }
-  .event-info { flex:1; color:var(--muted); }
-  .event-time { font-size:0.74rem; color:var(--muted); white-space:nowrap; }
+  .event-info { flex:1; color:var(--muted); line-height:1.4; }
+  .event-time { font-size:0.7rem; color:var(--muted); white-space:nowrap; margin-top:2px; }
 
   .loading { color:var(--muted); font-size:0.9rem; padding:40px; text-align:center; }
+
+  /* Responsive: tablet */
+  @media(max-width:1200px) {
+    .kpi-grid { grid-template-columns:repeat(3,1fr); }
+    .main-grid { grid-template-columns:1fr; }
+    .events-card { max-height:400px; }
+    .bottom-grid { grid-template-columns:1fr 1fr; }
+  }
   @media(max-width:768px) {
-    .charts-grid, .tables-grid { grid-template-columns:1fr; }
-    .scroll-funnel { grid-template-columns:repeat(5,1fr); gap:6px; }
+    body { padding:16px; }
+    .kpi-grid { grid-template-columns:repeat(2,1fr); }
+    .charts-grid { grid-template-columns:1fr; }
+    .bottom-grid { grid-template-columns:1fr; }
   }
 </style>
 </head>
 <body>
+
+<div class="page-wrap">
 
 <div class="header">
   <div>
@@ -129,73 +148,82 @@
   </div>
 </div>
 
-<!-- Charts -->
-<div class="charts-grid">
-  <div class="chart-card">
-    <h3>Visits per day</h3>
-    <canvas id="chart-visits" height="180"></canvas>
-  </div>
-  <div class="chart-card">
-    <h3>Event breakdown</h3>
-    <canvas id="chart-events" height="180"></canvas>
-  </div>
-</div>
+<!-- Main grid: conteúdo esquerda + eventos direita -->
+<div class="main-grid">
+  <div class="left-col">
 
-<!-- Scroll Depth -->
-<div class="scroll-card">
-  <h3>Scroll depth — % of visitors who reached each point</h3>
-  <div class="scroll-funnel">
-    <div class="scroll-step">
-      <div class="scroll-bar-wrap"><div class="scroll-bar" id="bar-25"></div></div>
-      <div class="scroll-pct" id="pct-25">—</div>
-      <div class="scroll-label">25%</div>
+    <!-- Charts -->
+    <div class="charts-grid">
+      <div class="chart-card">
+        <h3>Visits per day</h3>
+        <canvas id="chart-visits" height="160"></canvas>
+      </div>
+      <div class="chart-card">
+        <h3>Event breakdown</h3>
+        <canvas id="chart-events" height="160"></canvas>
+      </div>
     </div>
-    <div class="scroll-step">
-      <div class="scroll-bar-wrap"><div class="scroll-bar" id="bar-50"></div></div>
-      <div class="scroll-pct" id="pct-50">—</div>
-      <div class="scroll-label">50%</div>
-    </div>
-    <div class="scroll-step">
-      <div class="scroll-bar-wrap"><div class="scroll-bar" id="bar-75"></div></div>
-      <div class="scroll-pct" id="pct-75">—</div>
-      <div class="scroll-label">75%</div>
-    </div>
-    <div class="scroll-step">
-      <div class="scroll-bar-wrap"><div class="scroll-bar" id="bar-90"></div></div>
-      <div class="scroll-pct" id="pct-90">—</div>
-      <div class="scroll-label">90%</div>
-    </div>
-    <div class="scroll-step">
-      <div class="scroll-bar-wrap"><div class="scroll-bar" id="bar-100"></div></div>
-      <div class="scroll-pct" id="pct-100">—</div>
-      <div class="scroll-label">100%</div>
-    </div>
-  </div>
-</div>
 
-<!-- Tables -->
-<div class="tables-grid">
-  <div class="table-card">
-    <h3>Sections viewed</h3>
-    <table>
-      <thead><tr><th>Section</th><th style="text-align:right">Views</th><th style="width:80px"></th></tr></thead>
-      <tbody id="table-sections"><tr><td colspan="3" class="loading">Loading...</td></tr></tbody>
-    </table>
-  </div>
-  <div class="table-card">
-    <h3>Top countries</h3>
-    <table>
-      <thead><tr><th>Country</th><th style="text-align:right">Visits</th><th style="width:80px"></th></tr></thead>
-      <tbody id="table-countries"><tr><td colspan="3" class="loading">Loading...</td></tr></tbody>
-    </table>
-  </div>
-</div>
+    <!-- Scroll + Tables -->
+    <div class="bottom-grid">
+      <div class="scroll-card">
+        <h3>Scroll depth</h3>
+        <div class="scroll-funnel">
+          <div class="scroll-step">
+            <div class="scroll-bar-wrap"><div class="scroll-bar" id="bar-25"></div></div>
+            <div class="scroll-pct" id="pct-25">—</div>
+            <div class="scroll-label">25%</div>
+          </div>
+          <div class="scroll-step">
+            <div class="scroll-bar-wrap"><div class="scroll-bar" id="bar-50"></div></div>
+            <div class="scroll-pct" id="pct-50">—</div>
+            <div class="scroll-label">50%</div>
+          </div>
+          <div class="scroll-step">
+            <div class="scroll-bar-wrap"><div class="scroll-bar" id="bar-75"></div></div>
+            <div class="scroll-pct" id="pct-75">—</div>
+            <div class="scroll-label">75%</div>
+          </div>
+          <div class="scroll-step">
+            <div class="scroll-bar-wrap"><div class="scroll-bar" id="bar-90"></div></div>
+            <div class="scroll-pct" id="pct-90">—</div>
+            <div class="scroll-label">90%</div>
+          </div>
+          <div class="scroll-step">
+            <div class="scroll-bar-wrap"><div class="scroll-bar" id="bar-100"></div></div>
+            <div class="scroll-pct" id="pct-100">—</div>
+            <div class="scroll-label">100%</div>
+          </div>
+        </div>
+      </div>
 
-<!-- Recent Events -->
-<div class="events-card">
-  <h3>Recent events</h3>
-  <div id="recent-events"><div class="loading">Loading...</div></div>
-</div>
+      <div class="table-card">
+        <h3>Sections viewed</h3>
+        <table>
+          <thead><tr><th>Section</th><th style="text-align:right">Views</th><th style="width:60px"></th></tr></thead>
+          <tbody id="table-sections"><tr><td colspan="3" class="loading">Loading...</td></tr></tbody>
+        </table>
+      </div>
+
+      <div class="table-card">
+        <h3>Top countries</h3>
+        <table>
+          <thead><tr><th>Country</th><th style="text-align:right">Visits</th><th style="width:60px"></th></tr></thead>
+          <tbody id="table-countries"><tr><td colspan="3" class="loading">Loading...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div><!-- /left-col -->
+
+  <!-- Recent Events sidebar -->
+  <div class="events-card">
+    <h3>Recent events</h3>
+    <div id="recent-events"><div class="loading">Loading...</div></div>
+  </div>
+</div><!-- /main-grid -->
+
+</div><!-- /page-wrap -->
 
 <script>
 const SUPABASE_URL = 'https://rjnjjyclxfbnjswugrex.supabase.co';
