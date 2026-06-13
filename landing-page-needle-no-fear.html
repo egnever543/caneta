@@ -437,6 +437,64 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
     }
   }
 
+  // ── Analytics Tracking ──────────────────────────────────────────
+  const SESSION_ID = Math.random().toString(36).slice(2) + Date.now().toString(36);
+
+  function track(event_type, section, metadata) {
+    fetch('/api/track', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_id: SESSION_ID, event_type, section: section || null, metadata: metadata || {} })
+    }).catch(() => {});
+  }
+
+  // PageView
+  track('page_view', null, { referrer: document.referrer, url: location.href });
+
+  // CTA clicks
+  document.querySelectorAll('.btn-primary, .nav-cta').forEach(btn => {
+    btn.addEventListener('click', () => {
+      track('cta_click', btn.closest('section')?.className || 'nav', { text: btn.innerText.trim() });
+    });
+  });
+
+  // Scroll depth — fires once per threshold
+  const scrollThresholds = [25, 50, 75, 90, 100];
+  const firedThresholds = new Set();
+  window.addEventListener('scroll', () => {
+    const pct = Math.round((window.scrollY / (document.body.scrollHeight - window.innerHeight)) * 100);
+    scrollThresholds.forEach(t => {
+      if (pct >= t && !firedThresholds.has(t)) {
+        firedThresholds.add(t);
+        track('scroll_depth', null, { percent: t });
+      }
+    });
+  }, { passive: true });
+
+  // Section visibility (Intersection Observer)
+  const sectionMap = {
+    'hero': 'hero', 'problem': 'problem', 'inside': 'chapters',
+    'who': 'who_its_for', 'offer': 'offer', 'faq-list': 'faq'
+  };
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        const key = Object.keys(sectionMap).find(k => e.target.classList.contains(k) || e.target.querySelector('.' + k));
+        if (key) track('section_viewed', sectionMap[key], {});
+        observer.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.4 });
+  document.querySelectorAll('section').forEach(s => observer.observe(s));
+
+  // Time on page — fires on unload
+  const pageStart = Date.now();
+  window.addEventListener('beforeunload', () => {
+    const seconds = Math.round((Date.now() - pageStart) / 1000);
+    track('page_exit', null, { seconds_on_page: seconds });
+  });
+  // ────────────────────────────────────────────────────────────────
+
   document.querySelectorAll('.faq-item').forEach(item => {
     const q = item.querySelector('.faq-q');
     const a = item.querySelector('.faq-a');
