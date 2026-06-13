@@ -1,5 +1,8 @@
 {
   "outputDirectory": ".",
+  "crons": [
+    { "path": "/api/daily-report", "schedule": "0 11 * * *" }
+  ],
   "rewrites": [
     { "source": "/", "destination": "/landing-page-needle-no-fear.html" },
     { "source": "/pt", "destination": "/landing-page-caneta-sem-medo.html" },
