@@ -84,18 +84,24 @@
 
   .loading { color:var(--muted); font-size:0.9rem; padding:40px; text-align:center; }
 
+  /* Traffic sources row */
+  .sources-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; margin-top:20px; }
+  td.ctr-num { text-align:right; color:var(--gold); font-weight:600; }
+
   /* Responsive: tablet */
   @media(max-width:1200px) {
-    .kpi-grid { grid-template-columns:repeat(3,1fr); }
+    .kpi-grid { grid-template-columns:repeat(4,1fr); }
     .main-grid { grid-template-columns:1fr; }
     .events-card { max-height:400px; }
     .bottom-grid { grid-template-columns:1fr 1fr; }
+    .sources-grid { grid-template-columns:1fr 1fr; }
   }
   @media(max-width:768px) {
     body { padding:16px; }
     .kpi-grid { grid-template-columns:repeat(2,1fr); }
     .charts-grid { grid-template-columns:1fr; }
     .bottom-grid { grid-template-columns:1fr; }
+    .sources-grid { grid-template-columns:1fr; }
   }
 </style>
 </head>
@@ -219,6 +225,31 @@
       </div>
     </div>
 
+    <!-- Traffic Sources -->
+    <div class="sources-grid">
+      <div class="table-card">
+        <h3>Traffic source <span style="color:var(--teal);font-size:0.7rem;margin-left:6px;">utm_source</span></h3>
+        <table>
+          <thead><tr><th>Source</th><th style="text-align:right">Visits</th><th style="text-align:right;color:var(--gold)">CTAs</th><th style="width:60px"></th></tr></thead>
+          <tbody id="table-sources"><tr><td colspan="4" class="loading">Loading...</td></tr></tbody>
+        </table>
+      </div>
+      <div class="table-card">
+        <h3>Campaign <span style="color:var(--teal);font-size:0.7rem;margin-left:6px;">utm_campaign</span></h3>
+        <table>
+          <thead><tr><th>Campaign</th><th style="text-align:right">Visits</th><th style="text-align:right;color:var(--gold)">CTAs</th><th style="width:60px"></th></tr></thead>
+          <tbody id="table-campaigns"><tr><td colspan="4" class="loading">Loading...</td></tr></tbody>
+        </table>
+      </div>
+      <div class="table-card">
+        <h3>Medium <span style="color:var(--teal);font-size:0.7rem;margin-left:6px;">utm_medium / fbclid</span></h3>
+        <table>
+          <thead><tr><th>Medium</th><th style="text-align:right">Visits</th><th style="text-align:right;color:var(--gold)">CTAs</th><th style="width:60px"></th></tr></thead>
+          <tbody id="table-mediums"><tr><td colspan="4" class="loading">Loading...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
   </div><!-- /left-col -->
 
   <!-- Recent Events sidebar -->
@@ -329,6 +360,46 @@ async function loadAll() {
   document.getElementById('table-countries').innerHTML = countryRows.length ? countryRows.map(([c,n]) =>
     `<tr><td>${c}</td><td class="num">${n}</td><td class="bar-cell"><div class="bar" style="width:${Math.round(n/maxCountry*100)}%"></div></td></tr>`
   ).join('') : '<tr><td colspan="3" style="color:var(--muted);padding:16px 0;">No data yet</td></tr>';
+
+  // Traffic sources (utm_source, utm_campaign, utm_medium / fbclid)
+  const pageViews = all.filter(e => e.event_type === 'page_view');
+  const ctasBySession = {};
+  all.filter(e => e.event_type === 'cta_click').forEach(e => { ctasBySession[e.session_id] = true; });
+
+  function buildSourceTable(key, fallback, elId) {
+    const counts = {}, ctaCounts = {};
+    pageViews.forEach(e => {
+      const val = e.metadata?.[key] || (key === 'utm_medium' && e.metadata?.fbclid ? 'facebook (fbclid)' : null) || fallback(e);
+      if (!val) return;
+      counts[val] = (counts[val]||0) + 1;
+      if (ctasBySession[e.session_id]) ctaCounts[val] = (ctaCounts[val]||0) + 1;
+    });
+    const rows = Object.entries(counts).sort((a,b) => b[1]-a[1]).slice(0,8);
+    const max = Math.max(...rows.map(r => r[1]), 1);
+    document.getElementById(elId).innerHTML = rows.length ? rows.map(([label, n]) => {
+      const ctas = ctaCounts[label] || 0;
+      return `<tr>
+        <td>${label}</td>
+        <td class="num">${n}</td>
+        <td class="ctr-num">${ctas || '—'}</td>
+        <td class="bar-cell"><div class="bar" style="width:${Math.round(n/max*100)}%"></div></td>
+      </tr>`;
+    }).join('') : `<tr><td colspan="4" style="color:var(--muted);padding:16px 0;">No UTM data yet — start a campaign to see sources here</td></tr>`;
+  }
+
+  const referrerLabel = e => {
+    const ref = e.metadata?.referrer || '';
+    if (!ref) return 'direct';
+    if (ref.includes('facebook') || ref.includes('fb.com')) return 'facebook';
+    if (ref.includes('instagram')) return 'instagram';
+    if (ref.includes('google')) return 'google';
+    if (ref.includes('t.co') || ref.includes('twitter')) return 'twitter';
+    try { return new URL(ref).hostname.replace('www.',''); } catch { return ref; }
+  };
+
+  buildSourceTable('utm_source', referrerLabel, 'table-sources');
+  buildSourceTable('utm_campaign', () => null, 'table-campaigns');
+  buildSourceTable('utm_medium', () => null, 'table-mediums');
 
   // Recent events
   const recent = all.slice(0, 20);

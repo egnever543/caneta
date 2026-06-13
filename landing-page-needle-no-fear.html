@@ -448,8 +448,13 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
     }).catch(() => {});
   }
 
-  // PageView
-  track('page_view', null, { referrer: document.referrer, url: location.href });
+  // PageView — capture UTM params and fbclid
+  const _sp = new URLSearchParams(location.search);
+  const _utms = {};
+  ['utm_source','utm_medium','utm_campaign','utm_content','utm_term','fbclid','gclid'].forEach(k => {
+    if (_sp.get(k)) _utms[k] = _sp.get(k);
+  });
+  track('page_view', null, { referrer: document.referrer, url: location.href, ..._utms });
 
   // CTA clicks
   document.querySelectorAll('.btn-primary, .nav-cta').forEach(btn => {
