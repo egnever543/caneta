@@ -511,14 +511,15 @@ async function runReport() {
   document.getElementById('ai-report-content').innerHTML = '<div class="loading">Fetching Meta data and analyzing with Claude — this takes ~10 seconds...</div>';
   try {
     const res = await fetch('/api/daily-report');
-    const json = await res.json();
-    if (json.ok) {
+    let json;
+    try { json = await res.json(); } catch { json = {}; }
+    if (res.ok && json.ok) {
       await loadReport();
     } else {
-      document.getElementById('ai-report-content').innerHTML = `<div class="loading" style="color:#ff7070">Error: ${json.error}</div>`;
+      document.getElementById('ai-report-content').innerHTML = `<div class="loading" style="color:#ff7070">Error: ${json.error || 'HTTP ' + res.status}</div>`;
     }
   } catch (e) {
-    document.getElementById('ai-report-content').innerHTML = `<div class="loading" style="color:#ff7070">Failed to connect to report API.</div>`;
+    document.getElementById('ai-report-content').innerHTML = `<div class="loading" style="color:#ff7070">Network error: ${e.message}</div>`;
   }
   btn.textContent = '↻ Generate now';
   btn.disabled = false;
