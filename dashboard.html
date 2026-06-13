@@ -457,15 +457,9 @@ async function loadAll() {
 
 // AI Report
 async function loadReport() {
-  const { data } = await supabase
-    .from('ai_reports')
-    .select('*')
-    .order('report_date', { ascending: false })
-    .limit(1)
-    .single();
-
-  if (!data) return;
-  renderReport(data);
+  const data = await query('ai_reports', { select: '*', order: 'report_date.desc', limit: 1 });
+  if (!Array.isArray(data) || !data.length) return;
+  renderReport(data[0]);
 }
 
 function renderReport(data) {
