@@ -39,9 +39,9 @@ async function fetchMetaInsights() {
 }
 
 async function analyzeWithClaude(metaData, siteData) {
-  const prompt = `You are a performance marketing analyst specialized in Meta Ads for digital products.
+  const prompt = `Você é um analista de performance especializado em Meta Ads para produtos digitais. Responda sempre em português do Brasil, de forma direta e objetiva.
 
-## Meta Ads Data (Yesterday)
+## Dados Meta Ads (Ontem)
 
 ### Campaign Insights
 ${JSON.stringify(metaData.insights, null, 2)}
@@ -52,30 +52,30 @@ ${JSON.stringify(metaData.campaigns, null, 2)}
 ### Ad Sets
 ${JSON.stringify(metaData.adsets, null, 2)}
 
-## Site Analytics (Last 7 days from our tracking)
-- Total visits: ${siteData.visits}
-- CTA clicks: ${siteData.ctas}
-- Purchases confirmed: ${siteData.purchases}
-- Click rate (visits → CTA): ${siteData.ctr}%
-- Top countries: ${siteData.countries}
+## Analytics do Site (Últimos 7 dias)
+- Visitas únicas: ${siteData.visits}
+- Cliques no CTA: ${siteData.ctas}
+- Compras confirmadas: ${siteData.purchases}
+- Taxa de clique (visitas → CTA): ${siteData.ctr}%
+- Principais países: ${siteData.countries}
 
-## Product Context
-- Product: "Shot Without Fear" — $9 digital ebook for GLP-1 medication users (Ozempic, Mounjaro, Wegovy)
-- Target: US market, 35-65yo, mostly women
-- Goal: maximize purchases at lowest possible CPA
+## Contexto do Produto
+- Produto: "Shot Without Fear" — ebook digital de $9 para usuários de GLP-1 (Ozempic, Mounjaro, Wegovy)
+- Mercado-alvo: EUA, 35-65 anos, maioria mulheres
+- Objetivo: maximizar compras com o menor CPA possível
 
-## Your Task
-Analyze the campaign performance and provide:
+## Sua Tarefa
+Analise a performance da campanha e forneça:
 
-1. **Summary** — 2-3 sentences on overall performance in plain language
-2. **What's working** — specific positives with data to back it up
-3. **What's not working** — specific issues with data
-4. **Recommendations** — 3 concrete actions ranked by priority (include the specific campaign/adset name when relevant)
-5. **Risk alerts** — anything that needs immediate attention
+1. **Resumo** — 2-3 frases sobre a performance geral em linguagem simples
+2. **O que está funcionando** — pontos positivos com dados concretos
+3. **O que não está funcionando** — problemas identificados com dados
+4. **Recomendações** — 3 ações concretas por prioridade (inclua o nome da campanha/conjunto quando relevante)
+5. **Alertas** — qualquer coisa que precise de atenção imediata
 
-Be direct, specific, and data-driven. If data is insufficient (campaign just started), say so and recommend waiting for more data before making changes. Never recommend changes during the learning phase (first 7 days) unless there's a critical issue.
+Seja direto, específico e baseado em dados. Se os dados forem insuficientes (campanha recém-iniciada), diga isso e recomende aguardar mais dados antes de fazer mudanças. Nunca recomende alterações durante a fase de aprendizado (primeiros 7 dias) a menos que haja um problema crítico.
 
-Respond in JSON with this exact structure:
+Responda em JSON com esta estrutura exata:
 {
   "summary": "string",
   "working": ["string"],
