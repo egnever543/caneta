@@ -125,34 +125,50 @@ module.exports = async (req, res) => {
       if (!creative) continue;
       if (singleCreativeId && creative.id !== singleCreativeId) continue;
 
-      // Resolve the actual ad image via image_hash (most reliable)
-      // image_url on the creative can be the page profile picture — avoid it
       let imageUrl = null;
       const thumbnailUrl = creative.thumbnail_url || null;
 
       try {
-        // Fetch creative with image_hash and object_story_spec fields
+        // Fetch all image-related fields directly from the creative endpoint
         const creativeRes = await fetch(
-          `${base}/${creative.id}?fields=image_hash,image_url,thumbnail_url,object_story_spec&access_token=${token}`
+          `${base}/${creative.id}?fields=image_hash,image_url,thumbnail_url,object_story_spec,effective_object_story_id&access_token=${token}`
         );
-        const creativeJson = await creativeRes.json();
+        const c = await creativeRes.json();
+        console.log(`Creative ${creative.id} raw fields:`, JSON.stringify({
+          image_hash: c.image_hash,
+          image_url: c.image_url?.slice(0, 80),
+          oss_picture: c.object_story_spec?.link_data?.picture?.slice(0, 80),
+          oss_image_hash: c.object_story_spec?.link_data?.image_hash,
+        }));
 
-        // Prefer image_hash → resolve to full URL via adimages endpoint
-        const hash = creativeJson.image_hash
-          || creativeJson.object_story_spec?.link_data?.image_hash
-          || creativeJson.object_story_spec?.video_data?.image_hash;
+        // 1. object_story_spec.link_data.picture — direct image URL in the ad spec
+        const picture = c.object_story_spec?.link_data?.picture
+          || c.object_story_spec?.video_data?.image_url;
 
+        // 2. Resolve via image_hash → adimages endpoint
+        const hash = c.image_hash
+          || c.object_story_spec?.link_data?.image_hash;
+
+        let hashUrl = null;
         if (hash) {
           const imgRes = await fetch(
-            `${base}/${accountId}/adimages?hashes=["${hash}"]&fields=url,url_128&access_token=${token}`
+            `${base}/${accountId}/adimages?hashes=["${hash}"]&fields=url,url_128,width,height&access_token=${token}`
           );
           const imgJson = await imgRes.json();
-          imageUrl = imgJson.data?.[0]?.url || imgJson.data?.[0]?.url_128;
+          const img = imgJson.data?.[0];
+          console.log(`Creative ${creative.id} adimages result:`, JSON.stringify(img));
+          // url field should be full-res; skip if it looks like a thumbnail (contains p64x64 etc)
+          if (img?.url && !img.url.includes('p64x64') && !img.url.includes('p128x128')) {
+            hashUrl = img.url;
+          } else if (img?.url_128) {
+            hashUrl = img.url_128;
+          }
         }
 
-        // Fallback: thumbnail_url (at least shows the actual ad frame)
-        if (!imageUrl) imageUrl = creativeJson.thumbnail_url;
+        // Priority: picture from story spec > hash URL > image_url from creative > thumbnail
+        imageUrl = picture || hashUrl || c.image_url || thumbnailUrl;
       } catch(e) {
+        console.error(`Creative ${creative.id} image resolve error:`, e.message);
         imageUrl = thumbnailUrl;
       }
 
