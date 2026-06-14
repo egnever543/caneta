@@ -1,17 +1,18 @@
 const META_FORMATS = [
-  { key: 'feed',     label: 'Feed / Post',        aspectRatio: '1:1'  },
-  { key: 'reels',    label: 'Reels / Stories',     aspectRatio: '9:16' },
-  { key: 'audience', label: 'Audience Network',    aspectRatio: '16:9' },
+  { key: 'feed',     label: 'Feed / Post',      aspectRatio: '1:1',  promptSuffix: 'square 1:1 format, perfectly centered composition' },
+  { key: 'reels',    label: 'Reels / Stories',  aspectRatio: '9:16', promptSuffix: 'vertical 9:16 portrait format, tall composition, subject centered vertically' },
+  { key: 'audience', label: 'Audience Network', aspectRatio: '16:9', promptSuffix: 'horizontal 16:9 widescreen landscape format, wide composition' },
 ];
 
-async function generateOne(prompt, aspectRatio, model, apiKey) {
+async function generateOne(prompt, format, model, apiKey) {
+  const fullPrompt = `${prompt}. ${format.promptSuffix}.`;
   const response = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
+        contents: [{ parts: [{ text: fullPrompt }] }],
         generationConfig: { responseModalities: ['IMAGE', 'TEXT'] },
       }),
     }
@@ -40,7 +41,7 @@ module.exports = async (req, res) => {
   try {
     // Generate all 3 formats in parallel
     const results = await Promise.allSettled(
-      META_FORMATS.map(f => generateOne(prompt, f.aspectRatio, model, apiKey))
+      META_FORMATS.map(f => generateOne(prompt, f, model, apiKey))
     );
 
     const images = META_FORMATS.map((f, i) => {
