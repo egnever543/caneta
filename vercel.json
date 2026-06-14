@@ -1,7 +1,8 @@
 {
   "outputDirectory": ".",
   "crons": [
-    { "path": "/api/daily-report", "schedule": "0 11 * * *" }
+    { "path": "/api/daily-report", "schedule": "0 11 * * *" },
+    { "path": "/api/analyze-creatives", "schedule": "0 12 * * *" }
   ],
   "rewrites": [
     { "source": "/", "destination": "/landing-page-needle-no-fear.html" },

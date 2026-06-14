@@ -1,0 +1,178 @@
+const Anthropic = require('@anthropic-ai/sdk');
+
+const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY;
+
+async function sbUpsert(data) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/creatives`, {
+    method: 'POST',
+    headers: {
+      apikey: SUPABASE_KEY,
+      Authorization: `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json',
+      Prefer: 'resolution=merge-duplicates',
+    },
+    body: JSON.stringify(Array.isArray(data) ? data : [data]),
+  });
+  return res.json();
+}
+
+async function sbSelect(id) {
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/creatives?id=eq.${id}&select=id,analyzed_at`,
+    { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
+  );
+  return res.json();
+}
+
+async function fetchImageBase64(url) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Image fetch failed: ${res.status}`);
+  const buffer = await res.arrayBuffer();
+  const contentType = res.headers.get('content-type') || 'image/jpeg';
+  const mediaType = contentType.split(';')[0].trim();
+  return { base64: Buffer.from(buffer).toString('base64'), mediaType };
+}
+
+async function analyzeWithClaude(base64, mediaType) {
+  const prompt = `Você é um especialista em marketing direto e análise de criativos para Meta Ads. Analise este anúncio do produto "Shot Without Fear" — ebook de $9 para usuários de GLP-1 (Ozempic, Mounjaro, Wegovy) que ensinam a aplicar injeções sem medo. Público: EUA, 35-65 anos, maioria mulheres.
+
+Analise a imagem e responda APENAS com JSON válido, sem texto adicional:
+{
+  "hook": "texto exato do hook principal ou descrição se for visual",
+  "hook_type": "medo|curiosidade|urgencia|autoridade|prova_social|beneficio",
+  "hook_score": 7,
+  "visual_elements": ["lista", "de", "elementos", "visuais", "presentes"],
+  "dominant_colors": ["cor1", "cor2"],
+  "has_person": true,
+  "has_product": false,
+  "has_text_overlay": true,
+  "cta_text": "texto do CTA se visível ou null",
+  "tone": "urgente|educativo|emocional|direto|empático",
+  "target_audience": "descrição do público aparente",
+  "analysis_notes": "2-3 frases sobre pontos fortes, fracos e o que provavelmente funciona ou não"
+}
+
+Elementos visuais possíveis: pessoa, rosto_expressivo, seringa, produto, texto_sobreposto, antes_depois, depoimento, numeros, cores_chamativas, fundo_simples, cenario_medico, mao, corpo_inteiro, close_up.`;
+
+  const response = await anthropic.messages.create({
+    model: 'claude-sonnet-4-6',
+    max_tokens: 1024,
+    messages: [{
+      role: 'user',
+      content: [
+        { type: 'image', source: { type: 'base64', media_type: mediaType, data: base64 } },
+        { type: 'text', text: prompt },
+      ],
+    }],
+  });
+
+  const text = response.content[0].text;
+  const match = text.match(/\{[\s\S]*\}/);
+  if (!match) throw new Error('Claude did not return valid JSON');
+  return JSON.parse(match[0]);
+}
+
+module.exports = async (req, res) => {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Cache-Control', 'no-store');
+  if (req.method !== 'GET' && req.method !== 'POST') return res.status(405).end();
+
+  const token = process.env.META_ACCESS_TOKEN;
+  const rawId = process.env.META_AD_ACCOUNT_ID || '';
+  const accountId = rawId.startsWith('act_') ? rawId : `act_${rawId}`;
+  const base = 'https://graph.facebook.com/v19.0';
+  const forceReanalyze = req.query.force === '1';
+
+  try {
+    const [adsRes, insightsRes] = await Promise.all([
+      fetch(`${base}/${accountId}/ads?fields=id,name,adset_id,campaign_id,status,creative{id,name,image_url,thumbnail_url}&limit=100&access_token=${token}`),
+      fetch(`${base}/${accountId}/insights?fields=ad_id,impressions,clicks,spend,ctr,cpc,reach,frequency&date_preset=last_30d&level=ad&limit=100&access_token=${token}`),
+    ]);
+
+    const [adsJson, insightsJson] = await Promise.all([adsRes.json(), insightsRes.json()]);
+    if (adsJson.error) return res.status(200).json({ ok: false, error: adsJson.error.message });
+
+    const insightMap = {};
+    (insightsJson.data || []).forEach(i => { insightMap[i.ad_id] = i; });
+
+    const ads = adsJson.data || [];
+    const results = [];
+
+    for (const ad of ads) {
+      const creative = ad.creative;
+      if (!creative) continue;
+
+      const imageUrl = creative.image_url || creative.thumbnail_url;
+      if (!imageUrl) { results.push({ id: creative.id, skipped: 'no_image' }); continue; }
+
+      // Skip if already analyzed (unless force)
+      let analysis = null;
+      if (!forceReanalyze) {
+        const existing = await sbSelect(creative.id);
+        if (existing.length && existing[0].analyzed_at) {
+          results.push({ id: creative.id, name: ad.name, skipped: 'already_analyzed' });
+          // Still update performance metrics below
+        }
+      }
+
+      // Only analyze if not already done
+      const needsAnalysis = forceReanalyze || !(await sbSelect(creative.id)).some(r => r.analyzed_at);
+      if (needsAnalysis) {
+        try {
+          const { base64, mediaType } = await fetchImageBase64(imageUrl);
+          analysis = await analyzeWithClaude(base64, mediaType);
+        } catch (e) {
+          console.error(`Creative ${creative.id} analysis failed:`, e.message);
+          results.push({ id: creative.id, error: e.message });
+        }
+      }
+
+      const insight = insightMap[ad.id] || {};
+      const record = {
+        id: creative.id,
+        ad_id: ad.id,
+        adset_id: ad.adset_id,
+        campaign_id: ad.campaign_id,
+        name: creative.name || ad.name,
+        thumbnail_url: creative.thumbnail_url || creative.image_url,
+        media_type: 'image',
+        impressions: parseInt(insight.impressions || 0),
+        clicks: parseInt(insight.clicks || 0),
+        spend: parseFloat(insight.spend || 0),
+        ctr: parseFloat(insight.ctr || 0),
+        cpc: parseFloat(insight.cpc || 0),
+        reach: parseInt(insight.reach || 0),
+        frequency: parseFloat(insight.frequency || 0),
+        updated_at: new Date().toISOString(),
+        ...(analysis ? {
+          hook: analysis.hook,
+          hook_type: analysis.hook_type,
+          hook_score: analysis.hook_score,
+          visual_elements: analysis.visual_elements,
+          dominant_colors: analysis.dominant_colors,
+          has_person: analysis.has_person,
+          has_product: analysis.has_product,
+          has_text_overlay: analysis.has_text_overlay,
+          cta_text: analysis.cta_text,
+          tone: analysis.tone,
+          target_audience: analysis.target_audience,
+          analysis_notes: analysis.analysis_notes,
+          analysis_raw: analysis,
+          analyzed_at: new Date().toISOString(),
+        } : {}),
+      };
+
+      await sbUpsert(record);
+      if (!results.find(r => r.id === creative.id)) {
+        results.push({ id: creative.id, name: record.name, analyzed: !!analysis });
+      }
+    }
+
+    res.status(200).json({ ok: true, total: ads.length, processed: results.length, results });
+  } catch (err) {
+    console.error('analyze-creatives error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+};
