@@ -11,11 +11,15 @@ async function sbUpsert(data) {
       apikey: SUPABASE_KEY,
       Authorization: `Bearer ${SUPABASE_KEY}`,
       'Content-Type': 'application/json',
-      Prefer: 'resolution=merge-duplicates',
+      Prefer: 'resolution=merge-duplicates,return=minimal',
     },
     body: JSON.stringify(Array.isArray(data) ? data : [data]),
   });
-  return res.json();
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Supabase upsert failed: ${res.status} ${text}`);
+  }
+  return true;
 }
 
 async function sbSelect(id) {
@@ -107,19 +111,12 @@ module.exports = async (req, res) => {
       const imageUrl = creative.image_url || creative.thumbnail_url;
       if (!imageUrl) { results.push({ id: creative.id, skipped: 'no_image' }); continue; }
 
-      // Skip if already analyzed (unless force)
-      let analysis = null;
-      if (!forceReanalyze) {
-        const existing = await sbSelect(creative.id);
-        if (existing.length && existing[0].analyzed_at) {
-          results.push({ id: creative.id, name: ad.name, skipped: 'already_analyzed' });
-          // Still update performance metrics below
-        }
-      }
+      // Check if already analyzed
+      const existing = await sbSelect(creative.id);
+      const alreadyAnalyzed = existing.length > 0 && existing[0].analyzed_at;
 
-      // Only analyze if not already done
-      const needsAnalysis = forceReanalyze || !(await sbSelect(creative.id)).some(r => r.analyzed_at);
-      if (needsAnalysis) {
+      let analysis = null;
+      if (forceReanalyze || !alreadyAnalyzed) {
         try {
           const { base64, mediaType } = await fetchImageBase64(imageUrl);
           analysis = await analyzeWithClaude(base64, mediaType);
