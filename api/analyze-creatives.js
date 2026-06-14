@@ -143,6 +143,7 @@ module.exports = async (req, res) => {
       }
 
       if (!imageUrl) { results.push({ id: creative.id, skipped: 'no_image' }); continue; }
+      console.log(`Creative ${creative.id} — image URL: ${imageUrl}`);
 
       // Check if already analyzed
       const existing = await sbSelect(creative.id);
