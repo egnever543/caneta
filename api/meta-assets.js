@@ -22,7 +22,7 @@ module.exports = async (req, res) => {
     const [pagesRes, pixelsRes, campsRes] = await Promise.all([
       fetch(`${base}/me/accounts?fields=id,name&limit=50&access_token=${token}`),
       fetch(`${base}/${accountId}/adspixels?fields=id,name&access_token=${token}`),
-      fetch(`${base}/${accountId}/campaigns?fields=id,name,status,objective&filtering=[{"field":"effective_status","operator":"IN","value":["ACTIVE","PAUSED"]}]&limit=50&access_token=${token}`),
+      fetch(`${base}/${accountId}/campaigns?fields=id,name,status,objective&filtering=[{"field":"effective_status","operator":"IN","value":["ACTIVE"]}]&limit=50&access_token=${token}`),
     ]);
 
     const [pages, pixels, camps] = await Promise.all([

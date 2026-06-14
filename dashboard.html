@@ -594,8 +594,11 @@
           <input type="text" id="m-headline" placeholder="Texto do hook"/>
         </div>
         <div class="modal-field">
-          <label>Texto principal</label>
-          <textarea id="m-body" placeholder="Descrição do anúncio..."></textarea>
+          <label style="display:flex;align-items:center;justify-content:space-between;">
+            Texto principal
+            <button onclick="generateAdCopy()" id="btn-gen-copy" style="font-size:0.68rem;background:rgba(92,156,143,0.15);color:var(--teal);border:1px solid rgba(92,156,143,0.3);border-radius:6px;padding:2px 8px;cursor:pointer;">⏳ Gerando...</button>
+          </label>
+          <textarea id="m-body" placeholder="Gerando com IA..."></textarea>
         </div>
       </div>
       <div class="modal-grid" style="margin-top:12px;">
@@ -604,7 +607,10 @@
           <input type="url" id="m-url" placeholder="https://..."/>
         </div>
         <div class="modal-field">
-          <label>Botão CTA</label>
+          <label style="display:flex;align-items:center;justify-content:space-between;">
+            Botão CTA
+            <span id="m-cta-reason" style="font-size:0.65rem;color:var(--muted);font-style:italic;"></span>
+          </label>
           <select id="m-cta">
             <option value="LEARN_MORE">Saiba Mais</option>
             <option value="SHOP_NOW">Comprar Agora</option>
@@ -1530,8 +1536,40 @@ async function openCampaignModal(type) {
   // Pre-fill campaign name
   document.getElementById('m-camp-name').value = `SWF — ${document.getElementById('m-headline').value.slice(0, 40)}`;
 
-  // Load Meta assets
-  await loadMetaAssets();
+  // Load Meta assets and generate copy in parallel
+  await Promise.all([loadMetaAssets(), generateAdCopy()]);
+}
+
+async function generateAdCopy() {
+  const btn = document.getElementById('btn-gen-copy');
+  const bodyEl = document.getElementById('m-body');
+  const ctaEl = document.getElementById('m-cta');
+  const reasonEl = document.getElementById('m-cta-reason');
+  if (btn) { btn.textContent = '⏳ Gerando...'; btn.disabled = true; }
+
+  // Get hook info from current suggestion block
+  const block = document.querySelector(`#suggest-content .suggest-block.${modalImageType}`);
+  const hookType = block?.querySelector('.hook-badge')?.className.match(/hook-(\w+)/)?.[1] || '';
+  const templateInput = document.getElementById(`template-${modalImageType}`);
+  const templateUsed = templateInput?.value || '';
+  const headline = document.getElementById('m-headline')?.value || '';
+
+  try {
+    const res = await fetch('/api/generate-ad-copy', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ headline, hook_type: hookType, template_used: templateUsed }),
+    });
+    const json = await res.json();
+    if (!json.ok) throw new Error(json.error);
+    if (bodyEl) bodyEl.value = json.body;
+    if (ctaEl) ctaEl.value = json.cta_type;
+    if (reasonEl) reasonEl.textContent = json.cta_reason || '';
+    if (btn) { btn.textContent = '↺ Regenerar'; btn.disabled = false; }
+  } catch(e) {
+    if (bodyEl) bodyEl.placeholder = 'Erro ao gerar — escreva manualmente';
+    if (btn) { btn.textContent = '↺ Tentar novamente'; btn.disabled = false; }
+  }
 }
 
 function closeModal() {
