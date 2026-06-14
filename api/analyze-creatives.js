@@ -31,13 +31,17 @@ async function sbSelect(id) {
 }
 
 async function fetchImageBase64(url, token) {
-  // Facebook CDN URLs often embed the real image URL as a `url=` param with resize (e.g. p64x64).
-  // Extract and use the inner URL directly to get full resolution.
   let fetchUrl = url;
   try {
     const parsed = new URL(url);
     const inner = parsed.searchParams.get('url');
-    if (inner) fetchUrl = decodeURIComponent(inner);
+    if (inner) {
+      fetchUrl = decodeURIComponent(inner);
+    } else {
+      // Remove the `stp` resize parameter (e.g. p64x64) to get full-resolution from Facebook CDN
+      parsed.searchParams.delete('stp');
+      fetchUrl = parsed.toString();
+    }
   } catch(_) {}
 
   // Append access token if it's a facebook.com URL (requires auth)
@@ -121,7 +125,16 @@ module.exports = async (req, res) => {
         const pr = await fetch(`${base}/${raw.effective_object_story_id}?fields=full_picture,picture&access_token=${token}`);
         postResult = await pr.json();
       }
-      return res.status(200).json({ raw, adimagesResult, postResult });
+      // Show thumbnail URL with stp removed (full-res fallback)
+      let thumbnailFullRes = null;
+      if (raw.thumbnail_url) {
+        try {
+          const tp = new URL(raw.thumbnail_url);
+          tp.searchParams.delete('stp');
+          thumbnailFullRes = tp.toString();
+        } catch(_) {}
+      }
+      return res.status(200).json({ raw, adimagesResult, postResult, thumbnailFullRes });
     }
     const filterParam = singleCreativeId ? '' : `&filtering=[{"field":"campaign.effective_status","operator":"IN","value":["ACTIVE"]}]`;
     const [adsRes, insightsRes] = await Promise.all([
