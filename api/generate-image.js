@@ -13,32 +13,30 @@ module.exports = async (req, res) => {
 
   try {
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-preview-05-20:predict?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-preview-image-generation:generateContent?key=${apiKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          instances: [{ prompt }],
-          parameters: {
-            sampleCount: 1,
-            aspectRatio,
-            personGeneration: 'allow_adult',
-          },
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { responseModalities: ['IMAGE', 'TEXT'] },
         }),
       }
     );
 
     const json = await response.json();
-
     if (json.error) return res.status(200).json({ ok: false, error: json.error.message });
 
-    const prediction = json.predictions?.[0];
-    if (!prediction) return res.status(200).json({ ok: false, error: 'No image returned from Imagen' });
+    // Find the image part in the response
+    const parts = json.candidates?.[0]?.content?.parts || [];
+    const imagePart = parts.find(p => p.inlineData?.mimeType?.startsWith('image/'));
+
+    if (!imagePart) return res.status(200).json({ ok: false, error: 'Nenhuma imagem retornada. Tente um prompt diferente.' });
 
     res.status(200).json({
       ok: true,
-      imageBase64: prediction.bytesBase64Encoded,
-      mimeType: prediction.mimeType || 'image/png',
+      imageBase64: imagePart.inlineData.data,
+      mimeType: imagePart.inlineData.mimeType,
     });
   } catch (err) {
     console.error('generate-image error:', err.message);
