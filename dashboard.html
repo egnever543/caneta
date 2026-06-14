@@ -1698,16 +1698,29 @@ async function submitCampaign() {
   const logEl = document.getElementById('modal-log');
   const resultEl = document.getElementById('modal-result');
 
-  // Collect images from generated img elements
+  // Collect images — compress to JPEG to stay under Vercel 4.5MB body limit
+  function compressToJpeg(dataUrl, quality = 0.82) {
+    return new Promise(resolve => {
+      const img = new Image();
+      img.onload = () => {
+        const c = document.createElement('canvas');
+        c.width = img.naturalWidth; c.height = img.naturalHeight;
+        c.getContext('2d').drawImage(img, 0, 0);
+        resolve(c.toDataURL('image/jpeg', quality));
+      };
+      img.src = dataUrl;
+    });
+  }
+
   const images = {};
-  ['feed','reels','audience'].forEach(f => {
+  await Promise.all(['feed','reels','audience'].map(async f => {
     const imgEl = document.getElementById(`fmt-wrap-${modalImageType}-${f}`)?.querySelector('img');
     if (imgEl?.src?.startsWith('data:')) {
-      const [meta, base64] = imgEl.src.split(',');
-      const mimeType = meta.match(/:(.*?);/)?.[1] || 'image/png';
-      images[f] = { base64, mimeType };
+      const compressed = await compressToJpeg(imgEl.src);
+      const [meta, base64] = compressed.split(',');
+      images[f] = { base64, mimeType: 'image/jpeg' };
     }
-  });
+  }));
 
   if (!Object.keys(images).length) {
     alert('Nenhuma imagem gerada encontrada. Gere as imagens primeiro.');
