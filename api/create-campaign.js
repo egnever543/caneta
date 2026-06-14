@@ -100,74 +100,127 @@ module.exports = async (req, res) => {
       finalCampaignId = camp.id;
       log.push(`Campanha criada: ${finalCampaignId}`);
 
-      // ── 3. Create adset ──
-      log.push('Criando ad set...');
-      // daily_budget comes as float (e.g. 10.00 USD) — Meta expects cents (integer)
+      // ── 3. Create 3 adsets with fixed placements + 1 ad each ──
       const budgetCents = Math.round(parseFloat(daily_budget) * 100);
-
-      // start_time from HTML date input is "YYYY-MM-DD" — convert to ISO timestamp
       const startTs = start_time
         ? new Date(start_time + 'T00:00:00Z').toISOString()
         : new Date().toISOString();
-      const endTs = end_time
-        ? new Date(end_time + 'T23:59:59Z').toISOString()
-        : null;
+      const endTs = end_time ? new Date(end_time + 'T23:59:59Z').toISOString() : null;
 
-      const adsetPayload = {
-        name: `${campaign_name || 'SWF'} — Ad Set`,
-        campaign_id: finalCampaignId,
-        daily_budget: budgetCents,
-        billing_event: 'IMPRESSIONS',
-        optimization_goal: pixel_id ? 'OFFSITE_CONVERSIONS' : 'LINK_CLICKS',
-        targeting: {
-          geo_locations: { countries: Array.isArray(countries) ? countries : [countries] },
-          age_min: parseInt(age_min) || 35,
-          age_max: parseInt(age_max) || 65,
-          ...(Array.isArray(genders) && genders.length ? { genders } : {}),
-        },
-        start_time: startTs,
-        status: 'PAUSED',
+      const baseTargeting = {
+        geo_locations: { countries: Array.isArray(countries) ? countries : [countries] },
+        age_min: parseInt(age_min) || 35,
+        age_max: parseInt(age_max) || 65,
+        ...(Array.isArray(genders) && genders.length ? { genders } : {}),
       };
-      if (endTs) adsetPayload.end_time = endTs;
-      if (pixel_id) {
-        adsetPayload.promoted_object = { pixel_id, custom_event_type: 'PURCHASE' };
+
+      // Each format gets its own adset with locked placement
+      const FORMAT_ADSETS = [
+        {
+          key: 'feed',
+          label: 'Feed 1:1',
+          placement: { facebook_positions: ['feed'], publisher_platforms: ['facebook'] },
+        },
+        {
+          key: 'reels',
+          label: 'Reels 9:16',
+          placement: { instagram_positions: ['reels'], publisher_platforms: ['instagram'] },
+        },
+        {
+          key: 'audience',
+          label: 'Audience 16:9',
+          placement: { audience_network_positions: ['classic'], publisher_platforms: ['audience_network'] },
+        },
+      ];
+
+      const createdAdsets = [];
+      for (const fmt of FORMAT_ADSETS) {
+        if (!imageHashes[fmt.key]) continue;
+        log.push(`Criando ad set ${fmt.label}...`);
+        const adsetPayload = {
+          name: `${campaign_name || 'SWF'} — ${fmt.label}`,
+          campaign_id: finalCampaignId,
+          daily_budget: budgetCents,
+          billing_event: 'IMPRESSIONS',
+          optimization_goal: pixel_id ? 'OFFSITE_CONVERSIONS' : 'LINK_CLICKS',
+          targeting: { ...baseTargeting, ...fmt.placement },
+          start_time: startTs,
+          status: 'PAUSED',
+        };
+        if (endTs) adsetPayload.end_time = endTs;
+        if (pixel_id) adsetPayload.promoted_object = { pixel_id, custom_event_type: 'PURCHASE' };
+        const adset = await metaPost(`${accountId}/adsets`, adsetPayload, token);
+        createdAdsets.push({ ...fmt, adset_id: adset.id });
+        log.push(`Ad Set ${fmt.label} criado: ${adset.id}`);
       }
-      const adset = await metaPost(`${accountId}/adsets`, adsetPayload, token);
-      finalAdsetId = adset.id;
-      log.push(`Ad Set criado: ${finalAdsetId}`);
+      finalAdsetId = createdAdsets[0]?.adset_id;
     }
 
-    // ── 4. Create ONE creative — use reels (9:16) as primary, fallback to feed ──
-    const primaryHash = imageHashes.reels || imageHashes.feed || Object.values(imageHashes)[0];
-    if (!primaryHash) throw new Error('Nenhuma imagem disponível para criar o creative');
+    // ── 4. Create creative + ad per format (mode=new: 3 adsets; mode=existing: 1 adset) ──
+    const createdAds = [];
 
-    log.push('Criando creative...');
-    const creative = await metaPost(`${accountId}/adcreatives`, {
-      name: `SWF — ${headline?.slice(0, 40)}`,
-      object_story_spec: {
-        page_id,
-        link_data: {
-          image_hash: primaryHash,
-          link: destination_url,
-          message: body,
-          name: headline,
-          call_to_action: { type: cta_type, value: { link: destination_url } },
+    if (mode === 'new') {
+      // 3 adsets already created above — one ad per adset with matching image
+      const adsetList = [];
+      // Re-read from log is messy; instead rebuild from imageHashes
+      // We need the adset IDs — they were created in the loop above
+      // Access via a closure variable set during adset creation
+      // (createdAdsets is already populated)
+      for (const fmt of (typeof createdAdsets !== 'undefined' ? createdAdsets : [])) {
+        const hash = imageHashes[fmt.key];
+        if (!hash) continue;
+        log.push(`Criando creative ${fmt.label}...`);
+        const creative = await metaPost(`${accountId}/adcreatives`, {
+          name: `SWF — ${fmt.label} — ${headline?.slice(0, 30)}`,
+          object_story_spec: {
+            page_id,
+            link_data: {
+              image_hash: hash,
+              link: destination_url,
+              message: body,
+              name: headline,
+              call_to_action: { type: cta_type, value: { link: destination_url } },
+            },
+          },
+        }, token);
+        log.push(`Criando anúncio ${fmt.label}...`);
+        const ad = await metaPost(`${accountId}/ads`, {
+          name: `SWF — ${fmt.label} — ${headline?.slice(0, 30)}`,
+          adset_id: fmt.adset_id,
+          creative: { creative_id: creative.id },
+          status: ad_status,
+        }, token);
+        createdAds.push({ format: fmt.label, ad_id: ad.id, creative_id: creative.id });
+      }
+    } else {
+      // mode=existing — single adset, use best available image
+      const primaryHash = imageHashes.reels || imageHashes.feed || Object.values(imageHashes)[0];
+      if (!primaryHash) throw new Error('Nenhuma imagem disponível');
+      log.push('Criando creative...');
+      const creative = await metaPost(`${accountId}/adcreatives`, {
+        name: `SWF — ${headline?.slice(0, 40)}`,
+        object_story_spec: {
+          page_id,
+          link_data: {
+            image_hash: primaryHash,
+            link: destination_url,
+            message: body,
+            name: headline,
+            call_to_action: { type: cta_type, value: { link: destination_url } },
+          },
         },
-      },
-    }, token);
-    log.push(`Creative criado: ${creative.id}`);
+      }, token);
+      log.push('Criando anúncio...');
+      const ad = await metaPost(`${accountId}/ads`, {
+        name: `SWF — ${headline?.slice(0, 40)}`,
+        adset_id: finalAdsetId,
+        creative: { creative_id: creative.id },
+        status: ad_status,
+      }, token);
+      createdAds.push({ ad_id: ad.id, creative_id: creative.id });
+    }
 
-    // ── 5. Create ONE ad referencing the creative ──
-    log.push('Criando anúncio...');
-    const ad = await metaPost(`${accountId}/ads`, {
-      name: `SWF — ${headline?.slice(0, 40)}`,
-      adset_id: finalAdsetId,
-      creative: { creative_id: creative.id },
-      status: ad_status,
-    }, token);
-    const createdAds = [{ ad_id: ad.id, creative_id: creative.id }];
-
-    log.push(`Anúncio criado como ${ad_status}.`);
+    log.push(`${createdAds.length} anúncio(s) criado(s) como ${ad_status}.`);
 
     res.status(200).json({
       ok: true,
