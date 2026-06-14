@@ -200,6 +200,9 @@
   .cm .cm-value.gold { color:var(--gold); }
   .cm .cm-value.teal { color:var(--teal); }
   .creative-notes { font-size:0.76rem; color:var(--muted); line-height:1.5; font-style:italic; border-top:1px solid var(--border); padding-top:10px; }
+  .btn-reanalyze { margin-top:10px; padding:4px 10px; font-size:0.72rem; border:1px solid var(--border); border-radius:6px; background:transparent; color:var(--muted); cursor:pointer; }
+  .btn-reanalyze:hover { color:var(--text); border-color:var(--text); }
+  .btn-reanalyze:disabled { opacity:0.4; cursor:default; }
   /* Ranking section */
   .ranking-card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:24px; margin-bottom:20px; }
   .ranking-card h3 { font-size:0.85rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.09em; margin-bottom:16px; }
@@ -1215,6 +1218,24 @@ function saveBudget(id) {
 }
 
 // ── Creative Analysis ──
+async function reanalyzeCreative(creativeId) {
+  const btn = document.getElementById(`btn-ra-${creativeId}`);
+  const card = document.getElementById(`card-${creativeId}`);
+  btn.disabled = true;
+  btn.textContent = '⏳ Analisando...';
+  try {
+    const res = await fetch(`/api/analyze-creatives?creative_id=${creativeId}&force=1`);
+    const json = await res.json();
+    if (!json.ok) throw new Error(json.error || 'Erro desconhecido');
+    // Reload creatives to refresh the card
+    await loadCreatives();
+  } catch(e) {
+    btn.disabled = false;
+    btn.textContent = '↺ Re-analisar';
+    alert('Erro ao re-analisar: ' + e.message);
+  }
+}
+
 async function loadCreatives() {
   try {
     const res = await fetch(`${SUPABASE_URL}/rest/v1/creatives?select=*&order=ctr.desc`, {
@@ -1243,7 +1264,7 @@ function renderCreatives(list) {
       : `<div class="creative-thumb-placeholder">🖼</div>`;
     const elements = (c.visual_elements || []).map(e => `<span class="element-tag">${e}</span>`).join('');
     const analyzed = c.analyzed_at;
-    return `<div class="creative-card">
+    return `<div class="creative-card" id="card-${c.id}">
       ${thumb}
       <div class="creative-body">
         <div class="creative-name">${c.name || c.id}</div>
@@ -1261,6 +1282,7 @@ function renderCreatives(list) {
           <div class="cm"><div class="cm-label">Cliques</div><div class="cm-value">${c.clicks ? c.clicks.toLocaleString('pt-BR') : '—'}</div></div>
         </div>
         ${c.analysis_notes ? `<div class="creative-notes">${c.analysis_notes}</div>` : ''}
+        <button class="btn-reanalyze" id="btn-ra-${c.id}" onclick="reanalyzeCreative('${c.id}')">↺ Re-analisar</button>
       </div>
     </div>`;
   }).join('');

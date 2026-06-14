@@ -88,10 +88,12 @@ module.exports = async (req, res) => {
   const accountId = rawId.startsWith('act_') ? rawId : `act_${rawId}`;
   const base = 'https://graph.facebook.com/v19.0';
   const forceReanalyze = req.query.force === '1';
+  const singleCreativeId = req.query.creative_id || null;
 
   try {
+    const filterParam = singleCreativeId ? '' : `&filtering=[{"field":"campaign.effective_status","operator":"IN","value":["ACTIVE"]}]`;
     const [adsRes, insightsRes] = await Promise.all([
-      fetch(`${base}/${accountId}/ads?fields=id,name,adset_id,campaign_id,status,creative{id,name,image_url,thumbnail_url,object_story_spec}&filtering=[{"field":"campaign.effective_status","operator":"IN","value":["ACTIVE"]}]&limit=100&access_token=${token}`),
+      fetch(`${base}/${accountId}/ads?fields=id,name,adset_id,campaign_id,status,creative{id,name,image_url,thumbnail_url,object_story_spec}${filterParam}&limit=100&access_token=${token}`),
       fetch(`${base}/${accountId}/insights?fields=ad_id,impressions,clicks,spend,ctr,cpc,reach,frequency&date_preset=last_30d&level=ad&limit=100&access_token=${token}`),
     ]);
 
@@ -107,6 +109,7 @@ module.exports = async (req, res) => {
     for (const ad of ads) {
       const creative = ad.creative;
       if (!creative) continue;
+      if (singleCreativeId && creative.id !== singleCreativeId) continue;
 
       // Fetch full-res image directly from creative endpoint
       let imageUrl = creative.image_url;
