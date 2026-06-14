@@ -213,6 +213,27 @@
   .rank-pos { color:var(--gold); font-weight:700; width:20px; }
   @media(max-width:1200px) { .creatives-grid { grid-template-columns:repeat(2,1fr); } .ranking-grid { grid-template-columns:1fr; } }
   @media(max-width:768px) { .creatives-grid { grid-template-columns:1fr; } }
+  /* Suggester */
+  .suggest-card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:24px; margin-bottom:20px; }
+  .suggest-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:12px; }
+  .suggest-header h3 { font-size:0.85rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.09em; }
+  .suggest-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  .suggest-block { background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:12px; padding:20px; display:flex; flex-direction:column; gap:12px; }
+  .suggest-block.champion { border-color:rgba(206,155,76,0.3); }
+  .suggest-block.test { border-color:rgba(92,156,143,0.3); }
+  .suggest-type { font-size:0.65rem; font-weight:700; text-transform:uppercase; letter-spacing:0.1em; padding:3px 10px; border-radius:99px; display:inline-flex; align-items:center; gap:5px; width:fit-content; }
+  .suggest-type.champion { background:rgba(206,155,76,0.15); color:var(--gold); }
+  .suggest-type.test { background:rgba(92,156,143,0.15); color:var(--teal); }
+  .suggest-rationale { font-size:0.84rem; color:var(--text); line-height:1.6; }
+  .suggest-hypothesis { font-size:0.78rem; color:var(--muted); line-height:1.5; font-style:italic; padding:10px 14px; background:rgba(255,255,255,0.03); border-radius:8px; border-left:3px solid var(--teal); }
+  .suggest-hook { display:flex; align-items:center; gap:8px; }
+  .suggest-hook-text { font-size:0.88rem; font-weight:600; color:var(--text); }
+  .suggest-prompt-wrap { position:relative; }
+  .suggest-prompt-label { font-size:0.65rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:6px; }
+  .suggest-prompt { font-size:0.78rem; color:var(--muted); line-height:1.6; background:rgba(0,0,0,0.2); border:1px solid var(--border); border-radius:8px; padding:14px; font-family:monospace; white-space:pre-wrap; word-break:break-word; }
+  .btn-copy { position:absolute; top:28px; right:10px; padding:4px 10px; font-size:0.68rem; border-radius:6px; border:1px solid var(--border); background:var(--card); color:var(--muted); cursor:pointer; transition:all .15s; }
+  .btn-copy:hover { border-color:var(--teal); color:var(--teal); }
+  @media(max-width:768px) { .suggest-grid { grid-template-columns:1fr; } }
 
   /* Tabs */
   .tabs-nav { display:flex; gap:4px; margin-bottom:28px; border-bottom:1px solid var(--border); padding-bottom:0; }
@@ -428,6 +449,22 @@
       <p class="criativo-status" id="criativo-status">—</p>
     </div>
     <button class="btn-refresh" id="btn-analyze" onclick="runCreativeAnalysis()">✦ Analisar Criativos</button>
+  </div>
+
+  <!-- Sugestor de Criativo -->
+  <div class="suggest-card">
+    <div class="suggest-header">
+      <div>
+        <h3>Sugestor de Criativo <span class="ai-badge">IA</span></h3>
+        <p style="font-size:0.78rem;color:var(--muted);margin-top:4px;">Combina os dados de performance para sugerir o próximo criativo campeão e um teste de hipótese.</p>
+      </div>
+      <button class="btn-refresh" id="btn-suggest" onclick="runSuggestion()">✦ Gerar Sugestões</button>
+    </div>
+    <div id="suggest-content">
+      <div style="color:var(--muted);font-size:0.84rem;text-align:center;padding:32px;">
+        Clique em "Gerar Sugestões" após analisar os criativos para obter os prompts otimizados por dados.
+      </div>
+    </div>
   </div>
 
   <!-- Ranking de elementos -->
@@ -1060,6 +1097,61 @@ async function runCreativeAnalysis() {
   } finally {
     btn.disabled = false; btn.textContent = '✦ Analisar Criativos';
   }
+}
+
+async function runSuggestion() {
+  const btn = document.getElementById('btn-suggest');
+  btn.disabled = true; btn.textContent = '⏳ Calculando...';
+  document.getElementById('suggest-content').innerHTML = '<div class="loading">Analisando performance e gerando sugestões com IA...</div>';
+  try {
+    const res = await fetch('/api/suggest-creative?t=' + Date.now());
+    const json = await res.json();
+    if (!json.ok) throw new Error(json.error);
+    renderSuggestion(json.suggestion);
+  } catch(e) {
+    document.getElementById('suggest-content').innerHTML = `<div class="loading" style="color:#ff7070">Erro: ${e.message}</div>`;
+  } finally {
+    btn.disabled = false; btn.textContent = '✦ Gerar Sugestões';
+  }
+}
+
+function renderSuggestion(s) {
+  const block = (type, data) => {
+    const label = type === 'champion' ? '🏆 Criativo Campeão' : '🧪 Criativo Teste';
+    const tags = (data.elements_used || []).map(e => `<span class="element-tag">${e}</span>`).join('');
+    const hypothesis = type === 'test' && data.hypothesis
+      ? `<div class="suggest-hypothesis">${data.hypothesis}</div>` : '';
+    return `<div class="suggest-block ${type}">
+      <span class="suggest-type ${type}">${label}</span>
+      <p class="suggest-rationale">${data.rationale}</p>
+      ${hypothesis}
+      <div class="suggest-hook">
+        ${hookBadge(data.hook_type)}
+        <span class="suggest-hook-text">"${data.hook_text}"</span>
+      </div>
+      ${tags ? `<div class="elements-wrap">${tags}</div>` : ''}
+      <div class="suggest-prompt-wrap">
+        <div class="suggest-prompt-label">Prompt para geração de imagem</div>
+        <button class="btn-copy" onclick="copyPrompt(this)">Copiar</button>
+        <div class="suggest-prompt" id="prompt-${type}">${data.image_prompt}</div>
+      </div>
+    </div>`;
+  };
+
+  document.getElementById('suggest-content').innerHTML = `
+    <div class="suggest-grid">
+      ${block('champion', s.champion)}
+      ${block('test', s.test)}
+    </div>`;
+}
+
+function copyPrompt(btn) {
+  const type = btn.nextElementSibling.id.replace('prompt-', '');
+  const text = document.getElementById('prompt-' + type).textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    btn.textContent = 'Copiado!';
+    setTimeout(() => btn.textContent = 'Copiar', 2000);
+  });
 }
 
 loadAll();
