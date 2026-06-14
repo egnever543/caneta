@@ -165,9 +165,9 @@ module.exports = async (req, res) => {
       creative: { creative_id: creative.id },
       status: ad_status,
     }, token);
-    const createdAds = [{ ad_id: ad.id, creative_id: creative.id, formats: availableHashes.length }];
+    const createdAds = [{ ad_id: ad.id, creative_id: creative.id }];
 
-    log.push(`Anúncio criado como ${ad_status} com ${availableHashes.length} formato(s).`);
+    log.push(`Anúncio criado como ${ad_status}.`);
 
     res.status(200).json({
       ok: true,
