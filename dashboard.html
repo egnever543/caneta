@@ -1453,19 +1453,49 @@ function renderSuggestion(s) {
     </div>`;
 }
 
+// Crops a base image (data URL) to a target aspect ratio (w/h) via canvas
+function cropToRatio(dataUrl, targetW, targetH) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const srcW = img.naturalWidth, srcH = img.naturalHeight;
+      const srcRatio = srcW / srcH;
+      const tgtRatio = targetW / targetH;
+      let sx, sy, sw, sh;
+      if (srcRatio > tgtRatio) {
+        // source is wider — crop sides
+        sh = srcH; sw = Math.round(srcH * tgtRatio);
+        sx = Math.round((srcW - sw) / 2); sy = 0;
+      } else {
+        // source is taller — crop top/bottom
+        sw = srcW; sh = Math.round(srcW / tgtRatio);
+        sx = 0; sy = Math.round((srcH - sh) / 2);
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = sw; canvas.height = sh;
+      canvas.getContext('2d').drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh);
+      resolve(canvas.toDataURL('image/png'));
+    };
+    img.src = dataUrl;
+  });
+}
+
 async function generateImage(type) {
   const btn = document.getElementById('btn-gen-' + type);
   const prompt = document.getElementById('prompt-' + type)?.textContent;
   if (!prompt) return;
 
   btn.disabled = true;
-  btn.textContent = '⏳ Gerando 3 formatos...';
+  btn.textContent = '⏳ Gerando criativo...';
 
-  // Show format grid with loading state
   const fmtWrap = document.getElementById('img-formats-' + type);
   fmtWrap.style.display = 'block';
+
+  // Show loading only on reels (base), feed and audience show "cropping..."
+  document.getElementById(`fmt-wrap-${type}-reels`).innerHTML    = '<span style="color:var(--muted);font-size:0.75rem;padding:20px;display:block;">⏳ gerando...</span>';
+  document.getElementById(`fmt-wrap-${type}-feed`).innerHTML     = '<span style="color:var(--muted);font-size:0.75rem;padding:20px;display:block;">✂ recortando...</span>';
+  document.getElementById(`fmt-wrap-${type}-audience`).innerHTML = '<span style="color:var(--muted);font-size:0.75rem;padding:20px;display:block;">✂ recortando...</span>';
   ['feed','reels','audience'].forEach(f => {
-    document.getElementById(`fmt-wrap-${type}-${f}`).innerHTML = '<span style="color:var(--muted);font-size:0.75rem;padding:20px;display:block;">⏳ gerando...</span>';
     document.getElementById(`fmt-dl-${type}-${f}`).style.display = 'none';
   });
 
@@ -1480,24 +1510,26 @@ async function generateImage(type) {
       }),
     });
     const json = await res.json();
-    if (!json.ok && !json.images) throw new Error(json.error);
+    if (!json.ok) throw new Error(json.error);
 
-    (json.images || []).forEach(img => {
-      const wrapEl  = document.getElementById(`fmt-wrap-${type}-${img.key}`);
-      const dlEl    = document.getElementById(`fmt-dl-${type}-${img.key}`);
-      if (!wrapEl) return;
-      if (img.ok) {
-        const dataUrl = `data:${img.mimeType};base64,${img.imageBase64}`;
-        wrapEl.innerHTML = `<img src="${dataUrl}" style="width:100%;display:block;border-radius:8px;" alt="${img.label}"/>`;
-        if (dlEl) { dlEl.href = dataUrl; dlEl.style.display = 'inline-block'; }
-      } else {
-        wrapEl.innerHTML = `<span style="color:#ff7070;font-size:0.7rem;padding:12px;display:block;">Erro: ${img.error}</span>`;
-      }
+    const baseDataUrl = `data:${json.mimeType};base64,${json.imageBase64}`;
+
+    // Derive the 3 formats from the single base image
+    const formats = [
+      { key: 'reels',    label: 'Reels · 9:16',    dataUrl: baseDataUrl },
+      { key: 'feed',     label: 'Feed · 1:1',       dataUrl: await cropToRatio(baseDataUrl, 1, 1) },
+      { key: 'audience', label: 'Audience · 16:9',  dataUrl: await cropToRatio(baseDataUrl, 16, 9) },
+    ];
+
+    formats.forEach(({ key, label, dataUrl }) => {
+      const wrapEl = document.getElementById(`fmt-wrap-${type}-${key}`);
+      const dlEl   = document.getElementById(`fmt-dl-${type}-${key}`);
+      wrapEl.innerHTML = `<img src="${dataUrl}" style="width:100%;display:block;border-radius:8px;" alt="${label}" id="fmt-img-${type}-${key}"/>`;
+      if (dlEl) { dlEl.href = dataUrl; dlEl.download = `swf-${key}.png`; dlEl.style.display = 'inline-block'; }
     });
 
     btn.textContent = '✦ Gerar Novamente';
 
-    // Show publish button after generation
     let pubBtn = document.getElementById('btn-publish-' + type);
     if (!pubBtn) {
       pubBtn = document.createElement('button');
@@ -1511,7 +1543,7 @@ async function generateImage(type) {
     pubBtn.style.display = 'block';
   } catch(e) {
     alert('Erro ao gerar imagem: ' + e.message);
-    btn.textContent = '✦ Criar Ideia (3 formatos)';
+    btn.textContent = '✦ Criar Ideia';
     fmtWrap.style.display = 'none';
   } finally {
     btn.disabled = false;
