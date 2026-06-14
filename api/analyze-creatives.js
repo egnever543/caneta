@@ -91,7 +91,7 @@ module.exports = async (req, res) => {
 
   try {
     const [adsRes, insightsRes] = await Promise.all([
-      fetch(`${base}/${accountId}/ads?fields=id,name,adset_id,campaign_id,status,creative{id,name,image_url,thumbnail_url,object_story_spec}&limit=100&access_token=${token}`),
+      fetch(`${base}/${accountId}/ads?fields=id,name,adset_id,campaign_id,status,creative{id,name,image_url,thumbnail_url,object_story_spec}&filtering=[{"field":"campaign.effective_status","operator":"IN","value":["ACTIVE"]}]&limit=100&access_token=${token}`),
       fetch(`${base}/${accountId}/insights?fields=ad_id,impressions,clicks,spend,ctr,cpc,reach,frequency&date_preset=last_30d&level=ad&limit=100&access_token=${token}`),
     ]);
 
