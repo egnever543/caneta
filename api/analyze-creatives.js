@@ -30,9 +30,23 @@ async function sbSelect(id) {
   return res.json();
 }
 
-async function fetchImageBase64(url) {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Image fetch failed: ${res.status}`);
+async function fetchImageBase64(url, token) {
+  // Facebook CDN URLs often embed the real image URL as a `url=` param with resize (e.g. p64x64).
+  // Extract and use the inner URL directly to get full resolution.
+  let fetchUrl = url;
+  try {
+    const parsed = new URL(url);
+    const inner = parsed.searchParams.get('url');
+    if (inner) fetchUrl = decodeURIComponent(inner);
+  } catch(_) {}
+
+  // Append access token if it's a facebook.com URL (requires auth)
+  if (token && fetchUrl.includes('facebook.com') && !fetchUrl.includes('access_token')) {
+    fetchUrl += (fetchUrl.includes('?') ? '&' : '?') + `access_token=${token}`;
+  }
+
+  const res = await fetch(fetchUrl);
+  if (!res.ok) throw new Error(`Image fetch failed: ${res.status} ${fetchUrl}`);
   const buffer = await res.arrayBuffer();
   const contentType = res.headers.get('content-type') || 'image/jpeg';
   const mediaType = contentType.split(';')[0].trim();
@@ -152,7 +166,7 @@ module.exports = async (req, res) => {
       let analysis = null;
       if (forceReanalyze || !alreadyAnalyzed) {
         try {
-          const { base64, mediaType } = await fetchImageBase64(imageUrl);
+          const { base64, mediaType } = await fetchImageBase64(imageUrl, token);
           analysis = await analyzeWithClaude(base64, mediaType);
         } catch (e) {
           console.error(`Creative ${creative.id} analysis failed:`, e.message);
