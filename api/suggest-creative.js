@@ -11,6 +11,39 @@ const ALL_ELEMENTS = [
   'cenario_medico', 'mao', 'corpo_inteiro', 'close_up',
 ];
 
+const PROMPT_TEMPLATES = {
+  editorial_saude: {
+    label: 'Editorial Saúde',
+    description: 'Estilo revista de saúde — limpo, empoderador, profissional',
+    structure: 'A confident woman in her 50s, smiling, self-administering a small injection pen on her stomach, bright clean kitchen background, soft natural window light, shallow depth of field, shot on Canon 85mm f/1.8, health magazine editorial style, empowering, high resolution',
+  },
+  lifestyle_ugc: {
+    label: 'Lifestyle Autêntico (UGC)',
+    description: 'Estilo conteúdo real — casual, confiável, cotidiano',
+    structure: 'Real woman 45-60 years old, casual home setting, holding injection pen confidently, relaxed expression, warm afternoon light, candid authentic moment, iPhone-style photo, relatable everyday scene, no makeup, trust-building',
+  },
+  antes_depois: {
+    label: 'Antes/Depois Emocional',
+    description: 'Composição dividida mostrando transformação de ansiedade para confiança',
+    structure: 'Split composition: left side woman looking anxious holding syringe, right side same woman smiling confidently self-injecting, clean white background, clinical but warm, transformation story, health advertising style',
+  },
+  close_produto: {
+    label: 'Close Produto + Mão',
+    description: 'Foco no produto — elegante, premium, confiança no objeto',
+    structure: 'Close-up of a woman\'s hand holding a GLP-1 injection pen, soft skin, manicured nails, clean medical aesthetic, macro lens, white marble background, premium health product photography, studio lighting',
+  },
+  depoimento_camera: {
+    label: 'Depoimento / Câmera Direta',
+    description: 'Mulher olhando direto para câmera — conexão, confiança, social proof',
+    structure: 'Woman in her 50s looking directly at camera, warm genuine smile, holding injection pen casually, cozy living room background blurred, natural light, documentary portrait style, trustworthy, relatable, social media ad',
+  },
+  empoderamento: {
+    label: 'Motivacional / Empoderamento',
+    description: 'Estilo campanha aspiracional — força, confiança, superação',
+    structure: 'Strong confident mature woman, arms relaxed, bright expression, wearing comfortable casual clothes, holding small medical pen, golden hour outdoor lighting, empowering health campaign, Nike-style composition, aspirational lifestyle',
+  },
+};
+
 function score(ctr, cpc, impressions) {
   const confidence = Math.min(impressions / 1000, 1);
   const ctrScore = (ctr || 0) * 10;
@@ -137,8 +170,40 @@ module.exports = async (req, res) => {
       top_creatives: topCreatives,
     };
 
+    // ── MATH: rank templates ──
+    const templateStats = {};
+    creatives.forEach(c => {
+      if (!c.template_used) return;
+      if (!templateStats[c.template_used]) templateStats[c.template_used] = { count: 0, ctrSum: 0, cpcSum: 0, imprSum: 0 };
+      templateStats[c.template_used].count++;
+      templateStats[c.template_used].ctrSum += c.ctr || 0;
+      templateStats[c.template_used].cpcSum += c.cpc || 0;
+      templateStats[c.template_used].imprSum += c.impressions || 0;
+    });
+    const templateRanked = Object.entries(templateStats)
+      .map(([t, s]) => ({
+        template: t,
+        label: PROMPT_TEMPLATES[t]?.label || t,
+        count: s.count,
+        avgCtr: s.ctrSum / s.count,
+        score: score(s.ctrSum / s.count, s.cpcSum / s.count, s.imprSum / s.count),
+      }))
+      .sort((a, b) => b.score - a.score);
+
+    const untestedTemplates = Object.keys(PROMPT_TEMPLATES).filter(t => !templateStats[t]);
+    mathSummary.templates_ranked = templateRanked;
+    mathSummary.untested_templates = untestedTemplates;
+
+    const templatesBlock = Object.entries(PROMPT_TEMPLATES).map(([key, t]) => {
+      const stats = templateStats[key];
+      const perf = stats
+        ? `CTR médio ${(stats.ctrSum/stats.count).toFixed(2)}% | score ${score(stats.ctrSum/stats.count, stats.cpcSum/stats.count, stats.imprSum/stats.count).toFixed(2)}`
+        : 'ainda não testado';
+      return `- ${key} (${t.label}): ${perf}\n  Estrutura base: "${t.structure}"`;
+    }).join('\n');
+
     // ── CLAUDE: generate suggestions ──
-    const prompt = `Você é um especialista em performance marketing e criação de anúncios para Meta Ads. Analise os dados matemáticos de performance abaixo e gere sugestões de criativos.
+    const prompt = `Você é um especialista em performance marketing e criação de anúncios para Meta Ads. Analise os dados de performance abaixo e gere sugestões de criativos usando os templates de prompt disponíveis.
 
 ## Produto
 "Shot Without Fear" — ebook digital de $9 para usuários de GLP-1 (Ozempic, Mounjaro, Wegovy) que ensinam a aplicar injeções sem medo.
@@ -155,30 +220,41 @@ ${mathSummary.elements_ranked.map(e => `- ${e.element}: CTR ${e.avgCtr.toFixed(2
 ### Top 3 Criativos
 ${mathSummary.top_creatives.map(c => `- "${c.hook}" (${c.hook_type}) | elementos: ${(c.elements||[]).join(', ')} | CTR ${c.ctr?.toFixed(2)}% | CPC $${c.cpc?.toFixed(2)}`).join('\n') || 'Sem dados'}
 
-### Hooks Ainda Não Testados
+### Hooks Não Testados
 ${mathSummary.untested_hooks.length ? mathSummary.untested_hooks.join(', ') : 'Todos testados'}
 
-### Elementos Ainda Não Testados
+### Elementos Não Testados
 ${mathSummary.untested_elements.length ? mathSummary.untested_elements.join(', ') : 'Todos testados'}
+
+## Templates de Prompt Disponíveis (com performance histórica)
+${templatesBlock}
 
 ## Sua Tarefa
 
-Gere dois outputs em JSON exato:
+1. Para o CAMPEÃO: escolha o template com melhor performance histórica (ou o mais adequado aos dados se não houver histórico). Adapte a estrutura base do template para o produto e hook escolhido, mantendo o estilo técnico do template (iluminação, câmera, composição).
+
+2. Para o TESTE: escolha um template ainda não testado (ou o de menor score) para validar um novo estilo visual.
+
+Responda em JSON exato:
 {
   "champion": {
     "rationale": "Por que esta combinação deve ganhar — 2-3 frases baseadas nos dados",
+    "template_used": "chave_do_template",
+    "template_label": "Nome legível do template",
     "elements_used": ["elemento1", "elemento2"],
     "hook_type": "tipo_de_hook",
     "hook_text": "texto do hook sugerido para o anúncio",
-    "image_prompt": "prompt completo em inglês para geração de imagem, muito detalhado"
+    "image_prompt": "prompt final completo em inglês — estrutura do template adaptada para o produto e hook"
   },
   "test": {
     "rationale": "O que este teste vai validar e por que vale rodar — 2-3 frases",
-    "hypothesis": "Hipótese: se [elemento/hook não testado] então CTR/conversão vai [aumentar/diminuir] porque [razão]",
+    "hypothesis": "Hipótese: se [template/elemento não testado] então CTR vai [aumentar/diminuir] porque [razão]",
+    "template_used": "chave_do_template",
+    "template_label": "Nome legível do template",
     "elements_used": ["elemento1", "elemento2"],
     "hook_type": "tipo_de_hook",
     "hook_text": "texto do hook sugerido",
-    "image_prompt": "prompt completo em inglês para geração de imagem"
+    "image_prompt": "prompt final completo em inglês — estrutura do template adaptada para o produto e hook"
   }
 }`;
 

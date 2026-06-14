@@ -507,6 +507,13 @@
           <tbody id="rank-elements"><tr><td colspan="4" class="loading">—</td></tr></tbody>
         </table>
       </div>
+      <div>
+        <p style="font-size:0.72rem;color:var(--muted);margin-bottom:10px;">Por template visual</p>
+        <table class="ranking-table">
+          <thead><tr><th>#</th><th>Template</th><th>Criativos</th><th>CTR médio</th></tr></thead>
+          <tbody id="rank-templates"><tr><td colspan="4" style="color:var(--muted);padding:12px;font-size:0.78rem;">Sem dados — gere criativos para acumular</td></tr></tbody>
+        </table>
+      </div>
     </div>
   </div>
 
@@ -1116,6 +1123,26 @@ function renderRankings(creatives) {
         <td style="text-align:right;color:var(--teal);font-weight:600">${r.avgCtr.toFixed(2)}%</td>
       </tr>`).join('')
     : '<tr><td colspan="4" style="color:var(--muted);padding:12px">Dados insuficientes</td></tr>';
+
+  // Ranking de templates
+  const tmplMap = {};
+  analyzed.forEach(c => {
+    if (!c.template_used) return;
+    if (!tmplMap[c.template_used]) tmplMap[c.template_used] = { count: 0, ctrSum: 0 };
+    tmplMap[c.template_used].count++;
+    tmplMap[c.template_used].ctrSum += c.ctr || 0;
+  });
+  const tmplRows = Object.entries(tmplMap)
+    .map(([t, d]) => ({ t, count: d.count, avgCtr: d.ctrSum / d.count }))
+    .sort((a, b) => b.avgCtr - a.avgCtr);
+  document.getElementById('rank-templates').innerHTML = tmplRows.length
+    ? tmplRows.map((r, i) => `<tr>
+        <td class="rank-pos">${i+1}</td>
+        <td><span class="element-tag" style="background:rgba(99,102,241,0.15);color:#a5b4fc;border-color:rgba(99,102,241,0.3)">${r.t.replace(/_/g,' ')}</span></td>
+        <td style="text-align:right;color:var(--muted)">${r.count}</td>
+        <td style="text-align:right;color:var(--teal);font-weight:600">${r.avgCtr.toFixed(2)}%</td>
+      </tr>`).join('')
+    : '<tr><td colspan="4" style="color:var(--muted);padding:12px;font-size:0.78rem;">Sem dados — gere criativos para acumular</td></tr>';
 }
 
 async function runCreativeAnalysis() {
@@ -1194,6 +1221,8 @@ function renderSuggestion(s) {
     const tags = (data.elements_used || []).map(e => `<span class="element-tag">${e}</span>`).join('');
     const hypothesis = type === 'test' && data.hypothesis
       ? `<div class="suggest-hypothesis">${data.hypothesis}</div>` : '';
+    const templateBadge = data.template_used
+      ? `<span class="element-tag" style="background:rgba(99,102,241,0.15);color:#a5b4fc;border-color:rgba(99,102,241,0.3)">🎨 ${data.template_label || data.template_used}</span>` : '';
     return `<div class="suggest-block ${type}">
       <span class="suggest-type ${type}">${label}</span>
       <p class="suggest-rationale">${data.rationale}</p>
@@ -1202,12 +1231,13 @@ function renderSuggestion(s) {
         ${hookBadge(data.hook_type)}
         <span class="suggest-hook-text">"${data.hook_text}"</span>
       </div>
-      ${tags ? `<div class="elements-wrap">${tags}</div>` : ''}
+      ${tags || templateBadge ? `<div class="elements-wrap">${templateBadge}${tags}</div>` : ''}
       <div class="suggest-prompt-wrap">
         <div class="suggest-prompt-label">Prompt para geração de imagem</div>
         <button class="btn-copy" onclick="copyPrompt(this)">Copiar</button>
         <div class="suggest-prompt" id="prompt-${type}">${data.image_prompt}</div>
       </div>
+      <input type="hidden" id="template-${type}" value="${data.template_used || ''}"/>
       <button class="btn-generate" id="btn-gen-${type}" onclick="generateImage('${type}')">✦ Criar Ideia</button>
       <div class="generated-img-wrap" id="img-wrap-${type}">
         <img id="generated-img-${type}" src="" alt="Criativo gerado"/>
@@ -1235,7 +1265,12 @@ async function generateImage(type) {
     const res = await fetch('/api/generate-image', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt, aspectRatio: '1:1', model: localStorage.getItem('image_model') || '' }),
+      body: JSON.stringify({
+        prompt,
+        aspectRatio: '1:1',
+        model: localStorage.getItem('image_model') || '',
+        template_used: document.getElementById('template-' + type)?.value || '',
+      }),
     });
     const json = await res.json();
     if (!json.ok) throw new Error(json.error);
