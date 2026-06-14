@@ -344,9 +344,10 @@
       <div class="camp-analytics-header">
         <h3>Analytics de Campanhas <span style="color:var(--teal);font-size:0.7rem;margin-left:6px;">Meta Ads</span></h3>
         <div class="period-btns">
-          <button class="period-btn active" onclick="setCampPeriod(7,this)">7d</button>
-          <button class="period-btn" onclick="setCampPeriod(14,this)">14d</button>
-          <button class="period-btn" onclick="setCampPeriod(30,this)">30d</button>
+          <button class="period-btn active" onclick="setCampPeriod('today',this)">Hoje</button>
+          <button class="period-btn" onclick="setCampPeriod('7',this)">7d</button>
+          <button class="period-btn" onclick="setCampPeriod('14',this)">14d</button>
+          <button class="period-btn" onclick="setCampPeriod('30',this)">30d</button>
         </div>
       </div>
       <!-- KPI summary row -->
@@ -636,7 +637,7 @@ async function runReport() {
 
 // Campaigns
 const PAGE_SIZE = 5;
-let allCampaigns = [], campPage = 0, campPeriodDays = 7, campCurrencySym = '$';
+let allCampaigns = [], campPage = 0, campPeriodDays = 'today', campCurrencySym = '$';
 let campTrendChart = null;
 
 function setCampPeriod(days, btn) {

@@ -7,8 +7,8 @@ module.exports = async (req, res) => {
   const rawId = process.env.META_AD_ACCOUNT_ID || '';
   const accountId = rawId.startsWith('act_') ? rawId : `act_${rawId}`;
   const base = 'https://graph.facebook.com/v19.0';
-  const days = parseInt(req.query.days || '7', 10);
-  const datePreset = days === 30 ? 'last_30d' : days === 14 ? 'last_14d' : 'last_7d';
+  const days = req.query.days || '7';
+  const datePreset = days === 'today' ? 'today' : days === '30' ? 'last_30d' : days === '14' ? 'last_14d' : 'last_7d';
 
   const insightFields = 'campaign_id,campaign_name,impressions,clicks,spend,cpm,cpc,ctr,reach,actions';
 
