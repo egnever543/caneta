@@ -233,6 +233,13 @@
   .suggest-prompt { font-size:0.78rem; color:var(--muted); line-height:1.6; background:rgba(0,0,0,0.2); border:1px solid var(--border); border-radius:8px; padding:14px; font-family:monospace; white-space:pre-wrap; word-break:break-word; }
   .btn-copy { position:absolute; top:28px; right:10px; padding:4px 10px; font-size:0.68rem; border-radius:6px; border:1px solid var(--border); background:var(--card); color:var(--muted); cursor:pointer; transition:all .15s; }
   .btn-copy:hover { border-color:var(--teal); color:var(--teal); }
+  .btn-generate { width:100%; padding:10px; border-radius:10px; border:1px solid var(--teal); background:rgba(92,156,143,0.08); color:var(--teal); font-size:0.84rem; font-weight:600; cursor:pointer; transition:all .15s; margin-top:4px; }
+  .btn-generate:hover { background:rgba(92,156,143,0.18); }
+  .btn-generate:disabled { opacity:0.4; cursor:not-allowed; }
+  .generated-img-wrap { margin-top:8px; border-radius:10px; overflow:hidden; border:1px solid var(--border); position:relative; display:none; }
+  .generated-img-wrap img { width:100%; display:block; }
+  .btn-download { position:absolute; bottom:10px; right:10px; padding:6px 12px; font-size:0.72rem; border-radius:8px; border:1px solid var(--border); background:rgba(15,25,35,0.85); color:var(--text); cursor:pointer; text-decoration:none; backdrop-filter:blur(4px); }
+  .btn-download:hover { border-color:var(--teal); color:var(--teal); }
   @media(max-width:768px) { .suggest-grid { grid-template-columns:1fr; } }
 
   /* Tabs */
@@ -1154,6 +1161,11 @@ function renderSuggestion(s) {
         <button class="btn-copy" onclick="copyPrompt(this)">Copiar</button>
         <div class="suggest-prompt" id="prompt-${type}">${data.image_prompt}</div>
       </div>
+      <button class="btn-generate" id="btn-gen-${type}" onclick="generateImage('${type}')">✦ Criar Ideia</button>
+      <div class="generated-img-wrap" id="img-wrap-${type}">
+        <img id="generated-img-${type}" src="" alt="Criativo gerado"/>
+        <a class="btn-download" id="btn-dl-${type}" href="#" download="criativo-${type}.png">⬇ Baixar</a>
+      </div>
     </div>`;
   };
 
@@ -1162,6 +1174,40 @@ function renderSuggestion(s) {
       ${block('champion', s.champion)}
       ${block('test', s.test)}
     </div>`;
+}
+
+async function generateImage(type) {
+  const btn = document.getElementById('btn-gen-' + type);
+  const prompt = document.getElementById('prompt-' + type)?.textContent;
+  if (!prompt) return;
+
+  btn.disabled = true;
+  btn.textContent = '⏳ Gerando com Imagen 4...';
+
+  try {
+    const res = await fetch('/api/generate-image', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt, aspectRatio: '1:1' }),
+    });
+    const json = await res.json();
+    if (!json.ok) throw new Error(json.error);
+
+    const dataUrl = `data:${json.mimeType};base64,${json.imageBase64}`;
+    const imgEl   = document.getElementById('generated-img-' + type);
+    const wrapEl  = document.getElementById('img-wrap-' + type);
+    const dlEl    = document.getElementById('btn-dl-' + type);
+
+    imgEl.src    = dataUrl;
+    dlEl.href    = dataUrl;
+    wrapEl.style.display = 'block';
+    btn.textContent = '✦ Gerar Novamente';
+  } catch(e) {
+    alert('Erro ao gerar imagem: ' + e.message);
+    btn.textContent = '✦ Criar Ideia';
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 function copyPrompt(btn) {
