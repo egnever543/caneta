@@ -236,6 +236,111 @@ O cron de criativos roda diariamente mas **não re-analisa imagens** — apenas 
 
 ---
 
+## Etapa 3 — Cache de Sugestões (`suggest-creative.js` + Supabase)
+
+### Por que existe
+Cada chamada ao sugestor custa tokens do Claude. O cache evita re-processar quando os dados não mudaram.
+
+### Como funciona
+- Chamada normal (`GET /api/suggest-creative`): retorna o resultado salvo na tabela `ai_suggestions` sem chamar o Claude
+- `?force=1`: ignora o cache, recalcula tudo e salva o novo resultado
+- O dashboard chama automaticamente na abertura para exibir o último resultado
+- O botão "Regerar Sugestões" chama com `force=1`
+
+### Tabela `ai_suggestions`
+```sql
+CREATE TABLE ai_suggestions (
+  id TEXT PRIMARY KEY DEFAULT 'latest',  -- sempre uma única linha
+  suggestion JSONB,   -- { champion: {...}, test: {...} }
+  math JSONB,         -- resumo dos dados que geraram a sugestão
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+A resposta inclui `cached: true/false` e `cached_at` com o timestamp da última geração.
+
+---
+
+## Etapa 4 — Templates de Prompt Visual (`suggest-creative.js`)
+
+### O que são
+Templates são estruturas de prompt fotográfico pré-definidas. Em vez de o Claude inventar um prompt do zero, ele escolhe o template mais adequado e adapta para o produto e hook.
+
+### Os 6 templates disponíveis
+
+| Chave | Nome | Estilo |
+|---|---|---|
+| `editorial_saude` | Editorial Saúde | Revista de saúde, 85mm, luz natural, empoderador |
+| `lifestyle_ugc` | Lifestyle Autêntico | Conteúdo real/UGC, cotidiano, sem maquiagem |
+| `antes_depois` | Antes/Depois Emocional | Composição dividida, transformação ansiedade → confiança |
+| `close_produto` | Close Produto + Mão | Foco na caneta, fundo mármore, macro, premium |
+| `depoimento_camera` | Depoimento / Câmera Direta | Olhando para a câmera, sala de estar, documentário |
+| `empoderamento` | Motivacional | Estilo Nike/campanha aspiracional, golden hour |
+
+### Como o Claude escolhe
+O prompt enviado ao Claude inclui:
+1. A performance histórica de cada template (CTR médio, score, criativos rodados)
+2. Quais templates ainda não foram testados
+3. A estrutura base de cada template
+
+**Para o Campeão:** Claude escolhe o template com melhor score histórico (ou o mais adequado se não houver dados)
+**Para o Teste:** Claude escolhe um template não testado ou de menor score para validar
+
+### Como adicionar um novo template
+Apenas adicione uma entrada no objeto `PROMPT_TEMPLATES` em `suggest-creative.js`:
+```js
+novo_estilo: {
+  label: 'Nome Legível',
+  description: 'Descrição do estilo para contexto',
+  structure: 'Prompt base em inglês com estilo fotográfico detalhado...',
+},
+```
+O Claude vai incluí-lo automaticamente nas próximas sugestões.
+
+### Loop de aprendizado dos templates
+```
+Sugestão gerada (template escolhido)
+  → Imagem gerada no dashboard
+    → Criativo subido manualmente na Meta
+      → analyze-creatives atualiza CTR/CPC no campo template_used
+        → Ranking de templates no dashboard
+          → Claude usa esse ranking na próxima sugestão
+```
+
+O campo `template_used` na tabela `creatives` é a ponte entre a geração e a performance real.
+
+---
+
+## Etapa 5 — Geração de Imagem (`generate-image.js`)
+
+### Endpoint
+`POST /api/generate-image`
+
+Body:
+```json
+{
+  "prompt": "texto do prompt",
+  "aspectRatio": "1:1",
+  "model": "nome-do-modelo-google",
+  "template_used": "chave_do_template"
+}
+```
+
+### Modelo
+Usa a Google Generative AI API (`generativelanguage.googleapis.com/v1beta`) com `generateContent`.
+O modelo é selecionável via dropdown no dashboard, populado dinamicamente por `/api/list-models`.
+A seleção fica salva em `localStorage` no navegador.
+
+### `/api/list-models`
+Endpoint de diagnóstico que lista todos os modelos disponíveis com a `GOOGLE_AI_KEY` configurada no Vercel.
+Filtra e retorna os modelos relacionados a geração de imagem separadamente.
+Útil para descobrir quais modelos estão disponíveis quando um nome de modelo retorna erro 404.
+
+### Variável de ambiente necessária
+`GOOGLE_AI_KEY` — chave do Google AI Studio (não Vertex AI)
+
+---
+
 ## Como Evoluir o Sistema
 
 **Adicionar novo hook type:**
@@ -256,7 +361,15 @@ function score(ctr, cpc, impressions) {
 }
 ```
 
+**Adicionar novo template de prompt:**
+1. Incluir nova entrada em `PROMPT_TEMPLATES` no `suggest-creative.js`
+2. Nenhuma outra mudança necessária — o Claude descobre automaticamente
+
 **Suporte a vídeo (futuro):**
 - Campo `media_type` já existe na tabela (`'image' | 'video'`)
 - No `analyze-creatives.js`, verificar `media_type` e enviar frame/thumbnail para o Claude Vision com prompt adaptado
 - A lógica de score e agrupamento não precisa mudar
+
+**Fechar o loop de templates automaticamente (futuro):**
+- Quando o criativo for subido na Meta, salvar o `creative_id` da Meta junto com o `template_used` no Supabase
+- O `analyze-creatives.js` já atualiza CTR/CPC pelo `creative_id` — o `template_used` será preenchido automaticamente
