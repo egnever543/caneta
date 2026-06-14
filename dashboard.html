@@ -1515,6 +1515,7 @@ function renderSuggestion(s) {
         <div class="suggest-prompt" id="prompt-${type}">${data.image_prompt}</div>
       </div>
       <input type="hidden" id="template-${type}" value="${data.template_used || ''}"/>
+      <input type="hidden" id="hooktype-${type}" value="${data.hook_type || ''}"/>
       <button class="btn-generate" id="btn-gen-${type}" onclick="generateImage('${type}')">✦ Criar Ideia (3 formatos)</button>
       <div id="img-formats-${type}" style="display:none;margin-top:16px;">
         <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;">
@@ -1631,6 +1632,7 @@ async function generateImage(type) {
         prompt,
         model: localStorage.getItem('image_model') || '',
         template_used: document.getElementById('template-' + type)?.value || '',
+        hook_type: document.getElementById('hooktype-' + type)?.value || 'beneficio',
       }),
     });
     const json = await res.json();
