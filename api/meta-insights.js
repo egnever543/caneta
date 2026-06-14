@@ -21,8 +21,10 @@ module.exports = async (req, res) => {
       adsetsRes.json(),
     ]);
 
-    console.log('META campaigns raw:', JSON.stringify(campaigns).slice(0, 300));
-    console.log('META token prefix:', (process.env.META_ACCESS_TOKEN || '').slice(0, 20));
+    // Expose raw error for debugging
+    if (campaigns.error) {
+      return res.status(200).json({ ok: false, debug: { campaigns, tokenPrefix: (process.env.META_ACCESS_TOKEN||'').slice(0,20) } });
+    }
 
     // Merge insights into campaigns
     const insightMap = {};
