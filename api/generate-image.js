@@ -12,7 +12,8 @@ module.exports = async (req, res) => {
   if (!apiKey) return res.status(500).json({ error: 'GOOGLE_AI_KEY not configured' });
 
   // Generate ONE base image in 9:16 (Reels) — frontend crops to other formats
-  const fullPrompt = `${prompt}. Vertical 9:16 portrait format, tall composition, subject centered vertically, optimized for mobile Reels and Stories.`;
+  // No text or overlays: headline is added via Canvas per format
+  const fullPrompt = `${prompt}. Vertical 9:16 portrait format, tall composition, subject centered vertically, optimized for mobile Reels and Stories. NO text, NO captions, NO overlays, NO watermarks on the image — clean image only.`;
 
   try {
     const response = await fetch(

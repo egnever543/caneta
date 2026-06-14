@@ -1453,8 +1453,8 @@ function renderSuggestion(s) {
     </div>`;
 }
 
-// Crops a base image (data URL) to a target aspect ratio (w/h) via canvas
-function cropToRatio(dataUrl, targetW, targetH) {
+// Crops a base image to target ratio and optionally overlays headline text
+function cropToRatio(dataUrl, targetW, targetH, headline) {
   return new Promise((resolve) => {
     const img = new Image();
     img.onload = () => {
@@ -1463,17 +1463,52 @@ function cropToRatio(dataUrl, targetW, targetH) {
       const tgtRatio = targetW / targetH;
       let sx, sy, sw, sh;
       if (srcRatio > tgtRatio) {
-        // source is wider — crop sides
         sh = srcH; sw = Math.round(srcH * tgtRatio);
         sx = Math.round((srcW - sw) / 2); sy = 0;
       } else {
-        // source is taller — crop top/bottom
         sw = srcW; sh = Math.round(srcW / tgtRatio);
         sx = 0; sy = Math.round((srcH - sh) / 2);
       }
       const canvas = document.createElement('canvas');
       canvas.width = sw; canvas.height = sh;
-      canvas.getContext('2d').drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh);
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, sx, sy, sw, sh, 0, 0, sw, sh);
+
+      if (headline) {
+        // Dark gradient at bottom for legibility
+        const gradH = sh * 0.38;
+        const grad = ctx.createLinearGradient(0, sh - gradH, 0, sh);
+        grad.addColorStop(0, 'rgba(0,0,0,0)');
+        grad.addColorStop(1, 'rgba(0,0,0,0.72)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, sh - gradH, sw, gradH);
+
+        // Text — size scales with canvas width
+        const fontSize = Math.round(sw * 0.072);
+        ctx.font = `bold ${fontSize}px sans-serif`;
+        ctx.fillStyle = '#ffffff';
+        ctx.textBaseline = 'bottom';
+
+        // Word-wrap within 90% of width
+        const maxW = sw * 0.88;
+        const padding = sw * 0.06;
+        const words = headline.split(' ');
+        const lines = [];
+        let line = '';
+        for (const word of words) {
+          const test = line ? line + ' ' + word : word;
+          if (ctx.measureText(test).width > maxW && line) {
+            lines.push(line); line = word;
+          } else { line = test; }
+        }
+        if (line) lines.push(line);
+
+        const lineH = fontSize * 1.25;
+        const totalH = lines.length * lineH;
+        const startY = sh - padding - totalH + lineH;
+        lines.forEach((l, i) => ctx.fillText(l, padding, startY + i * lineH));
+      }
+
       resolve(canvas.toDataURL('image/png'));
     };
     img.src = dataUrl;
@@ -1514,11 +1549,15 @@ async function generateImage(type) {
 
     const baseDataUrl = `data:${json.mimeType};base64,${json.imageBase64}`;
 
-    // Derive the 3 formats from the single base image
+    // Get headline text to overlay on each format
+    const hookEl = document.querySelector(`#suggest-content .suggest-block.${type} .suggest-hook-text`);
+    const headline = hookEl ? hookEl.textContent.replace(/^"|"$/g, '').trim() : '';
+
+    // Derive the 3 formats — Reels is the parent, Feed and Audience are crops
     const formats = [
-      { key: 'reels',    label: 'Reels · 9:16',    dataUrl: baseDataUrl },
-      { key: 'feed',     label: 'Feed · 1:1',       dataUrl: await cropToRatio(baseDataUrl, 1, 1) },
-      { key: 'audience', label: 'Audience · 16:9',  dataUrl: await cropToRatio(baseDataUrl, 16, 9) },
+      { key: 'reels',    label: 'Reels · 9:16',    dataUrl: await cropToRatio(baseDataUrl, 9, 16, headline) },
+      { key: 'feed',     label: 'Feed · 1:1',       dataUrl: await cropToRatio(baseDataUrl, 1, 1, headline) },
+      { key: 'audience', label: 'Audience · 16:9',  dataUrl: await cropToRatio(baseDataUrl, 16, 9, headline) },
     ];
 
     formats.forEach(({ key, label, dataUrl }) => {
