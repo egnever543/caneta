@@ -422,7 +422,13 @@
   <div class="campaigns-card">
     <div class="campaigns-header">
       <h3>Campanhas Meta Ads</h3>
-      <button class="btn-refresh" onclick="loadCampaigns()">↻ Atualizar</button>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div class="period-btns">
+          <button class="period-btn active" id="filter-active" onclick="setCampFilter('ACTIVE',this)">Ativas</button>
+          <button class="period-btn" id="filter-all" onclick="setCampFilter('ALL',this)">Todas</button>
+        </div>
+        <button class="btn-refresh" onclick="loadCampaigns()">↻ Atualizar</button>
+      </div>
     </div>
     <div id="campaigns-content"><div class="loading">Carregando campanhas...</div></div>
   </div>
@@ -731,7 +737,7 @@ async function runReport() {
 
 // Campaigns
 const PAGE_SIZE = 5;
-let allCampaigns = [], campPage = 0, campPeriodDays = 'today', campCurrencySym = '$';
+let allCampaigns = [], campPage = 0, campPeriodDays = 'today', campCurrencySym = '$', campFilter = 'ACTIVE';
 let campTrendChart = null;
 
 function setCampPeriod(days, btn) {
@@ -864,15 +870,27 @@ function fmt(n, prefix='') {
   return prefix + num.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
 }
 
+function setCampFilter(val, btn) {
+  campFilter = val;
+  campPage = 0;
+  document.querySelectorAll('#filter-active,#filter-all').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderCampaigns();
+}
+
 function renderCampaigns() {
-  if (!allCampaigns.length) {
+  const filtered = campFilter === 'ACTIVE'
+    ? allCampaigns.filter(c => c.status === 'ACTIVE')
+    : allCampaigns;
+
+  if (!filtered.length) {
     document.getElementById('campaigns-content').innerHTML = '<div class="loading">Nenhuma campanha encontrada.</div>';
     return;
   }
 
-  const total = allCampaigns.length;
+  const total = filtered.length;
   const totalPages = Math.ceil(total / PAGE_SIZE);
-  const slice = allCampaigns.slice(campPage * PAGE_SIZE, (campPage + 1) * PAGE_SIZE);
+  const slice = filtered.slice(campPage * PAGE_SIZE, (campPage + 1) * PAGE_SIZE);
 
   const html = slice.map(c => {
     const ins = c.insights;
@@ -942,7 +960,8 @@ function renderCampaigns() {
 }
 
 function changePage(dir) {
-  const totalPages = Math.ceil(allCampaigns.length / PAGE_SIZE);
+  const filtered = campFilter === 'ACTIVE' ? allCampaigns.filter(c => c.status === 'ACTIVE') : allCampaigns;
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
   campPage = Math.max(0, Math.min(totalPages - 1, campPage + dir));
   renderCampaigns();
 }
