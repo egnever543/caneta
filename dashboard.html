@@ -171,6 +171,15 @@
   @media(max-width:1200px) { .camp-kpi-grid { grid-template-columns:repeat(3,1fr); } }
   @media(max-width:768px) { .camp-kpi-grid { grid-template-columns:repeat(2,1fr); } }
 
+  /* Tabs */
+  .tabs-nav { display:flex; gap:4px; margin-bottom:28px; border-bottom:1px solid var(--border); padding-bottom:0; }
+  .tab-btn { padding:10px 24px; border-radius:10px 10px 0 0; font-size:0.88rem; font-weight:600; cursor:pointer; border:1px solid transparent; border-bottom:none; background:transparent; color:var(--muted); transition:all .15s; position:relative; bottom:-1px; }
+  .tab-btn:hover { color:var(--text); }
+  .tab-btn.active { background:var(--card); border-color:var(--border); color:var(--text); border-bottom-color:var(--card); }
+  .tab-btn .tab-badge { font-size:0.6rem; background:rgba(92,156,143,0.2); color:var(--teal); padding:2px 6px; border-radius:99px; margin-left:6px; vertical-align:middle; }
+  .tab-panel { display:none; }
+  .tab-panel.active { display:block; }
+
   /* Responsive: tablet */
   @media(max-width:1200px) {
     .kpi-grid { grid-template-columns:repeat(4,1fr); }
@@ -209,206 +218,172 @@
   </div>
 </div>
 
-<!-- KPIs -->
-<div class="kpi-grid">
-  <div class="kpi">
-    <div class="label">Total Visits</div>
-    <div class="value" id="kpi-visits">—</div>
-    <div class="sub">unique sessions</div>
-  </div>
-  <div class="kpi highlight">
-    <div class="label">CTA Clicks</div>
-    <div class="value" id="kpi-cta">—</div>
-    <div class="sub">checkout attempts</div>
-  </div>
-  <div class="kpi teal">
-    <div class="label">Click Rate</div>
-    <div class="value" id="kpi-ctr">—</div>
-    <div class="sub">visits → CTA</div>
-  </div>
-  <div class="kpi">
-    <div class="label">Avg Time on Page</div>
-    <div class="value" id="kpi-time">—</div>
-    <div class="sub">seconds</div>
-  </div>
-  <div class="kpi">
-    <div class="label">Countries</div>
-    <div class="value" id="kpi-countries">—</div>
-    <div class="sub">unique</div>
-  </div>
-  <div class="kpi teal">
-    <div class="label">Events Today</div>
-    <div class="value" id="kpi-today">—</div>
-    <div class="sub">last 24h</div>
-  </div>
-  <div class="kpi highlight">
-    <div class="label">Purchases</div>
-    <div class="value" id="kpi-purchases">—</div>
-    <div class="sub">confirmed sales</div>
-  </div>
-</div>
+<!-- Tabs nav -->
+<nav class="tabs-nav">
+  <button class="tab-btn active" onclick="switchTab('site',this)">Análise de Site</button>
+  <button class="tab-btn" onclick="switchTab('campanha',this)">Análise de Campanha</button>
+  <button class="tab-btn" onclick="switchTab('criativo',this)">Análise de Criativo <span class="tab-badge">Em breve</span></button>
+</nav>
 
-<!-- Main grid: conteúdo esquerda + eventos direita -->
-<div class="main-grid">
-  <div class="left-col">
+<!-- ── ABA 1: SITE ── -->
+<div id="tab-site" class="tab-panel active">
 
-    <!-- Charts -->
-    <div class="charts-grid">
-      <div class="chart-card">
-        <h3>Visits per day</h3>
-        <canvas id="chart-visits" height="160"></canvas>
-      </div>
-      <div class="chart-card">
-        <h3>Event breakdown</h3>
-        <canvas id="chart-events" height="160"></canvas>
+  <div class="kpi-grid">
+    <div class="kpi">
+      <div class="label">Total Visits</div>
+      <div class="value" id="kpi-visits">—</div>
+      <div class="sub">unique sessions</div>
+    </div>
+    <div class="kpi highlight">
+      <div class="label">CTA Clicks</div>
+      <div class="value" id="kpi-cta">—</div>
+      <div class="sub">checkout attempts</div>
+    </div>
+    <div class="kpi teal">
+      <div class="label">Click Rate</div>
+      <div class="value" id="kpi-ctr">—</div>
+      <div class="sub">visits → CTA</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Avg Time on Page</div>
+      <div class="value" id="kpi-time">—</div>
+      <div class="sub">seconds</div>
+    </div>
+    <div class="kpi">
+      <div class="label">Countries</div>
+      <div class="value" id="kpi-countries">—</div>
+      <div class="sub">unique</div>
+    </div>
+    <div class="kpi teal">
+      <div class="label">Events Today</div>
+      <div class="value" id="kpi-today">—</div>
+      <div class="sub">last 24h</div>
+    </div>
+    <div class="kpi highlight">
+      <div class="label">Purchases</div>
+      <div class="value" id="kpi-purchases">—</div>
+      <div class="sub">confirmed sales</div>
+    </div>
+  </div>
+
+  <div class="charts-grid" style="margin-bottom:20px;">
+    <div class="chart-card">
+      <h3>Visits per day</h3>
+      <canvas id="chart-visits" height="160"></canvas>
+    </div>
+    <div class="chart-card">
+      <h3>Event breakdown</h3>
+      <canvas id="chart-events" height="160"></canvas>
+    </div>
+  </div>
+
+  <div class="bottom-grid" style="margin-bottom:20px;">
+    <div class="scroll-card">
+      <h3>Scroll depth</h3>
+      <div class="scroll-funnel">
+        <div class="scroll-step"><div class="scroll-bar-wrap"><div class="scroll-bar" id="bar-25"></div></div><div class="scroll-pct" id="pct-25">—</div><div class="scroll-label">25%</div></div>
+        <div class="scroll-step"><div class="scroll-bar-wrap"><div class="scroll-bar" id="bar-50"></div></div><div class="scroll-pct" id="pct-50">—</div><div class="scroll-label">50%</div></div>
+        <div class="scroll-step"><div class="scroll-bar-wrap"><div class="scroll-bar" id="bar-75"></div></div><div class="scroll-pct" id="pct-75">—</div><div class="scroll-label">75%</div></div>
+        <div class="scroll-step"><div class="scroll-bar-wrap"><div class="scroll-bar" id="bar-90"></div></div><div class="scroll-pct" id="pct-90">—</div><div class="scroll-label">90%</div></div>
+        <div class="scroll-step"><div class="scroll-bar-wrap"><div class="scroll-bar" id="bar-100"></div></div><div class="scroll-pct" id="pct-100">—</div><div class="scroll-label">100%</div></div>
       </div>
     </div>
+    <div class="table-card">
+      <h3>Sections viewed</h3>
+      <table><thead><tr><th>Section</th><th style="text-align:right">Views</th><th style="width:60px"></th></tr></thead>
+      <tbody id="table-sections"><tr><td colspan="3" class="loading">Loading...</td></tr></tbody></table>
+    </div>
+    <div class="table-card">
+      <h3>Top countries</h3>
+      <table><thead><tr><th>Country</th><th style="text-align:right">Visits</th><th style="width:60px"></th></tr></thead>
+      <tbody id="table-countries"><tr><td colspan="3" class="loading">Loading...</td></tr></tbody></table>
+    </div>
+  </div>
 
-    <!-- Scroll + Tables -->
-    <div class="bottom-grid">
-      <div class="scroll-card">
-        <h3>Scroll depth</h3>
-        <div class="scroll-funnel">
-          <div class="scroll-step">
-            <div class="scroll-bar-wrap"><div class="scroll-bar" id="bar-25"></div></div>
-            <div class="scroll-pct" id="pct-25">—</div>
-            <div class="scroll-label">25%</div>
-          </div>
-          <div class="scroll-step">
-            <div class="scroll-bar-wrap"><div class="scroll-bar" id="bar-50"></div></div>
-            <div class="scroll-pct" id="pct-50">—</div>
-            <div class="scroll-label">50%</div>
-          </div>
-          <div class="scroll-step">
-            <div class="scroll-bar-wrap"><div class="scroll-bar" id="bar-75"></div></div>
-            <div class="scroll-pct" id="pct-75">—</div>
-            <div class="scroll-label">75%</div>
-          </div>
-          <div class="scroll-step">
-            <div class="scroll-bar-wrap"><div class="scroll-bar" id="bar-90"></div></div>
-            <div class="scroll-pct" id="pct-90">—</div>
-            <div class="scroll-label">90%</div>
-          </div>
-          <div class="scroll-step">
-            <div class="scroll-bar-wrap"><div class="scroll-bar" id="bar-100"></div></div>
-            <div class="scroll-pct" id="pct-100">—</div>
-            <div class="scroll-label">100%</div>
-          </div>
-        </div>
-      </div>
+  <div class="sources-grid" style="margin-bottom:20px;">
+    <div class="table-card">
+      <h3>Traffic source <span style="color:var(--teal);font-size:0.7rem;margin-left:6px;">utm_source</span></h3>
+      <table><thead><tr><th>Source</th><th style="text-align:right">Visits</th><th style="text-align:right;color:var(--gold)">CTAs</th><th style="width:60px"></th></tr></thead>
+      <tbody id="table-sources"><tr><td colspan="4" class="loading">Loading...</td></tr></tbody></table>
+    </div>
+    <div class="table-card">
+      <h3>Campaign <span style="color:var(--teal);font-size:0.7rem;margin-left:6px;">utm_campaign</span></h3>
+      <table><thead><tr><th>Campaign</th><th style="text-align:right">Visits</th><th style="text-align:right;color:var(--gold)">CTAs</th><th style="width:60px"></th></tr></thead>
+      <tbody id="table-campaigns"><tr><td colspan="4" class="loading">Loading...</td></tr></tbody></table>
+    </div>
+    <div class="table-card">
+      <h3>Medium <span style="color:var(--teal);font-size:0.7rem;margin-left:6px;">utm_medium / fbclid</span></h3>
+      <table><thead><tr><th>Medium</th><th style="text-align:right">Visits</th><th style="text-align:right;color:var(--gold)">CTAs</th><th style="width:60px"></th></tr></thead>
+      <tbody id="table-mediums"><tr><td colspan="4" class="loading">Loading...</td></tr></tbody></table>
+    </div>
+  </div>
 
-      <div class="table-card">
-        <h3>Sections viewed</h3>
-        <table>
-          <thead><tr><th>Section</th><th style="text-align:right">Views</th><th style="width:60px"></th></tr></thead>
-          <tbody id="table-sections"><tr><td colspan="3" class="loading">Loading...</td></tr></tbody>
-        </table>
-      </div>
+  <div class="events-card" style="max-height:320px;">
+    <h3>Recent events</h3>
+    <div id="recent-events"><div class="loading">Loading...</div></div>
+  </div>
 
-      <div class="table-card">
-        <h3>Top countries</h3>
-        <table>
-          <thead><tr><th>Country</th><th style="text-align:right">Visits</th><th style="width:60px"></th></tr></thead>
-          <tbody id="table-countries"><tr><td colspan="3" class="loading">Loading...</td></tr></tbody>
-        </table>
+</div><!-- /tab-site -->
+
+<!-- ── ABA 2: CAMPANHA ── -->
+<div id="tab-campanha" class="tab-panel">
+
+  <div class="camp-analytics-card">
+    <div class="camp-analytics-header">
+      <h3>Analytics de Campanhas <span style="color:var(--teal);font-size:0.7rem;margin-left:6px;">Meta Ads</span></h3>
+      <div class="period-btns">
+        <button class="period-btn active" onclick="setCampPeriod('today',this)">Hoje</button>
+        <button class="period-btn" onclick="setCampPeriod('7',this)">7d</button>
+        <button class="period-btn" onclick="setCampPeriod('14',this)">14d</button>
+        <button class="period-btn" onclick="setCampPeriod('30',this)">30d</button>
       </div>
     </div>
-
-    <!-- Traffic Sources -->
-    <div class="sources-grid">
-      <div class="table-card">
-        <h3>Traffic source <span style="color:var(--teal);font-size:0.7rem;margin-left:6px;">utm_source</span></h3>
-        <table>
-          <thead><tr><th>Source</th><th style="text-align:right">Visits</th><th style="text-align:right;color:var(--gold)">CTAs</th><th style="width:60px"></th></tr></thead>
-          <tbody id="table-sources"><tr><td colspan="4" class="loading">Loading...</td></tr></tbody>
-        </table>
-      </div>
-      <div class="table-card">
-        <h3>Campaign <span style="color:var(--teal);font-size:0.7rem;margin-left:6px;">utm_campaign</span></h3>
-        <table>
-          <thead><tr><th>Campaign</th><th style="text-align:right">Visits</th><th style="text-align:right;color:var(--gold)">CTAs</th><th style="width:60px"></th></tr></thead>
-          <tbody id="table-campaigns"><tr><td colspan="4" class="loading">Loading...</td></tr></tbody>
-        </table>
-      </div>
-      <div class="table-card">
-        <h3>Medium <span style="color:var(--teal);font-size:0.7rem;margin-left:6px;">utm_medium / fbclid</span></h3>
-        <table>
-          <thead><tr><th>Medium</th><th style="text-align:right">Visits</th><th style="text-align:right;color:var(--gold)">CTAs</th><th style="width:60px"></th></tr></thead>
-          <tbody id="table-mediums"><tr><td colspan="4" class="loading">Loading...</td></tr></tbody>
-        </table>
-      </div>
+    <div class="camp-kpi-grid" id="camp-kpi-grid">
+      <div class="camp-kpi"><div class="ck-label">Gasto</div><div class="ck-value gold" id="ck-spend">—</div></div>
+      <div class="camp-kpi"><div class="ck-label">Impressões</div><div class="ck-value" id="ck-impr">—</div></div>
+      <div class="camp-kpi"><div class="ck-label">Alcance</div><div class="ck-value" id="ck-reach">—</div></div>
+      <div class="camp-kpi"><div class="ck-label">Cliques</div><div class="ck-value teal" id="ck-clicks">—</div></div>
+      <div class="camp-kpi"><div class="ck-label">CTR</div><div class="ck-value" id="ck-ctr">—</div></div>
+      <div class="camp-kpi"><div class="ck-label">CPC</div><div class="ck-value" id="ck-cpc">—</div></div>
     </div>
-
-    <!-- Campaign Analytics -->
-    <div class="camp-analytics-card">
-      <div class="camp-analytics-header">
-        <h3>Analytics de Campanhas <span style="color:var(--teal);font-size:0.7rem;margin-left:6px;">Meta Ads</span></h3>
-        <div class="period-btns">
-          <button class="period-btn active" onclick="setCampPeriod('today',this)">Hoje</button>
-          <button class="period-btn" onclick="setCampPeriod('7',this)">7d</button>
-          <button class="period-btn" onclick="setCampPeriod('14',this)">14d</button>
-          <button class="period-btn" onclick="setCampPeriod('30',this)">30d</button>
-        </div>
-      </div>
-      <!-- KPI summary row -->
-      <div class="camp-kpi-grid" id="camp-kpi-grid">
-        <div class="camp-kpi"><div class="ck-label">Gasto</div><div class="ck-value gold" id="ck-spend">—</div></div>
-        <div class="camp-kpi"><div class="ck-label">Impressões</div><div class="ck-value" id="ck-impr">—</div></div>
-        <div class="camp-kpi"><div class="ck-label">Alcance</div><div class="ck-value" id="ck-reach">—</div></div>
-        <div class="camp-kpi"><div class="ck-label">Cliques</div><div class="ck-value teal" id="ck-clicks">—</div></div>
-        <div class="camp-kpi"><div class="ck-label">CTR</div><div class="ck-value" id="ck-ctr">—</div></div>
-        <div class="camp-kpi"><div class="ck-label">CPC</div><div class="ck-value" id="ck-cpc">—</div></div>
-      </div>
-      <!-- Trend chart -->
-      <div class="camp-chart-wrap">
-        <canvas id="camp-trend-chart" height="90"></canvas>
-      </div>
-      <!-- Daily table -->
-      <table class="camp-daily-table">
-        <thead><tr>
-          <th>Data</th>
-          <th>Gasto</th>
-          <th>Impressões</th>
-          <th>Alcance</th>
-          <th>Cliques</th>
-          <th>CTR</th>
-          <th>CPC</th>
-          <th>CPM</th>
-        </tr></thead>
-        <tbody id="camp-daily-tbody"><tr><td colspan="8" class="loading">Carregando...</td></tr></tbody>
-      </table>
+    <div class="camp-chart-wrap">
+      <canvas id="camp-trend-chart" height="90"></canvas>
     </div>
+    <table class="camp-daily-table">
+      <thead><tr><th>Data</th><th>Gasto</th><th>Impressões</th><th>Alcance</th><th>Cliques</th><th>CTR</th><th>CPC</th><th>CPM</th></tr></thead>
+      <tbody id="camp-daily-tbody"><tr><td colspan="8" class="loading">Carregando...</td></tr></tbody>
+    </table>
+  </div>
 
-    <!-- Campaigns -->
-    <div class="campaigns-card">
-      <div class="campaigns-header">
-        <h3>Campanhas Meta Ads</h3>
-        <button class="btn-refresh" onclick="loadCampaigns()">↻ Atualizar</button>
-      </div>
-      <div id="campaigns-content"><div class="loading">Carregando campanhas...</div></div>
+  <div class="campaigns-card">
+    <div class="campaigns-header">
+      <h3>Campanhas Meta Ads</h3>
+      <button class="btn-refresh" onclick="loadCampaigns()">↻ Atualizar</button>
     </div>
+    <div id="campaigns-content"><div class="loading">Carregando campanhas...</div></div>
+  </div>
 
-    <!-- AI Report -->
-    <div class="ai-report-card" id="ai-report-wrap">
-      <div class="ai-report-header">
-        <div>
-          <h3>AI Campaign Report <span class="ai-badge">Claude</span></h3>
-          <span class="ai-date" id="ai-report-date"></span>
-        </div>
-        <button class="btn-refresh" onclick="runReport()" id="btn-run-report">↻ Generate now</button>
+  <div class="ai-report-card" id="ai-report-wrap">
+    <div class="ai-report-header">
+      <div>
+        <h3>AI Campaign Report <span class="ai-badge">Claude</span></h3>
+        <span class="ai-date" id="ai-report-date"></span>
       </div>
-      <div id="ai-report-content"><div class="loading">No report yet — click "Generate now" to run the first analysis.</div></div>
+      <button class="btn-refresh" onclick="runReport()" id="btn-run-report">↻ Generate now</button>
     </div>
+    <div id="ai-report-content"><div class="loading">No report yet — click "Generate now" to run the first analysis.</div></div>
+  </div>
 
-  </div><!-- /left-col -->
+</div><!-- /tab-campanha -->
 
-</div><!-- /main-grid -->
-
-<!-- Recent Events — fim do dash -->
-<div class="events-card" style="margin-top:20px;max-height:320px;">
-  <h3>Recent events</h3>
-  <div id="recent-events"><div class="loading">Loading...</div></div>
-</div>
+<!-- ── ABA 3: CRIATIVO ── -->
+<div id="tab-criativo" class="tab-panel">
+  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;padding:80px 40px;gap:16px;text-align:center;">
+    <div style="font-size:3rem;">🎨</div>
+    <h2 style="font-size:1.2rem;font-weight:600;color:var(--text);">Análise de Criativo</h2>
+    <p style="color:var(--muted);font-size:0.9rem;max-width:400px;line-height:1.6;">Em breve — aqui você vai acompanhar performance por criativo: CTR, custo por resultado, fadiga e comparativos entre variações.</p>
+  </div>
+</div><!-- /tab-criativo -->
 
 </div><!-- /page-wrap -->
 
@@ -421,6 +396,13 @@ async function query(table, params) {
   Object.entries(params).forEach(([k,v]) => url.searchParams.set(k,v));
   const r = await fetch(url, { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } });
   return r.json();
+}
+
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
 }
 
 let visitChart, eventChart;
