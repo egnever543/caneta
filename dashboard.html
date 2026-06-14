@@ -213,6 +213,37 @@
   .rank-pos { color:var(--gold); font-weight:700; width:20px; }
   @media(max-width:1200px) { .creatives-grid { grid-template-columns:repeat(2,1fr); } .ranking-grid { grid-template-columns:1fr; } }
   @media(max-width:768px) { .creatives-grid { grid-template-columns:1fr; } }
+  /* Campaign Modal */
+  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:1000; overflow-y:auto; padding:24px; }
+  .modal-overlay.open { display:flex; align-items:flex-start; justify-content:center; }
+  .modal-box { background:var(--card); border:1px solid var(--border); border-radius:20px; width:100%; max-width:620px; padding:28px; margin:auto; }
+  .modal-box h2 { font-size:1.1rem; margin-bottom:4px; }
+  .modal-box .modal-sub { font-size:0.78rem; color:var(--muted); margin-bottom:20px; }
+  .modal-tabs { display:flex; gap:8px; margin-bottom:24px; }
+  .modal-tab { flex:1; padding:8px; border-radius:8px; border:1px solid var(--border); background:transparent; color:var(--muted); font-size:0.8rem; cursor:pointer; transition:all .2s; }
+  .modal-tab.active { background:var(--teal); color:#000; border-color:var(--teal); font-weight:600; }
+  .modal-section { margin-bottom:20px; }
+  .modal-section-title { font-size:0.7rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:10px; padding-bottom:6px; border-bottom:1px solid var(--border); }
+  .modal-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .modal-grid.cols1 { grid-template-columns:1fr; }
+  .modal-field { display:flex; flex-direction:column; gap:5px; }
+  .modal-field label { font-size:0.72rem; color:var(--muted); }
+  .modal-field input, .modal-field select, .modal-field textarea {
+    background:var(--bg); color:var(--text); border:1px solid var(--border);
+    border-radius:8px; padding:8px 10px; font-size:0.82rem; width:100%;
+  }
+  .modal-field textarea { min-height:70px; resize:vertical; }
+  .modal-field input:focus, .modal-field select:focus, .modal-field textarea:focus { outline:none; border-color:var(--teal); }
+  .modal-actions { display:flex; gap:10px; margin-top:24px; }
+  .modal-actions .btn-cancel { flex:1; padding:10px; border-radius:8px; border:1px solid var(--border); background:transparent; color:var(--muted); cursor:pointer; font-size:0.85rem; }
+  .modal-actions .btn-submit { flex:2; padding:10px; border-radius:8px; border:none; background:var(--teal); color:#000; cursor:pointer; font-weight:700; font-size:0.85rem; }
+  .modal-actions .btn-submit:disabled { opacity:0.5; cursor:not-allowed; }
+  .modal-log { margin-top:16px; background:var(--bg); border-radius:8px; padding:12px; font-size:0.75rem; color:var(--muted); max-height:160px; overflow-y:auto; }
+  .modal-log p { margin:2px 0; }
+  .modal-log p.ok { color:var(--teal); }
+  .modal-log p.err { color:#ff7070; }
+  .modal-result { background:rgba(92,156,143,0.1); border:1px solid rgba(92,156,143,0.3); border-radius:10px; padding:16px; margin-top:16px; }
+  .modal-result a { color:var(--teal); font-size:0.82rem; }
   /* Suggester */
   .suggest-card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:24px; margin-bottom:20px; }
   .suggest-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:12px; }
@@ -527,6 +558,153 @@
 </div><!-- /tab-criativo -->
 
 </div><!-- /page-wrap -->
+
+<!-- Campaign Modal -->
+<div class="modal-overlay" id="campaign-modal">
+  <div class="modal-box">
+    <h2>🚀 Publicar na Meta</h2>
+    <p class="modal-sub" id="modal-sub">Criando anúncios nos 3 formatos (Feed, Reels, Audience Network)</p>
+
+    <div class="modal-tabs">
+      <button class="modal-tab active" onclick="setModalMode('new', this)">✦ Nova Campanha</button>
+      <button class="modal-tab" onclick="setModalMode('existing', this)">+ Adicionar a Existente</button>
+    </div>
+
+    <!-- Conta -->
+    <div class="modal-section">
+      <div class="modal-section-title">Conta Meta</div>
+      <div class="modal-grid">
+        <div class="modal-field">
+          <label>Página do Facebook</label>
+          <select id="m-page"><option value="">Carregando...</option></select>
+        </div>
+        <div class="modal-field">
+          <label>Pixel de conversão (opcional)</label>
+          <select id="m-pixel"><option value="">Nenhum</option></select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Anúncio -->
+    <div class="modal-section">
+      <div class="modal-section-title">Conteúdo do Anúncio</div>
+      <div class="modal-grid cols1">
+        <div class="modal-field">
+          <label>Headline (título)</label>
+          <input type="text" id="m-headline" placeholder="Texto do hook"/>
+        </div>
+        <div class="modal-field">
+          <label>Texto principal</label>
+          <textarea id="m-body" placeholder="Descrição do anúncio..."></textarea>
+        </div>
+      </div>
+      <div class="modal-grid" style="margin-top:12px;">
+        <div class="modal-field">
+          <label>URL de destino</label>
+          <input type="url" id="m-url" placeholder="https://..."/>
+        </div>
+        <div class="modal-field">
+          <label>Botão CTA</label>
+          <select id="m-cta">
+            <option value="LEARN_MORE">Saiba Mais</option>
+            <option value="SHOP_NOW">Comprar Agora</option>
+            <option value="DOWNLOAD">Baixar</option>
+            <option value="GET_OFFER">Pegar Oferta</option>
+            <option value="SIGN_UP">Cadastrar</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Nova Campanha -->
+    <div id="section-new">
+      <div class="modal-section">
+        <div class="modal-section-title">Campanha</div>
+        <div class="modal-grid">
+          <div class="modal-field">
+            <label>Nome da campanha</label>
+            <input type="text" id="m-camp-name" placeholder="SWF — Campanha"/>
+          </div>
+          <div class="modal-field">
+            <label>Objetivo</label>
+            <select id="m-objective">
+              <option value="OUTCOME_SALES" selected>Vendas</option>
+              <option value="OUTCOME_TRAFFIC">Tráfego</option>
+              <option value="OUTCOME_LEADS">Leads</option>
+              <option value="OUTCOME_AWARENESS">Reconhecimento</option>
+            </select>
+          </div>
+          <div class="modal-field">
+            <label>Orçamento diário (R$)</label>
+            <input type="number" id="m-budget" placeholder="50" min="1" step="1"/>
+          </div>
+          <div class="modal-field">
+            <label>Data início</label>
+            <input type="date" id="m-start"/>
+          </div>
+          <div class="modal-field">
+            <label>Data fim (opcional)</label>
+            <input type="date" id="m-end"/>
+          </div>
+        </div>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-title">Público</div>
+        <div class="modal-grid">
+          <div class="modal-field">
+            <label>Países (vírgula)</label>
+            <input type="text" id="m-countries" value="US"/>
+          </div>
+          <div class="modal-field">
+            <label>Gênero</label>
+            <select id="m-gender">
+              <option value="female">Feminino</option>
+              <option value="all">Todos</option>
+              <option value="male">Masculino</option>
+            </select>
+          </div>
+          <div class="modal-field">
+            <label>Idade mínima</label>
+            <input type="number" id="m-age-min" value="35" min="18" max="65"/>
+          </div>
+          <div class="modal-field">
+            <label>Idade máxima</label>
+            <input type="number" id="m-age-max" value="65" min="18" max="65"/>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Campanha existente -->
+    <div id="section-existing" style="display:none;">
+      <div class="modal-section">
+        <div class="modal-section-title">Selecionar Campanha e Ad Set</div>
+        <div class="modal-grid cols1">
+          <div class="modal-field">
+            <label>Campanha</label>
+            <select id="m-existing-camp" onchange="loadAdsets(this.value)">
+              <option value="">Selecione...</option>
+            </select>
+          </div>
+          <div class="modal-field">
+            <label>Ad Set</label>
+            <select id="m-existing-adset">
+              <option value="">Selecione a campanha primeiro</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+      <button class="btn-submit" id="btn-modal-submit" onclick="submitCampaign()">🚀 Publicar Anúncios</button>
+    </div>
+
+    <div class="modal-log" id="modal-log" style="display:none;"></div>
+    <div class="modal-result" id="modal-result" style="display:none;"></div>
+  </div>
+</div>
 
 <script>
 const SUPABASE_URL = 'https://rjnjjyclxfbnjswugrex.supabase.co';
@@ -1308,12 +1486,187 @@ async function generateImage(type) {
     });
 
     btn.textContent = '✦ Gerar Novamente';
+
+    // Show publish button after generation
+    let pubBtn = document.getElementById('btn-publish-' + type);
+    if (!pubBtn) {
+      pubBtn = document.createElement('button');
+      pubBtn.id = 'btn-publish-' + type;
+      pubBtn.className = 'btn-generate';
+      pubBtn.style.cssText = 'background:linear-gradient(135deg,#1877f2,#0d5ab9);margin-top:8px;';
+      pubBtn.textContent = '🚀 Publicar na Meta';
+      pubBtn.onclick = () => openCampaignModal(type);
+      fmtWrap.after(pubBtn);
+    }
+    pubBtn.style.display = 'block';
   } catch(e) {
     alert('Erro ao gerar imagem: ' + e.message);
     btn.textContent = '✦ Criar Ideia (3 formatos)';
     fmtWrap.style.display = 'none';
   } finally {
     btn.disabled = false;
+  }
+}
+
+// ── Campaign Modal ──
+let modalImageType = null;
+let modalMode = 'new';
+
+async function openCampaignModal(type) {
+  modalImageType = type;
+  document.getElementById('campaign-modal').classList.add('open');
+  document.getElementById('modal-log').style.display = 'none';
+  document.getElementById('modal-result').style.display = 'none';
+
+  // Pre-fill headline from hook text
+  const hookText = document.querySelector(`#suggest-content .suggest-block.${type} .suggest-hook-text`);
+  if (hookText) {
+    document.getElementById('m-headline').value = hookText.textContent.replace(/^"|"$/g, '');
+  }
+
+  // Set default start date to today
+  document.getElementById('m-start').value = new Date().toISOString().split('T')[0];
+
+  // Pre-fill campaign name
+  document.getElementById('m-camp-name').value = `SWF — ${document.getElementById('m-headline').value.slice(0, 40)}`;
+
+  // Load Meta assets
+  await loadMetaAssets();
+}
+
+function closeModal() {
+  document.getElementById('campaign-modal').classList.remove('open');
+}
+
+function setModalMode(mode, btn) {
+  modalMode = mode;
+  document.querySelectorAll('.modal-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('section-new').style.display = mode === 'new' ? 'block' : 'none';
+  document.getElementById('section-existing').style.display = mode === 'existing' ? 'block' : 'none';
+}
+
+async function loadMetaAssets() {
+  try {
+    const res = await fetch('/api/meta-assets?t=' + Date.now());
+    const json = await res.json();
+
+    const pageEl = document.getElementById('m-page');
+    pageEl.innerHTML = json.pages.map(p => `<option value="${p.id}">${p.name}</option>`).join('') || '<option value="">Nenhuma página encontrada</option>';
+
+    const pixelEl = document.getElementById('m-pixel');
+    pixelEl.innerHTML = '<option value="">Nenhum</option>' + (json.pixels || []).map(p => `<option value="${p.id}">${p.name} (${p.id})</option>`).join('');
+
+    const campEl = document.getElementById('m-existing-camp');
+    campEl.innerHTML = '<option value="">Selecione...</option>' + (json.campaigns || []).map(c => `<option value="${c.id}">${c.name} · ${c.status}</option>`).join('');
+  } catch(e) {
+    console.error('loadMetaAssets:', e);
+  }
+}
+
+async function loadAdsets(campaignId) {
+  if (!campaignId) return;
+  const el = document.getElementById('m-existing-adset');
+  el.innerHTML = '<option value="">Carregando...</option>';
+  try {
+    const res = await fetch(`/api/meta-assets?type=adsets&campaign_id=${campaignId}`);
+    const json = await res.json();
+    el.innerHTML = (json.adsets || []).map(a => {
+      const budget = a.daily_budget ? ` · R$${(a.daily_budget/100).toFixed(2)}/dia` : '';
+      return `<option value="${a.id}">${a.name}${budget} · ${a.status}</option>`;
+    }).join('') || '<option value="">Nenhum ad set encontrado</option>';
+  } catch(e) {
+    el.innerHTML = '<option value="">Erro ao carregar</option>';
+  }
+}
+
+async function submitCampaign() {
+  const btn = document.getElementById('btn-modal-submit');
+  const logEl = document.getElementById('modal-log');
+  const resultEl = document.getElementById('modal-result');
+
+  // Collect images from generated img elements
+  const images = {};
+  ['feed','reels','audience'].forEach(f => {
+    const imgEl = document.getElementById(`fmt-wrap-${modalImageType}-${f}`)?.querySelector('img');
+    if (imgEl?.src?.startsWith('data:')) {
+      const [meta, base64] = imgEl.src.split(',');
+      const mimeType = meta.match(/:(.*?);/)?.[1] || 'image/png';
+      images[f] = { base64, mimeType };
+    }
+  });
+
+  if (!Object.keys(images).length) {
+    alert('Nenhuma imagem gerada encontrada. Gere as imagens primeiro.');
+    return;
+  }
+
+  const genderMap = { female: [2], male: [1], all: [] };
+  const genderVal = document.getElementById('m-gender')?.value || 'female';
+
+  const payload = {
+    mode: modalMode,
+    images,
+    page_id: document.getElementById('m-page').value,
+    pixel_id: document.getElementById('m-pixel').value || null,
+    headline: document.getElementById('m-headline').value,
+    body: document.getElementById('m-body').value,
+    destination_url: document.getElementById('m-url').value,
+    cta_type: document.getElementById('m-cta').value,
+    // new campaign fields
+    campaign_name: document.getElementById('m-camp-name').value,
+    objective: document.getElementById('m-objective').value,
+    daily_budget: parseFloat(document.getElementById('m-budget').value || 0),
+    start_time: document.getElementById('m-start').value,
+    end_time: document.getElementById('m-end').value || null,
+    countries: document.getElementById('m-countries').value.split(',').map(s => s.trim()).filter(Boolean),
+    age_min: parseInt(document.getElementById('m-age-min').value),
+    age_max: parseInt(document.getElementById('m-age-max').value),
+    genders: genderMap[genderVal],
+    // existing campaign fields
+    adset_id: document.getElementById('m-existing-adset').value || null,
+  };
+
+  if (!payload.page_id) return alert('Selecione uma Página do Facebook.');
+  if (!payload.destination_url) return alert('Preencha a URL de destino.');
+  if (modalMode === 'new' && (!payload.daily_budget || payload.daily_budget < 1)) return alert('Preencha o orçamento diário.');
+  if (modalMode === 'existing' && !payload.adset_id) return alert('Selecione um Ad Set.');
+
+  btn.disabled = true;
+  btn.textContent = '⏳ Publicando...';
+  logEl.style.display = 'block';
+  logEl.innerHTML = '';
+  resultEl.style.display = 'none';
+
+  try {
+    const res = await fetch('/api/create-campaign', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const json = await res.json();
+
+    (json.log || []).forEach(msg => {
+      logEl.innerHTML += `<p class="ok">✓ ${msg}</p>`;
+    });
+
+    if (!json.ok) {
+      logEl.innerHTML += `<p class="err">✗ Erro: ${json.error}</p>`;
+      return;
+    }
+
+    resultEl.style.display = 'block';
+    resultEl.innerHTML = `
+      <p style="font-weight:700;color:var(--teal);margin-bottom:8px;">✓ ${json.ads.length} anúncios criados (PAUSADOS)</p>
+      ${json.ads.map(a => `<p style="font-size:0.78rem;color:var(--muted);">• ${a.format} — Ad ID: ${a.ad_id}</p>`).join('')}
+      <a href="${json.meta_url}" target="_blank" style="display:inline-block;margin-top:10px;">
+        Abrir no Gerenciador de Anúncios →
+      </a>`;
+    btn.textContent = '✓ Publicado!';
+  } catch(e) {
+    logEl.innerHTML += `<p class="err">✗ ${e.message}</p>`;
+    btn.disabled = false;
+    btn.textContent = '🚀 Publicar Anúncios';
   }
 }
 
