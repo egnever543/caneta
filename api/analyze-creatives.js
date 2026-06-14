@@ -103,8 +103,21 @@ module.exports = async (req, res) => {
   const base = 'https://graph.facebook.com/v19.0';
   const forceReanalyze = req.query.force === '1';
   const singleCreativeId = req.query.creative_id || null;
+  const debugMode = req.query.debug === '1';
 
   try {
+    // Debug mode: return raw fields from Meta for a specific creative
+    if (debugMode && singleCreativeId) {
+      const r = await fetch(`${base}/${singleCreativeId}?fields=image_hash,image_url,thumbnail_url,object_story_spec,effective_object_story_id&access_token=${token}`);
+      const raw = await r.json();
+      const hash = raw.image_hash || raw.object_story_spec?.link_data?.image_hash;
+      let adimagesResult = null;
+      if (hash) {
+        const ir = await fetch(`${base}/${accountId}/adimages?hashes=["${hash}"]&fields=url,url_128,width,height&access_token=${token}`);
+        adimagesResult = await ir.json();
+      }
+      return res.status(200).json({ raw, adimagesResult });
+    }
     const filterParam = singleCreativeId ? '' : `&filtering=[{"field":"campaign.effective_status","operator":"IN","value":["ACTIVE"]}]`;
     const [adsRes, insightsRes] = await Promise.all([
       fetch(`${base}/${accountId}/ads?fields=id,name,adset_id,campaign_id,status,creative{id,name,image_url,thumbnail_url,object_story_spec}${filterParam}&limit=100&access_token=${token}`),
