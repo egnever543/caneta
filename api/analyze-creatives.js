@@ -91,7 +91,7 @@ module.exports = async (req, res) => {
 
   try {
     const [adsRes, insightsRes] = await Promise.all([
-      fetch(`${base}/${accountId}/ads?fields=id,name,adset_id,campaign_id,status,creative{id,name,image_url,thumbnail_url}&limit=100&access_token=${token}`),
+      fetch(`${base}/${accountId}/ads?fields=id,name,adset_id,campaign_id,status,creative{id,name,image_url,thumbnail_url,object_story_spec}&limit=100&access_token=${token}`),
       fetch(`${base}/${accountId}/insights?fields=ad_id,impressions,clicks,spend,ctr,cpc,reach,frequency&date_preset=last_30d&level=ad&limit=100&access_token=${token}`),
     ]);
 
@@ -108,7 +108,21 @@ module.exports = async (req, res) => {
       const creative = ad.creative;
       if (!creative) continue;
 
-      const imageUrl = creative.image_url || creative.thumbnail_url;
+      // Fetch full-res image directly from creative endpoint
+      let imageUrl = creative.image_url;
+      if (!imageUrl) {
+        try {
+          const creativeRes = await fetch(`${base}/${creative.id}?fields=image_url,thumbnail_url&access_token=${token}`);
+          const creativeJson = await creativeRes.json();
+          imageUrl = creativeJson.image_url || creativeJson.thumbnail_url;
+        } catch(e) {
+          imageUrl = creative.thumbnail_url;
+        }
+      }
+
+      // Save thumbnail separately (low-res, for display in dashboard)
+      const thumbnailUrl = creative.thumbnail_url || imageUrl;
+
       if (!imageUrl) { results.push({ id: creative.id, skipped: 'no_image' }); continue; }
 
       // Check if already analyzed
@@ -133,7 +147,7 @@ module.exports = async (req, res) => {
         adset_id: ad.adset_id,
         campaign_id: ad.campaign_id,
         name: creative.name || ad.name,
-        thumbnail_url: creative.thumbnail_url || creative.image_url,
+        thumbnail_url: thumbnailUrl,
         media_type: 'image',
         impressions: parseInt(insight.impressions || 0),
         clicks: parseInt(insight.clicks || 0),
