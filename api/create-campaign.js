@@ -61,6 +61,7 @@ module.exports = async (req, res) => {
     age_min = 35,
     age_max = 65,
     genders,        // [] = all, [1] = male, [2] = female
+    ad_status = 'PAUSED', // 'PAUSED' | 'ACTIVE'
     // mode=existing fields:
     adset_id,
   } = req.body;
@@ -136,42 +137,37 @@ module.exports = async (req, res) => {
       log.push(`Ad Set criado: ${finalAdsetId}`);
     }
 
-    // ── 4. Create creatives + ads for each format ──
-    const createdAds = [];
-    for (const f of formatDefs) {
-      const hash = imageHashes[f.key];
-      if (!hash) continue;
+    // ── 4. Create ONE creative with all 3 image formats via asset_feed_spec ──
+    const availableHashes = formatDefs
+      .map(f => imageHashes[f.key])
+      .filter(Boolean);
 
-      log.push(`Criando creative ${f.label}...`);
-      const creative = await metaPost(`${accountId}/adcreatives`, {
-        name: `SWF — ${f.label} — ${headline?.slice(0, 30)}`,
-        object_story_spec: {
-          page_id,
-          link_data: {
-            image_hash: hash,
-            link: destination_url,
-            message: body,
-            name: headline,
-            call_to_action: {
-              type: cta_type,
-              value: { link: destination_url },
-            },
-          },
-        },
-      }, token);
+    log.push('Criando creative com os 3 formatos...');
+    const creative = await metaPost(`${accountId}/adcreatives`, {
+      name: `SWF — ${headline?.slice(0, 40)}`,
+      asset_feed_spec: {
+        images: availableHashes.map(hash => ({ hash })),
+        bodies: [{ text: body }],
+        titles: [{ text: headline }],
+        link_urls: [{ website_url: destination_url, display_url: destination_url }],
+        call_to_action_types: [cta_type],
+        ad_formats: ['SINGLE_IMAGE'],
+      },
+      object_story_spec: { page_id },
+    }, token);
+    log.push(`Creative criado: ${creative.id}`);
 
-      log.push(`Criando ad ${f.label}...`);
-      const ad = await metaPost(`${accountId}/ads`, {
-        name: `SWF — ${f.label} — ${headline?.slice(0, 30)}`,
-        adset_id: finalAdsetId,
-        creative: { creative_id: creative.id },
-        status: 'PAUSED',
-      }, token);
+    // ── 5. Create ONE ad referencing the creative ──
+    log.push('Criando anúncio...');
+    const ad = await metaPost(`${accountId}/ads`, {
+      name: `SWF — ${headline?.slice(0, 40)}`,
+      adset_id: finalAdsetId,
+      creative: { creative_id: creative.id },
+      status: ad_status,
+    }, token);
+    const createdAds = [{ ad_id: ad.id, creative_id: creative.id, formats: availableHashes.length }];
 
-      createdAds.push({ format: f.label, ad_id: ad.id, creative_id: creative.id });
-    }
-
-    log.push('Concluído! Todos os anúncios criados como PAUSADOS.');
+    log.push(`Anúncio criado como ${ad_status} com ${availableHashes.length} formato(s).`);
 
     res.status(200).json({
       ok: true,

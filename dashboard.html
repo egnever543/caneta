@@ -703,6 +703,10 @@
     </div>
 
     <div class="modal-actions">
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-muted);cursor:pointer;">
+        <input type="checkbox" id="m-activate" style="width:16px;height:16px;cursor:pointer;"/>
+        Ativar anúncio ao publicar
+      </label>
       <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
       <button class="btn-submit" id="btn-modal-submit" onclick="submitCampaign()">🚀 Publicar Anúncios</button>
     </div>
@@ -1661,6 +1665,7 @@ async function submitCampaign() {
     age_min: parseInt(document.getElementById('m-age-min').value),
     age_max: parseInt(document.getElementById('m-age-max').value),
     genders: genderMap[genderVal],
+    ad_status: document.getElementById('m-activate')?.checked ? 'ACTIVE' : 'PAUSED',
     // existing campaign fields
     adset_id: document.getElementById('m-existing-adset').value || null,
   };
