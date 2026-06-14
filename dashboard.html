@@ -37,7 +37,7 @@
   .kpi.teal .value { color:var(--teal); }
 
   /* Main layout: charts left, events right */
-  .main-grid { display:grid; grid-template-columns:1fr 380px; gap:20px; margin-bottom:20px; align-items:start; }
+  .main-grid { display:grid; grid-template-columns:1fr; gap:20px; margin-bottom:20px; align-items:start; }
   .left-col { display:flex; flex-direction:column; gap:20px; }
 
   /* Charts row — 2 colunas dentro da col esquerda */
@@ -175,7 +175,6 @@
   @media(max-width:1200px) {
     .kpi-grid { grid-template-columns:repeat(4,1fr); }
     .main-grid { grid-template-columns:1fr; }
-    .events-card { max-height:400px; }
     .bottom-grid { grid-template-columns:1fr 1fr; }
     .sources-grid { grid-template-columns:1fr 1fr; }
     .campaign-metrics { grid-template-columns:repeat(3,1fr); }
@@ -402,12 +401,13 @@
 
   </div><!-- /left-col -->
 
-  <!-- Recent Events sidebar -->
-  <div class="events-card">
-    <h3>Recent events</h3>
-    <div id="recent-events"><div class="loading">Loading...</div></div>
-  </div>
 </div><!-- /main-grid -->
+
+<!-- Recent Events — fim do dash -->
+<div class="events-card" style="margin-top:20px;max-height:320px;">
+  <h3>Recent events</h3>
+  <div id="recent-events"><div class="loading">Loading...</div></div>
+</div>
 
 </div><!-- /page-wrap -->
 
