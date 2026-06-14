@@ -111,20 +111,36 @@ module.exports = async (req, res) => {
       if (!creative) continue;
       if (singleCreativeId && creative.id !== singleCreativeId) continue;
 
-      // Fetch full-res image directly from creative endpoint
-      let imageUrl = creative.image_url;
-      if (!imageUrl) {
-        try {
-          const creativeRes = await fetch(`${base}/${creative.id}?fields=image_url,thumbnail_url&access_token=${token}`);
-          const creativeJson = await creativeRes.json();
-          imageUrl = creativeJson.image_url || creativeJson.thumbnail_url;
-        } catch(e) {
-          imageUrl = creative.thumbnail_url;
-        }
-      }
+      // Resolve the actual ad image via image_hash (most reliable)
+      // image_url on the creative can be the page profile picture — avoid it
+      let imageUrl = null;
+      const thumbnailUrl = creative.thumbnail_url || null;
 
-      // Save thumbnail separately (low-res, for display in dashboard)
-      const thumbnailUrl = creative.thumbnail_url || imageUrl;
+      try {
+        // Fetch creative with image_hash and object_story_spec fields
+        const creativeRes = await fetch(
+          `${base}/${creative.id}?fields=image_hash,image_url,thumbnail_url,object_story_spec&access_token=${token}`
+        );
+        const creativeJson = await creativeRes.json();
+
+        // Prefer image_hash → resolve to full URL via adimages endpoint
+        const hash = creativeJson.image_hash
+          || creativeJson.object_story_spec?.link_data?.image_hash
+          || creativeJson.object_story_spec?.video_data?.image_hash;
+
+        if (hash) {
+          const imgRes = await fetch(
+            `${base}/${accountId}/adimages?hashes=["${hash}"]&fields=url,url_128&access_token=${token}`
+          );
+          const imgJson = await imgRes.json();
+          imageUrl = imgJson.data?.[0]?.url || imgJson.data?.[0]?.url_128;
+        }
+
+        // Fallback: thumbnail_url (at least shows the actual ad frame)
+        if (!imageUrl) imageUrl = creativeJson.thumbnail_url;
+      } catch(e) {
+        imageUrl = thumbnailUrl;
+      }
 
       if (!imageUrl) { results.push({ id: creative.id, skipped: 'no_image' }); continue; }
 
