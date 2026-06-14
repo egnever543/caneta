@@ -1555,10 +1555,10 @@ async function generateAdCopy() {
   const headline = document.getElementById('m-headline')?.value || '';
 
   try {
-    const res = await fetch('/api/generate-ad-copy', {
+    const res = await fetch('/api/meta-assets', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ headline, hook_type: hookType, template_used: templateUsed }),
+      body: JSON.stringify({ type: 'ad-copy', headline, hook_type: hookType, template_used: templateUsed }),
     });
     const json = await res.json();
     if (!json.ok) throw new Error(json.error);
