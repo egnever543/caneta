@@ -203,6 +203,10 @@
   .btn-reanalyze { margin-top:10px; padding:4px 10px; font-size:0.72rem; border:1px solid var(--border); border-radius:6px; background:transparent; color:var(--muted); cursor:pointer; }
   .btn-reanalyze:hover { color:var(--text); border-color:var(--text); }
   .btn-reanalyze:disabled { opacity:0.4; cursor:default; }
+  .creative-thumb-wrap { position:relative; cursor:pointer; }
+  .creative-thumb-wrap:hover .thumb-overlay { opacity:1; }
+  .thumb-overlay { position:absolute; inset:0; background:rgba(0,0,0,0.55); display:flex; align-items:center; justify-content:center; opacity:0; transition:opacity 0.18s; font-size:0.75rem; color:#fff; font-weight:600; gap:6px; }
+  .thumb-uploading { position:absolute; inset:0; background:rgba(0,0,0,0.6); display:flex; align-items:center; justify-content:center; color:#fff; font-size:0.75rem; }
   /* Ranking section */
   .ranking-card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:24px; margin-bottom:20px; }
   .ranking-card h3 { font-size:0.85rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.09em; margin-bottom:16px; }
@@ -1259,9 +1263,18 @@ function hookBadge(type) {
 function renderCreatives(list) {
   const sym = campCurrencySym || '$';
   document.getElementById('creatives-grid').innerHTML = list.map(c => {
-    const thumb = c.thumbnail_url
-      ? `<img class="creative-thumb" src="${c.thumbnail_url}" alt="${c.name}" loading="lazy"/>`
-      : `<div class="creative-thumb-placeholder">🖼</div>`;
+    const imgSrc = c.image_url_override || c.thumbnail_url;
+    const thumb = imgSrc
+      ? `<div class="creative-thumb-wrap" onclick="triggerThumbUpload('${c.id}')">
+           <img class="creative-thumb" src="${imgSrc}" alt="${c.name}" loading="lazy"/>
+           <div class="thumb-overlay">📷 Trocar imagem</div>
+           <div class="thumb-uploading" id="thumb-up-${c.id}" style="display:none">Enviando…</div>
+         </div>`
+      : `<div class="creative-thumb-wrap" onclick="triggerThumbUpload('${c.id}')">
+           <div class="creative-thumb-placeholder">🖼</div>
+           <div class="thumb-overlay">📷 Adicionar imagem</div>
+           <div class="thumb-uploading" id="thumb-up-${c.id}" style="display:none">Enviando…</div>
+         </div>`;
     const elements = (c.visual_elements || []).map(e => `<span class="element-tag">${e}</span>`).join('');
     const analyzed = c.analyzed_at;
     return `<div class="creative-card" id="card-${c.id}">
@@ -1286,6 +1299,60 @@ function renderCreatives(list) {
       </div>
     </div>`;
   }).join('');
+}
+
+// Hidden file input for thumbnail upload
+(function() {
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = 'image/*'; inp.style.display = 'none';
+  inp.id = 'thumb-file-input';
+  document.body.appendChild(inp);
+})();
+
+function triggerThumbUpload(creativeId) {
+  const inp = document.getElementById('thumb-file-input');
+  inp.onchange = () => uploadThumbToCloudinary(creativeId, inp.files[0]);
+  inp.value = '';
+  inp.click();
+}
+
+async function uploadThumbToCloudinary(creativeId, file) {
+  if (!file) return;
+  const upEl = document.getElementById(`thumb-up-${creativeId}`);
+  if (upEl) upEl.style.display = 'flex';
+
+  try {
+    const cloudName = 'studio1one';
+    const uploadPreset = '11en9rdsnHqnaOQEs_-pdH4HfT8';
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('upload_preset', uploadPreset);
+    fd.append('folder', 'swf-creatives');
+
+    const r = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, { method: 'POST', body: fd });
+    const json = await r.json();
+    if (!json.secure_url) throw new Error(json.error?.message || 'Upload falhou');
+
+    // Save URL to Supabase
+    const sbUrl = SUPABASE_URL;
+    const sbKey = SUPABASE_KEY;
+    await fetch(`${sbUrl}/rest/v1/creatives?id=eq.${creativeId}`, {
+      method: 'PATCH',
+      headers: { apikey: sbKey, Authorization: `Bearer ${sbKey}`, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+      body: JSON.stringify({ image_url_override: json.secure_url }),
+    });
+
+    // Update card image immediately
+    const card = document.getElementById(`card-${creativeId}`);
+    if (card) {
+      const img = card.querySelector('.creative-thumb');
+      if (img) img.src = json.secure_url;
+    }
+  } catch(e) {
+    alert('Erro ao enviar imagem: ' + e.message);
+  } finally {
+    if (upEl) upEl.style.display = 'none';
+  }
 }
 
 function renderRankings(creatives) {

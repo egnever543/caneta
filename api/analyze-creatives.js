@@ -24,7 +24,7 @@ async function sbUpsert(data) {
 
 async function sbSelect(id) {
   const res = await fetch(
-    `${SUPABASE_URL}/rest/v1/creatives?id=eq.${id}&select=id,analyzed_at`,
+    `${SUPABASE_URL}/rest/v1/creatives?id=eq.${id}&select=id,analyzed_at,image_url_override`,
     { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
   );
   return res.json();
@@ -208,12 +208,15 @@ module.exports = async (req, res) => {
         imageUrl = thumbnailUrl;
       }
 
-      if (!imageUrl) { results.push({ id: creative.id, skipped: 'no_image' }); continue; }
-      console.log(`Creative ${creative.id} — image URL: ${imageUrl}`);
-
-      // Check if already analyzed
+      // Check if already analyzed (also fetches image_url_override)
       const existing = await sbSelect(creative.id);
       const alreadyAnalyzed = existing.length > 0 && existing[0].analyzed_at;
+
+      // Override with manually uploaded image if available
+      if (existing[0]?.image_url_override) imageUrl = existing[0].image_url_override;
+
+      if (!imageUrl) { results.push({ id: creative.id, skipped: 'no_image' }); continue; }
+      console.log(`Creative ${creative.id} — image URL: ${imageUrl}`);
 
       let analysis = null;
       if (forceReanalyze || !alreadyAnalyzed) {
