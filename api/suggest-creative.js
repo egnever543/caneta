@@ -12,11 +12,32 @@ const ALL_ELEMENTS = [
 ];
 
 function score(ctr, cpc, impressions) {
-  // Weighted score: CTR contributes positively, CPC negatively, impressions as confidence weight
-  const confidence = Math.min(impressions / 1000, 1); // 0-1 based on volume
+  const confidence = Math.min(impressions / 1000, 1);
   const ctrScore = (ctr || 0) * 10;
   const cpcPenalty = (cpc || 0) * 2;
   return (ctrScore - cpcPenalty) * confidence;
+}
+
+async function loadCache() {
+  const res = await fetch(
+    `${SUPABASE_URL}/rest/v1/ai_suggestions?id=eq.latest&select=*`,
+    { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
+  );
+  const rows = await res.json();
+  return rows.length > 0 ? rows[0] : null;
+}
+
+async function saveCache(suggestion, math) {
+  await fetch(`${SUPABASE_URL}/rest/v1/ai_suggestions`, {
+    method: 'POST',
+    headers: {
+      apikey: SUPABASE_KEY,
+      Authorization: `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json',
+      Prefer: 'resolution=merge-duplicates,return=minimal',
+    },
+    body: JSON.stringify([{ id: 'latest', suggestion, math, created_at: new Date().toISOString() }]),
+  });
 }
 
 module.exports = async (req, res) => {
@@ -24,8 +45,24 @@ module.exports = async (req, res) => {
   res.setHeader('Cache-Control', 'no-store');
   if (req.method !== 'GET' && req.method !== 'POST') return res.status(405).end();
 
+  const force = req.query.force === '1';
+
   try {
-    // Fetch all analyzed creatives with performance data
+    // Return cached suggestion unless force=1
+    if (!force) {
+      const cached = await loadCache();
+      if (cached) {
+        return res.status(200).json({
+          ok: true,
+          cached: true,
+          cached_at: cached.created_at,
+          math: cached.math,
+          suggestion: cached.suggestion,
+        });
+      }
+    }
+
+    // Fetch all analyzed creatives
     const sbRes = await fetch(
       `${SUPABASE_URL}/rest/v1/creatives?analyzed_at=not.is.null&select=*`,
       { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
@@ -49,8 +86,7 @@ module.exports = async (req, res) => {
     });
     const hookRanked = Object.entries(hookStats)
       .map(([h, s]) => ({
-        hook: h,
-        count: s.count,
+        hook: h, count: s.count,
         avgCtr: s.ctrSum / s.count,
         avgCpc: s.cpcSum / s.count,
         score: score(s.ctrSum / s.count, s.cpcSum / s.count, s.imprSum / s.count),
@@ -72,8 +108,7 @@ module.exports = async (req, res) => {
     });
     const elRanked = Object.entries(elStats)
       .map(([el, s]) => ({
-        element: el,
-        count: s.count,
+        element: el, count: s.count,
         avgCtr: s.ctrSum / s.count,
         avgCpc: s.cpcSum / s.count,
         score: score(s.ctrSum / s.count, s.cpcSum / s.count, s.imprSum / s.count),
@@ -88,15 +123,9 @@ module.exports = async (req, res) => {
       .sort((a, b) => score(b.ctr, b.cpc, b.impressions) - score(a.ctr, a.cpc, a.impressions))
       .slice(0, 3)
       .map(c => ({
-        name: c.name,
-        hook: c.hook,
-        hook_type: c.hook_type,
-        elements: c.visual_elements,
-        tone: c.tone,
-        ctr: c.ctr,
-        cpc: c.cpc,
-        impressions: c.impressions,
-        notes: c.analysis_notes,
+        name: c.name, hook: c.hook, hook_type: c.hook_type,
+        elements: c.visual_elements, tone: c.tone,
+        ctr: c.ctr, cpc: c.cpc, impressions: c.impressions, notes: c.analysis_notes,
       }));
 
     const mathSummary = {
@@ -117,7 +146,7 @@ Público: EUA, 35-65 anos, maioria mulheres com dores relacionadas ao medo de in
 
 ## Dados de Performance (${mathSummary.total_creatives} criativos analisados)
 
-### Ranking de Hook Types por Score (CTR vs CPC ponderado por volume)
+### Ranking de Hook Types por Score
 ${mathSummary.hooks_ranked.map(h => `- ${h.hook}: CTR ${h.avgCtr.toFixed(2)}% | CPC $${h.avgCpc.toFixed(2)} | ${h.count} criativos | score ${h.score.toFixed(2)}`).join('\n') || 'Sem dados suficientes'}
 
 ### Ranking de Elementos Visuais por Score
@@ -134,20 +163,14 @@ ${mathSummary.untested_elements.length ? mathSummary.untested_elements.join(', '
 
 ## Sua Tarefa
 
-Gere dois outputs:
-
-1. **PROMPT CAMPEÃO**: Combinando os elementos e hooks com melhor performance, crie um prompt detalhado para geração de imagem (Midjourney/DALL-E). O prompt deve descrever a imagem exata a ser criada.
-
-2. **PROMPT TESTE**: Usando hooks ou elementos ainda não validados com maior potencial teórico para este produto/público, crie um prompt de imagem para um criativo de teste A/B.
-
-Responda em JSON exato:
+Gere dois outputs em JSON exato:
 {
   "champion": {
     "rationale": "Por que esta combinação deve ganhar — 2-3 frases baseadas nos dados",
     "elements_used": ["elemento1", "elemento2"],
     "hook_type": "tipo_de_hook",
     "hook_text": "texto do hook sugerido para o anúncio",
-    "image_prompt": "prompt completo em inglês para geração de imagem, muito detalhado, pronto para colar no Midjourney ou DALL-E"
+    "image_prompt": "prompt completo em inglês para geração de imagem, muito detalhado"
   },
   "test": {
     "rationale": "O que este teste vai validar e por que vale rodar — 2-3 frases",
@@ -170,7 +193,10 @@ Responda em JSON exato:
     if (!match) throw new Error('Claude did not return valid JSON');
     const suggestion = JSON.parse(match[0]);
 
-    res.status(200).json({ ok: true, math: mathSummary, suggestion });
+    // Save to cache
+    await saveCache(suggestion, mathSummary);
+
+    res.status(200).json({ ok: true, cached: false, math: mathSummary, suggestion });
   } catch (err) {
     console.error('suggest-creative error:', err.message);
     res.status(500).json({ error: err.message });

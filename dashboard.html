@@ -471,11 +471,20 @@
         <h3>Sugestor de Criativo <span class="ai-badge">IA</span></h3>
         <p style="font-size:0.78rem;color:var(--muted);margin-top:4px;">Combina os dados de performance para sugerir o próximo criativo campeão e um teste de hipótese.</p>
       </div>
-      <button class="btn-refresh" id="btn-suggest" onclick="runSuggestion()">✦ Gerar Sugestões</button>
+      <button class="btn-refresh" id="btn-suggest" onclick="runSuggestion()">✦ Regerar Sugestões</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap;">
+      <span id="suggest-status" style="font-size:0.75rem;color:var(--muted);"></span>
+      <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+        <label style="font-size:0.75rem;color:var(--muted);">Modelo de imagem:</label>
+        <select id="image-model-select" style="background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:4px 8px;font-size:0.75rem;">
+          <option value="">Carregando...</option>
+        </select>
+      </div>
     </div>
     <div id="suggest-content">
       <div style="color:var(--muted);font-size:0.84rem;text-align:center;padding:32px;">
-        Clique em "Gerar Sugestões" após analisar os criativos para obter os prompts otimizados por dados.
+        Carregando sugestões salvas...
       </div>
     </div>
   </div>
@@ -1125,20 +1134,58 @@ async function runCreativeAnalysis() {
   }
 }
 
-async function runSuggestion() {
-  const btn = document.getElementById('btn-suggest');
-  btn.disabled = true; btn.textContent = '⏳ Calculando...';
-  document.getElementById('suggest-content').innerHTML = '<div class="loading">Analisando performance e gerando sugestões com IA...</div>';
+async function loadSuggestion() {
   try {
     const res = await fetch('/api/suggest-creative?t=' + Date.now());
     const json = await res.json();
+    if (!json.ok) return;
+    const when = json.cached_at ? ' · salvo ' + new Date(json.cached_at).toLocaleDateString('pt-BR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '';
+    document.getElementById('suggest-status').textContent = json.cached ? `Cache${when}` : 'Gerado agora';
+    renderSuggestion(json.suggestion);
+  } catch(e) { console.error('loadSuggestion:', e); }
+}
+
+async function runSuggestion() {
+  const btn = document.getElementById('btn-suggest');
+  btn.disabled = true; btn.textContent = '⏳ Calculando...';
+  document.getElementById('suggest-status').textContent = '';
+  document.getElementById('suggest-content').innerHTML = '<div class="loading">Analisando performance e gerando sugestões com IA...</div>';
+  try {
+    const res = await fetch('/api/suggest-creative?force=1&t=' + Date.now());
+    const json = await res.json();
     if (!json.ok) throw new Error(json.error);
+    document.getElementById('suggest-status').textContent = 'Gerado agora';
     renderSuggestion(json.suggestion);
   } catch(e) {
     document.getElementById('suggest-content').innerHTML = `<div class="loading" style="color:#ff7070">Erro: ${e.message}</div>`;
   } finally {
-    btn.disabled = false; btn.textContent = '✦ Gerar Sugestões';
+    btn.disabled = false; btn.textContent = '✦ Regerar Sugestões';
   }
+}
+
+async function loadImageModels() {
+  try {
+    const res = await fetch('/api/list-models?t=' + Date.now());
+    const json = await res.json();
+    const sel = document.getElementById('image-model-select');
+    if (!sel) return;
+    // Filter to image-generation capable models
+    const candidates = (json.image_related || []).filter(m =>
+      m.methods && (m.methods.includes('generateContent') || m.methods.includes('predict'))
+    );
+    if (!candidates.length) {
+      sel.innerHTML = '<option value="">Nenhum modelo disponível</option>';
+      return;
+    }
+    const saved = localStorage.getItem('image_model') || '';
+    sel.innerHTML = candidates.map(m => {
+      const id = m.name.replace('models/', '');
+      const selected = (saved ? id === saved : candidates.indexOf(m) === 0) ? 'selected' : '';
+      return `<option value="${id}" ${selected}>${m.displayName || id}</option>`;
+    }).join('');
+    if (!saved) localStorage.setItem('image_model', sel.value);
+    sel.onchange = () => localStorage.setItem('image_model', sel.value);
+  } catch(e) { console.error('loadImageModels:', e); }
 }
 
 function renderSuggestion(s) {
@@ -1188,7 +1235,7 @@ async function generateImage(type) {
     const res = await fetch('/api/generate-image', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt, aspectRatio: '1:1' }),
+      body: JSON.stringify({ prompt, aspectRatio: '1:1', model: localStorage.getItem('image_model') || '' }),
     });
     const json = await res.json();
     if (!json.ok) throw new Error(json.error);
@@ -1223,6 +1270,8 @@ loadAll();
 loadReport();
 loadCampaigns();
 loadCreatives();
+loadSuggestion();
+loadImageModels();
 setInterval(loadAll, 30000); // auto-refresh every 30s
 </script>
 </body>

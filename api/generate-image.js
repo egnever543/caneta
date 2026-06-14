@@ -5,7 +5,7 @@ module.exports = async (req, res) => {
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).end();
 
-  const { prompt, aspectRatio = '1:1' } = req.body;
+  const { prompt, aspectRatio = '1:1', model = 'gemini-2.0-flash-exp' } = req.body;
   if (!prompt) return res.status(400).json({ error: 'prompt is required' });
 
   const apiKey = process.env.GOOGLE_AI_KEY;
@@ -13,7 +13,7 @@ module.exports = async (req, res) => {
 
   try {
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

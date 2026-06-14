@@ -10,21 +10,31 @@ module.exports = async (req, res) => {
   );
   const json = await response.json();
 
-  // Filter to only image-generation capable models
-  const imageModels = (json.models || []).filter(m =>
-    m.name.includes('imagen') ||
-    m.name.includes('image') ||
-    (m.supportedGenerationMethods || []).includes('predict') ||
+  const all = json.models || [];
+
+  // Models that can generate content (images or text+images)
+  const imageRelated = all.filter(m =>
+    m.name.toLowerCase().includes('imagen') ||
+    m.name.toLowerCase().includes('image') ||
+    m.displayName?.toLowerCase().includes('image')
+  );
+
+  // All generateContent-capable models (potential image output via modalities)
+  const generateContent = all.filter(m =>
     (m.supportedGenerationMethods || []).includes('generateContent')
   );
 
   res.status(200).json({
-    total: (json.models || []).length,
-    image_related: imageModels.map(m => ({
+    total: all.length,
+    image_related: imageRelated.map(m => ({
       name: m.name,
       displayName: m.displayName,
       methods: m.supportedGenerationMethods,
     })),
-    all_names: (json.models || []).map(m => m.name),
+    generate_content_capable: generateContent.map(m => ({
+      name: m.name,
+      displayName: m.displayName,
+    })),
+    all_names: all.map(m => m.name),
   });
 };
