@@ -21,6 +21,9 @@ module.exports = async (req, res) => {
       adsetsRes.json(),
     ]);
 
+    console.log('META campaigns raw:', JSON.stringify(campaigns).slice(0, 300));
+    console.log('META token prefix:', (process.env.META_ACCESS_TOKEN || '').slice(0, 20));
+
     // Merge insights into campaigns
     const insightMap = {};
     (insights.data || []).forEach(i => { insightMap[i.campaign_id] = i; });
