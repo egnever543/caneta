@@ -146,6 +146,31 @@
   .sources-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; margin-top:20px; }
   td.ctr-num { text-align:right; color:var(--gold); font-weight:600; }
 
+  /* Campaign analytics */
+  .camp-analytics-card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:24px; margin-top:20px; }
+  .camp-analytics-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:12px; }
+  .camp-analytics-header h3 { font-size:0.85rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.09em; }
+  .period-btns { display:flex; gap:6px; }
+  .period-btn { padding:5px 14px; border-radius:8px; font-size:0.78rem; font-weight:600; cursor:pointer; border:1px solid var(--border); background:transparent; color:var(--muted); transition:all .15s; }
+  .period-btn.active { border-color:var(--teal); color:var(--teal); background:rgba(92,156,143,0.08); }
+  .camp-kpi-grid { display:grid; grid-template-columns:repeat(6,1fr); gap:12px; margin-bottom:20px; }
+  .camp-kpi { background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:12px; padding:16px 14px; text-align:center; }
+  .camp-kpi .ck-label { font-size:0.65rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:6px; }
+  .camp-kpi .ck-value { font-size:1.4rem; font-weight:700; color:var(--text); line-height:1; }
+  .camp-kpi .ck-value.gold { color:var(--gold); }
+  .camp-kpi .ck-value.teal { color:var(--teal); }
+  .camp-chart-wrap { border-radius:12px; overflow:hidden; margin-bottom:20px; }
+  .camp-daily-table { width:100%; border-collapse:collapse; font-size:0.82rem; }
+  .camp-daily-table thead th { font-size:0.65rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.07em; padding:8px 10px; border-bottom:1px solid var(--border); text-align:right; }
+  .camp-daily-table thead th:first-child { text-align:left; }
+  .camp-daily-table tbody td { padding:9px 10px; border-bottom:1px solid rgba(255,255,255,0.04); color:var(--text); text-align:right; }
+  .camp-daily-table tbody td:first-child { text-align:left; color:var(--muted); font-size:0.78rem; }
+  .camp-daily-table tbody tr:last-child td { border-bottom:none; }
+  .camp-daily-table .td-spend { color:var(--gold); font-weight:600; }
+  .camp-daily-table .td-ctr { color:var(--teal); }
+  @media(max-width:1200px) { .camp-kpi-grid { grid-template-columns:repeat(3,1fr); } }
+  @media(max-width:768px) { .camp-kpi-grid { grid-template-columns:repeat(2,1fr); } }
+
   /* Responsive: tablet */
   @media(max-width:1200px) {
     .kpi-grid { grid-template-columns:repeat(4,1fr); }
@@ -313,6 +338,45 @@
           <tbody id="table-mediums"><tr><td colspan="4" class="loading">Loading...</td></tr></tbody>
         </table>
       </div>
+    </div>
+
+    <!-- Campaign Analytics -->
+    <div class="camp-analytics-card">
+      <div class="camp-analytics-header">
+        <h3>Analytics de Campanhas <span style="color:var(--teal);font-size:0.7rem;margin-left:6px;">Meta Ads</span></h3>
+        <div class="period-btns">
+          <button class="period-btn active" onclick="setCampPeriod(7,this)">7d</button>
+          <button class="period-btn" onclick="setCampPeriod(14,this)">14d</button>
+          <button class="period-btn" onclick="setCampPeriod(30,this)">30d</button>
+        </div>
+      </div>
+      <!-- KPI summary row -->
+      <div class="camp-kpi-grid" id="camp-kpi-grid">
+        <div class="camp-kpi"><div class="ck-label">Gasto</div><div class="ck-value gold" id="ck-spend">—</div></div>
+        <div class="camp-kpi"><div class="ck-label">Impressões</div><div class="ck-value" id="ck-impr">—</div></div>
+        <div class="camp-kpi"><div class="ck-label">Alcance</div><div class="ck-value" id="ck-reach">—</div></div>
+        <div class="camp-kpi"><div class="ck-label">Cliques</div><div class="ck-value teal" id="ck-clicks">—</div></div>
+        <div class="camp-kpi"><div class="ck-label">CTR</div><div class="ck-value" id="ck-ctr">—</div></div>
+        <div class="camp-kpi"><div class="ck-label">CPC</div><div class="ck-value" id="ck-cpc">—</div></div>
+      </div>
+      <!-- Trend chart -->
+      <div class="camp-chart-wrap">
+        <canvas id="camp-trend-chart" height="90"></canvas>
+      </div>
+      <!-- Daily table -->
+      <table class="camp-daily-table">
+        <thead><tr>
+          <th>Data</th>
+          <th>Gasto</th>
+          <th>Impressões</th>
+          <th>Alcance</th>
+          <th>Cliques</th>
+          <th>CTR</th>
+          <th>CPC</th>
+          <th>CPM</th>
+        </tr></thead>
+        <tbody id="camp-daily-tbody"><tr><td colspan="8" class="loading">Carregando...</td></tr></tbody>
+      </table>
     </div>
 
     <!-- Campaigns -->
@@ -570,20 +634,126 @@ async function runReport() {
 
 // Campaigns
 const PAGE_SIZE = 5;
-let allCampaigns = [], campPage = 0;
+let allCampaigns = [], campPage = 0, campPeriodDays = 7;
+let campTrendChart = null;
+
+function setCampPeriod(days, btn) {
+  campPeriodDays = days;
+  document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  loadCampaigns();
+}
 
 async function loadCampaigns() {
   document.getElementById('campaigns-content').innerHTML = '<div class="loading">Carregando campanhas...</div>';
+  document.getElementById('camp-daily-tbody').innerHTML = '<tr><td colspan="8" class="loading">Carregando...</td></tr>';
   try {
-    const res = await fetch('/api/meta-insights?t=' + Date.now());
+    const res = await fetch('/api/meta-insights?t=' + Date.now() + '&days=' + campPeriodDays);
     const json = await res.json();
     if (!json.ok) throw new Error(json.error);
     allCampaigns = json.campaigns;
     campPage = 0;
     renderCampaigns();
+    renderCampAnalytics(json.daily || []);
   } catch (e) {
     document.getElementById('campaigns-content').innerHTML = `<div class="loading" style="color:#ff7070">Erro: ${e.message}</div>`;
+    document.getElementById('camp-daily-tbody').innerHTML = `<tr><td colspan="8" style="color:#ff7070;padding:16px">Erro: ${e.message}</td></tr>`;
   }
+}
+
+function renderCampAnalytics(daily) {
+  // Aggregate totals
+  const totSpend  = daily.reduce((s, d) => s + parseFloat(d.spend || 0), 0);
+  const totImpr   = daily.reduce((s, d) => s + parseInt(d.impressions || 0), 0);
+  const totReach  = daily.reduce((s, d) => s + parseInt(d.reach || 0), 0);
+  const totClicks = daily.reduce((s, d) => s + parseInt(d.clicks || 0), 0);
+  const avgCtr    = totImpr ? (totClicks / totImpr * 100) : 0;
+  const avgCpc    = totClicks ? (totSpend / totClicks) : 0;
+
+  document.getElementById('ck-spend').textContent  = totSpend  ? '$' + totSpend.toFixed(2) : '—';
+  document.getElementById('ck-impr').textContent   = totImpr   ? totImpr.toLocaleString('pt-BR') : '—';
+  document.getElementById('ck-reach').textContent  = totReach  ? totReach.toLocaleString('pt-BR') : '—';
+  document.getElementById('ck-clicks').textContent = totClicks ? totClicks.toLocaleString('pt-BR') : '—';
+  document.getElementById('ck-ctr').textContent    = totImpr   ? avgCtr.toFixed(2) + '%' : '—';
+  document.getElementById('ck-cpc').textContent    = totClicks ? '$' + avgCpc.toFixed(2) : '—';
+
+  // Chart
+  const labels = daily.map(d => {
+    const [,m,day] = d.date_start.split('-');
+    return `${day}/${m}`;
+  });
+  const spendData  = daily.map(d => parseFloat(d.spend || 0));
+  const clicksData = daily.map(d => parseInt(d.clicks || 0));
+
+  const ctx = document.getElementById('camp-trend-chart').getContext('2d');
+  if (campTrendChart) campTrendChart.destroy();
+  campTrendChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'Gasto ($)',
+          data: spendData,
+          backgroundColor: 'rgba(206,155,76,0.4)',
+          borderColor: '#CE9B4C',
+          borderWidth: 1,
+          yAxisID: 'ySpend',
+          order: 2,
+        },
+        {
+          label: 'Cliques',
+          data: clicksData,
+          type: 'line',
+          borderColor: '#5C9C8F',
+          backgroundColor: 'rgba(92,156,143,0.1)',
+          borderWidth: 2,
+          pointRadius: 3,
+          tension: 0.3,
+          fill: true,
+          yAxisID: 'yClicks',
+          order: 1,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      interaction: { mode: 'index', intersect: false },
+      plugins: { legend: { labels: { color: '#7A8FA6', font: { size: 11 } } } },
+      scales: {
+        x: { ticks: { color: '#7A8FA6', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.05)' } },
+        ySpend:  { position: 'left',  ticks: { color: '#CE9B4C', font: { size: 10 }, callback: v => '$'+v.toFixed(0) }, grid: { color: 'rgba(255,255,255,0.05)' } },
+        yClicks: { position: 'right', ticks: { color: '#5C9C8F', font: { size: 10 } }, grid: { display: false } },
+      },
+    },
+  });
+
+  // Daily table
+  if (!daily.length) {
+    document.getElementById('camp-daily-tbody').innerHTML = '<tr><td colspan="8" class="loading">Sem dados no período</td></tr>';
+    return;
+  }
+  const rows = [...daily].reverse().map(d => {
+    const spend  = parseFloat(d.spend || 0);
+    const impr   = parseInt(d.impressions || 0);
+    const reach  = parseInt(d.reach || 0);
+    const clicks = parseInt(d.clicks || 0);
+    const ctr    = parseFloat(d.ctr || 0);
+    const cpc    = parseFloat(d.cpc || 0);
+    const cpm    = parseFloat(d.cpm || 0);
+    const [,m,day] = d.date_start.split('-');
+    return `<tr>
+      <td>${day}/${m}</td>
+      <td class="td-spend">${spend ? '$'+spend.toFixed(2) : '—'}</td>
+      <td>${impr ? impr.toLocaleString('pt-BR') : '—'}</td>
+      <td>${reach ? reach.toLocaleString('pt-BR') : '—'}</td>
+      <td>${clicks || '—'}</td>
+      <td class="td-ctr">${ctr ? ctr.toFixed(2)+'%' : '—'}</td>
+      <td>${cpc ? '$'+cpc.toFixed(2) : '—'}</td>
+      <td>${cpm ? '$'+cpm.toFixed(2) : '—'}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('camp-daily-tbody').innerHTML = rows;
 }
 
 function fmt(n, prefix='') {

@@ -7,18 +7,24 @@ module.exports = async (req, res) => {
   const rawId = process.env.META_AD_ACCOUNT_ID || '';
   const accountId = rawId.startsWith('act_') ? rawId : `act_${rawId}`;
   const base = 'https://graph.facebook.com/v19.0';
+  const days = parseInt(req.query.days || '7', 10);
+  const datePreset = days === 30 ? 'last_30d' : days === 14 ? 'last_14d' : 'last_7d';
+
+  const insightFields = 'campaign_id,campaign_name,impressions,clicks,spend,cpm,cpc,ctr,reach,actions';
 
   try {
-    const [campaignsRes, insightsRes, adsetsRes, adsRes] = await Promise.all([
+    const [campaignsRes, insightsRes, dailyRes, adsetsRes, adsRes] = await Promise.all([
       fetch(`${base}/${accountId}/campaigns?fields=id,name,status,daily_budget,lifetime_budget,objective&limit=50&access_token=${token}`),
-      fetch(`${base}/${accountId}/insights?fields=campaign_id,impressions,clicks,spend,cpm,cpc,ctr,reach,actions&date_preset=last_7d&level=campaign&limit=50&access_token=${token}`),
+      fetch(`${base}/${accountId}/insights?fields=${insightFields}&date_preset=${datePreset}&level=campaign&limit=50&access_token=${token}`),
+      fetch(`${base}/${accountId}/insights?fields=${insightFields}&date_preset=${datePreset}&time_increment=1&level=account&limit=100&access_token=${token}`),
       fetch(`${base}/${accountId}/adsets?fields=id,name,status,daily_budget,campaign_id&limit=100&access_token=${token}`),
       fetch(`${base}/${accountId}/ads?fields=id,name,status,adset_id,campaign_id,creative{id,name,thumbnail_url}&limit=100&access_token=${token}`),
     ]);
 
-    const [campaigns, insights, adsets, ads] = await Promise.all([
+    const [campaigns, insights, daily, adsets, ads] = await Promise.all([
       campaignsRes.json(),
       insightsRes.json(),
+      dailyRes.json(),
       adsetsRes.json(),
       adsRes.json(),
     ]);
@@ -37,7 +43,10 @@ module.exports = async (req, res) => {
       ads: (ads.data || []).filter(a => a.campaign_id === c.id),
     }));
 
-    res.status(200).json({ ok: true, campaigns: merged });
+    // Daily totals sorted by date
+    const dailySorted = (daily.data || []).sort((a, b) => a.date_start.localeCompare(b.date_start));
+
+    res.status(200).json({ ok: true, campaigns: merged, daily: dailySorted });
   } catch (err) {
     console.error('Meta insights error:', err.message);
     res.status(500).json({ error: err.message });
