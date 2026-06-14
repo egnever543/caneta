@@ -137,23 +137,23 @@ module.exports = async (req, res) => {
       log.push(`Ad Set criado: ${finalAdsetId}`);
     }
 
-    // ── 4. Create ONE creative with all 3 image formats via asset_feed_spec ──
-    const availableHashes = formatDefs
-      .map(f => imageHashes[f.key])
-      .filter(Boolean);
+    // ── 4. Create ONE creative — use reels (9:16) as primary, fallback to feed ──
+    const primaryHash = imageHashes.reels || imageHashes.feed || Object.values(imageHashes)[0];
+    if (!primaryHash) throw new Error('Nenhuma imagem disponível para criar o creative');
 
-    log.push('Criando creative com os 3 formatos...');
+    log.push('Criando creative...');
     const creative = await metaPost(`${accountId}/adcreatives`, {
       name: `SWF — ${headline?.slice(0, 40)}`,
-      asset_feed_spec: {
-        images: availableHashes.map(hash => ({ hash })),
-        bodies: [{ text: body }],
-        titles: [{ text: headline }],
-        link_urls: [{ website_url: destination_url, display_url: destination_url }],
-        call_to_action_types: [cta_type],
-        ad_formats: ['SINGLE_IMAGE'],
+      object_story_spec: {
+        page_id,
+        link_data: {
+          image_hash: primaryHash,
+          link: destination_url,
+          message: body,
+          name: headline,
+          call_to_action: { type: cta_type, value: { link: destination_url } },
+        },
       },
-      object_story_spec: { page_id },
     }, token);
     log.push(`Creative criado: ${creative.id}`);
 
