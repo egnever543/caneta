@@ -35,13 +35,7 @@ async function fetchImageBase64(url, token) {
   try {
     const parsed = new URL(url);
     const inner = parsed.searchParams.get('url');
-    if (inner) {
-      fetchUrl = decodeURIComponent(inner);
-    } else {
-      // Remove the `stp` resize parameter (e.g. p64x64) to get full-resolution from Facebook CDN
-      parsed.searchParams.delete('stp');
-      fetchUrl = parsed.toString();
-    }
+    if (inner) fetchUrl = decodeURIComponent(inner);
   } catch(_) {}
 
   // Append access token if it's a facebook.com URL (requires auth)
