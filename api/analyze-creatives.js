@@ -170,7 +170,6 @@ module.exports = async (req, res) => {
           const imgJson = await imgRes.json();
           const img = imgJson.data?.[0];
           console.log(`Creative ${creative.id} adimages result:`, JSON.stringify(img));
-          // url field should be full-res; skip if it looks like a thumbnail (contains p64x64 etc)
           if (img?.url && !img.url.includes('p64x64') && !img.url.includes('p128x128')) {
             hashUrl = img.url;
           } else if (img?.url_128) {
@@ -178,8 +177,20 @@ module.exports = async (req, res) => {
           }
         }
 
-        // Priority: picture from story spec > hash URL > image_url from creative > thumbnail
-        imageUrl = picture || hashUrl || c.image_url || thumbnailUrl;
+        // 3. Fetch full_picture from the Facebook post via effective_object_story_id
+        let postPicture = null;
+        const postId = c.effective_object_story_id;
+        if (!picture && !hashUrl && postId) {
+          const postRes = await fetch(
+            `${base}/${postId}?fields=full_picture&access_token=${token}`
+          );
+          const postJson = await postRes.json();
+          console.log(`Creative ${creative.id} post full_picture:`, postJson.full_picture?.slice(0, 80));
+          if (postJson.full_picture) postPicture = postJson.full_picture;
+        }
+
+        // Priority: picture from story spec > hash URL > post full_picture > image_url > thumbnail
+        imageUrl = picture || hashUrl || postPicture || c.image_url || thumbnailUrl;
       } catch(e) {
         console.error(`Creative ${creative.id} image resolve error:`, e.message);
         imageUrl = thumbnailUrl;
