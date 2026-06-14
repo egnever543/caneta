@@ -565,7 +565,7 @@ async function runReport() {
 async function loadCampaigns() {
   document.getElementById('campaigns-content').innerHTML = '<div class="loading">Carregando campanhas...</div>';
   try {
-    const res = await fetch('/api/meta-insights');
+    const res = await fetch('/api/meta-insights?t=' + Date.now());
     const json = await res.json();
     if (!json.ok) throw new Error(json.error);
     renderCampaigns(json.campaigns);

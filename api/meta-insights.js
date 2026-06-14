@@ -1,5 +1,6 @@
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Cache-Control', 'no-store');
   if (req.method !== 'GET') return res.status(405).end();
 
   const token = process.env.META_ACCESS_TOKEN;
