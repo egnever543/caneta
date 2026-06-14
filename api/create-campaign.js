@@ -89,6 +89,8 @@ module.exports = async (req, res) => {
     let finalCampaignId;
     let finalAdsetId = adset_id;
 
+    const createdAds = [];
+
     if (mode === 'new') {
       log.push('Criando campanha...');
       const camp = await metaPost(`${accountId}/campaigns`, {
@@ -100,13 +102,9 @@ module.exports = async (req, res) => {
       finalCampaignId = camp.id;
       log.push(`Campanha criada: ${finalCampaignId}`);
 
-      // ── 3. Create 3 adsets with fixed placements + 1 ad each ──
       const budgetCents = Math.round(parseFloat(daily_budget) * 100);
-      const startTs = start_time
-        ? new Date(start_time + 'T00:00:00Z').toISOString()
-        : new Date().toISOString();
+      const startTs = start_time ? new Date(start_time + 'T00:00:00Z').toISOString() : new Date().toISOString();
       const endTs = end_time ? new Date(end_time + 'T23:59:59Z').toISOString() : null;
-
       const baseTargeting = {
         geo_locations: { countries: Array.isArray(countries) ? countries : [countries] },
         age_min: parseInt(age_min) || 35,
@@ -114,28 +112,17 @@ module.exports = async (req, res) => {
         ...(Array.isArray(genders) && genders.length ? { genders } : {}),
       };
 
-      // Each format gets its own adset with locked placement
       const FORMAT_ADSETS = [
-        {
-          key: 'feed',
-          label: 'Feed 1:1',
-          placement: { facebook_positions: ['feed'], publisher_platforms: ['facebook'] },
-        },
-        {
-          key: 'reels',
-          label: 'Reels 9:16',
-          placement: { instagram_positions: ['reels'], publisher_platforms: ['instagram'] },
-        },
-        {
-          key: 'audience',
-          label: 'Audience 16:9',
-          placement: { audience_network_positions: ['classic'], publisher_platforms: ['audience_network'] },
-        },
+        { key: 'feed',     label: 'Feed 1:1',      placement: { facebook_positions: ['feed'], publisher_platforms: ['facebook'] } },
+        { key: 'reels',    label: 'Reels 9:16',    placement: { instagram_positions: ['reels'], publisher_platforms: ['instagram'] } },
+        { key: 'audience', label: 'Audience 16:9', placement: { audience_network_positions: ['classic'], publisher_platforms: ['audience_network'] } },
       ];
 
-      const createdAdsets = [];
       for (const fmt of FORMAT_ADSETS) {
-        if (!imageHashes[fmt.key]) continue;
+        const hash = imageHashes[fmt.key];
+        if (!hash) continue;
+
+        // ── Adset ──
         log.push(`Criando ad set ${fmt.label}...`);
         const adsetPayload = {
           name: `${campaign_name || 'SWF'} — ${fmt.label}`,
@@ -150,25 +137,10 @@ module.exports = async (req, res) => {
         if (endTs) adsetPayload.end_time = endTs;
         if (pixel_id) adsetPayload.promoted_object = { pixel_id, custom_event_type: 'PURCHASE' };
         const adset = await metaPost(`${accountId}/adsets`, adsetPayload, token);
-        createdAdsets.push({ ...fmt, adset_id: adset.id });
-        log.push(`Ad Set ${fmt.label} criado: ${adset.id}`);
-      }
-      finalAdsetId = createdAdsets[0]?.adset_id;
-    }
+        if (!finalAdsetId) finalAdsetId = adset.id;
+        log.push(`Ad Set criado: ${adset.id}`);
 
-    // ── 4. Create creative + ad per format (mode=new: 3 adsets; mode=existing: 1 adset) ──
-    const createdAds = [];
-
-    if (mode === 'new') {
-      // 3 adsets already created above — one ad per adset with matching image
-      const adsetList = [];
-      // Re-read from log is messy; instead rebuild from imageHashes
-      // We need the adset IDs — they were created in the loop above
-      // Access via a closure variable set during adset creation
-      // (createdAdsets is already populated)
-      for (const fmt of (typeof createdAdsets !== 'undefined' ? createdAdsets : [])) {
-        const hash = imageHashes[fmt.key];
-        if (!hash) continue;
+        // ── Creative ──
         log.push(`Criando creative ${fmt.label}...`);
         const creative = await metaPost(`${accountId}/adcreatives`, {
           name: `SWF — ${fmt.label} — ${headline?.slice(0, 30)}`,
@@ -183,10 +155,12 @@ module.exports = async (req, res) => {
             },
           },
         }, token);
+
+        // ── Ad ──
         log.push(`Criando anúncio ${fmt.label}...`);
         const ad = await metaPost(`${accountId}/ads`, {
           name: `SWF — ${fmt.label} — ${headline?.slice(0, 30)}`,
-          adset_id: fmt.adset_id,
+          adset_id: adset.id,
           creative: { creative_id: creative.id },
           status: ad_status,
         }, token);
