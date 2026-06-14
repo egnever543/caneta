@@ -634,7 +634,7 @@ async function runReport() {
 
 // Campaigns
 const PAGE_SIZE = 5;
-let allCampaigns = [], campPage = 0, campPeriodDays = 7;
+let allCampaigns = [], campPage = 0, campPeriodDays = 7, campCurrencySym = '$';
 let campTrendChart = null;
 
 function setCampPeriod(days, btn) {
@@ -653,15 +653,19 @@ async function loadCampaigns() {
     if (!json.ok) throw new Error(json.error);
     allCampaigns = json.campaigns;
     campPage = 0;
+    const cur = json.currency || 'USD';
+    campCurrencySym = cur === 'BRL' ? 'R$' : cur === 'EUR' ? '€' : '$';
     renderCampaigns();
-    renderCampAnalytics(json.daily || []);
+    renderCampAnalytics(json.daily || [], cur);
   } catch (e) {
     document.getElementById('campaigns-content').innerHTML = `<div class="loading" style="color:#ff7070">Erro: ${e.message}</div>`;
     document.getElementById('camp-daily-tbody').innerHTML = `<tr><td colspan="8" style="color:#ff7070;padding:16px">Erro: ${e.message}</td></tr>`;
   }
 }
 
-function renderCampAnalytics(daily) {
+function renderCampAnalytics(daily, currency) {
+  const sym = currency === 'BRL' ? 'R$' : currency === 'EUR' ? '€' : '$';
+  const fmtMoney = v => v ? sym + parseFloat(v).toFixed(2) : '—';
   // Aggregate totals
   const totSpend  = daily.reduce((s, d) => s + parseFloat(d.spend || 0), 0);
   const totImpr   = daily.reduce((s, d) => s + parseInt(d.impressions || 0), 0);
@@ -670,12 +674,12 @@ function renderCampAnalytics(daily) {
   const avgCtr    = totImpr ? (totClicks / totImpr * 100) : 0;
   const avgCpc    = totClicks ? (totSpend / totClicks) : 0;
 
-  document.getElementById('ck-spend').textContent  = totSpend  ? '$' + totSpend.toFixed(2) : '—';
+  document.getElementById('ck-spend').textContent  = fmtMoney(totSpend);
   document.getElementById('ck-impr').textContent   = totImpr   ? totImpr.toLocaleString('pt-BR') : '—';
   document.getElementById('ck-reach').textContent  = totReach  ? totReach.toLocaleString('pt-BR') : '—';
   document.getElementById('ck-clicks').textContent = totClicks ? totClicks.toLocaleString('pt-BR') : '—';
   document.getElementById('ck-ctr').textContent    = totImpr   ? avgCtr.toFixed(2) + '%' : '—';
-  document.getElementById('ck-cpc').textContent    = totClicks ? '$' + avgCpc.toFixed(2) : '—';
+  document.getElementById('ck-cpc').textContent    = fmtMoney(avgCpc);
 
   // Chart
   const labels = daily.map(d => {
@@ -693,7 +697,7 @@ function renderCampAnalytics(daily) {
       labels,
       datasets: [
         {
-          label: 'Gasto ($)',
+          label: `Gasto (${sym})`,
           data: spendData,
           backgroundColor: 'rgba(206,155,76,0.4)',
           borderColor: '#CE9B4C',
@@ -722,7 +726,7 @@ function renderCampAnalytics(daily) {
       plugins: { legend: { labels: { color: '#7A8FA6', font: { size: 11 } } } },
       scales: {
         x: { ticks: { color: '#7A8FA6', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.05)' } },
-        ySpend:  { position: 'left',  ticks: { color: '#CE9B4C', font: { size: 10 }, callback: v => '$'+v.toFixed(0) }, grid: { color: 'rgba(255,255,255,0.05)' } },
+        ySpend:  { position: 'left',  ticks: { color: '#CE9B4C', font: { size: 10 }, callback: v => sym+v.toFixed(0) }, grid: { color: 'rgba(255,255,255,0.05)' } },
         yClicks: { position: 'right', ticks: { color: '#5C9C8F', font: { size: 10 } }, grid: { display: false } },
       },
     },
@@ -744,13 +748,13 @@ function renderCampAnalytics(daily) {
     const [,m,day] = d.date_start.split('-');
     return `<tr>
       <td>${day}/${m}</td>
-      <td class="td-spend">${spend ? '$'+spend.toFixed(2) : '—'}</td>
+      <td class="td-spend">${fmtMoney(spend)}</td>
       <td>${impr ? impr.toLocaleString('pt-BR') : '—'}</td>
       <td>${reach ? reach.toLocaleString('pt-BR') : '—'}</td>
       <td>${clicks || '—'}</td>
       <td class="td-ctr">${ctr ? ctr.toFixed(2)+'%' : '—'}</td>
-      <td>${cpc ? '$'+cpc.toFixed(2) : '—'}</td>
-      <td>${cpm ? '$'+cpm.toFixed(2) : '—'}</td>
+      <td>${fmtMoney(cpc)}</td>
+      <td>${fmtMoney(cpm)}</td>
     </tr>`;
   }).join('');
   document.getElementById('camp-daily-tbody').innerHTML = rows;
@@ -775,7 +779,7 @@ function renderCampaigns() {
 
   const html = slice.map(c => {
     const ins = c.insights;
-    const budget = c.daily_budget ? '$' + (c.daily_budget / 100).toFixed(2) + '/dia' : c.lifetime_budget ? '$' + (c.lifetime_budget / 100).toFixed(2) + ' total' : '—';
+    const budget = c.daily_budget ? campCurrencySym + (c.daily_budget / 100).toFixed(2) + '/dia' : c.lifetime_budget ? campCurrencySym + (c.lifetime_budget / 100).toFixed(2) + ' total' : '—';
 
     const metrics = ins ? `
       <div class="campaign-metrics">
@@ -792,7 +796,7 @@ function renderCampaigns() {
       return `<div class="adset-row">
         <span class="status-badge status-${a.status}" style="font-size:0.6rem">${a.status === 'ACTIVE' ? '●' : '○'}</span>
         <span class="adset-name">${a.name}</span>
-        <span class="adset-budget">Budget: $<input class="budget-input" id="budget-${a.id}" value="${adBudget}" placeholder="0.00"/>/dia</span>
+        <span class="adset-budget">Budget: ${campCurrencySym}<input class="budget-input" id="budget-${a.id}" value="${adBudget}" placeholder="0.00"/>/dia</span>
         <button class="btn-action" onclick="saveBudget('${a.id}')">Salvar</button>
         <button class="btn-action ${a.status === 'ACTIVE' ? 'danger' : 'success'}" onclick="toggleAdset('${a.id}','${a.status === 'ACTIVE' ? 'PAUSED' : 'ACTIVE'}',this)">
           ${a.status === 'ACTIVE' ? 'Pausar' : 'Ativar'}
@@ -879,7 +883,7 @@ function toggleAdset(id, newStatus, btn) {
 function saveBudget(id) {
   const val = parseFloat(document.getElementById('budget-' + id).value);
   if (isNaN(val) || val <= 0) return alert('Digite um valor válido em dólares.');
-  if (!confirm(`Confirmar: alterar budget para $${val.toFixed(2)}/dia?`)) return;
+  if (!confirm(`Confirmar: alterar budget para ${campCurrencySym}${val.toFixed(2)}/dia?`)) return;
   metaAction({ action: 'set_budget', id, value: Math.round(val * 100) });
 }
 
