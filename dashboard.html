@@ -84,6 +84,39 @@
 
   .loading { color:var(--muted); font-size:0.9rem; padding:40px; text-align:center; }
 
+  /* Campaigns */
+  .campaigns-card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:24px; margin-top:20px; }
+  .campaigns-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
+  .campaigns-header h3 { font-size:0.85rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.09em; }
+  .campaign-row { border:1px solid var(--border); border-radius:12px; padding:16px 20px; margin-bottom:12px; }
+  .campaign-row:last-child { margin-bottom:0; }
+  .campaign-top { display:flex; align-items:center; gap:12px; margin-bottom:12px; }
+  .campaign-name { font-size:0.92rem; font-weight:600; color:var(--text); flex:1; }
+  .status-badge { padding:3px 10px; border-radius:99px; font-size:0.7rem; font-weight:700; }
+  .status-ACTIVE { background:rgba(92,156,143,0.15); color:var(--teal); }
+  .status-PAUSED { background:rgba(122,143,166,0.15); color:var(--muted); }
+  .campaign-metrics { display:grid; grid-template-columns:repeat(6,1fr); gap:12px; margin-bottom:14px; }
+  .metric { text-align:center; }
+  .metric .m-label { font-size:0.65rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.07em; margin-bottom:4px; }
+  .metric .m-value { font-size:1rem; font-weight:700; color:var(--text); }
+  .metric .m-value.gold { color:var(--gold); }
+  .metric .m-value.teal { color:var(--teal); }
+  .campaign-actions { display:flex; align-items:center; gap:8px; flex-wrap:wrap; }
+  .btn-action { padding:7px 14px; border-radius:8px; font-size:0.78rem; font-weight:600; cursor:pointer; border:1px solid var(--border); background:transparent; color:var(--text); transition:all .15s; }
+  .btn-action:hover { border-color:var(--teal); color:var(--teal); }
+  .btn-action.danger:hover { border-color:#ff7070; color:#ff7070; }
+  .btn-action.success { border-color:var(--teal); color:var(--teal); }
+  .btn-action:disabled { opacity:0.4; cursor:not-allowed; }
+  .adsets-wrap { margin-top:12px; padding-top:12px; border-top:1px solid var(--border); display:none; }
+  .adsets-wrap.open { display:block; }
+  .adset-row { display:flex; align-items:center; gap:10px; padding:7px 0; border-bottom:1px solid rgba(255,255,255,0.04); font-size:0.82rem; }
+  .adset-row:last-child { border-bottom:none; }
+  .adset-name { flex:1; color:var(--text); }
+  .adset-budget { color:var(--muted); font-size:0.78rem; }
+  .budget-input { background:var(--bg); border:1px solid var(--border); color:var(--text); padding:5px 8px; border-radius:6px; width:80px; font-size:0.82rem; }
+  .budget-input:focus { outline:none; border-color:var(--teal); }
+  .no-insights { color:var(--muted); font-size:0.8rem; font-style:italic; }
+
   /* AI Report */
   .ai-report-card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:24px; margin-top:20px; }
   .ai-report-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
@@ -273,6 +306,15 @@
           <tbody id="table-mediums"><tr><td colspan="4" class="loading">Loading...</td></tr></tbody>
         </table>
       </div>
+    </div>
+
+    <!-- Campaigns -->
+    <div class="campaigns-card">
+      <div class="campaigns-header">
+        <h3>Campanhas Meta Ads</h3>
+        <button class="btn-refresh" onclick="loadCampaigns()">↻ Atualizar</button>
+      </div>
+      <div id="campaigns-content"><div class="loading">Carregando campanhas...</div></div>
     </div>
 
     <!-- AI Report -->
@@ -519,8 +561,120 @@ async function runReport() {
   btn.disabled = false;
 }
 
+// Campaigns
+async function loadCampaigns() {
+  document.getElementById('campaigns-content').innerHTML = '<div class="loading">Carregando campanhas...</div>';
+  try {
+    const res = await fetch('/api/meta-insights');
+    const json = await res.json();
+    if (!json.ok) throw new Error(json.error);
+    renderCampaigns(json.campaigns);
+  } catch (e) {
+    document.getElementById('campaigns-content').innerHTML = `<div class="loading" style="color:#ff7070">Erro: ${e.message}</div>`;
+  }
+}
+
+function fmt(n, prefix='') {
+  if (n == null) return '—';
+  const num = parseFloat(n);
+  if (isNaN(num)) return '—';
+  return prefix + num.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
+}
+
+function renderCampaigns(campaigns) {
+  if (!campaigns.length) {
+    document.getElementById('campaigns-content').innerHTML = '<div class="loading">Nenhuma campanha encontrada.</div>';
+    return;
+  }
+
+  const html = campaigns.map(c => {
+    const ins = c.insights;
+    const purchases = ins?.actions?.find(a => a.action_type === 'purchase')?.value || 0;
+    const budget = c.daily_budget ? '$' + (c.daily_budget / 100).toFixed(2) + '/dia' : c.lifetime_budget ? '$' + (c.lifetime_budget / 100).toFixed(2) + ' total' : '—';
+
+    const metrics = ins ? `
+      <div class="campaign-metrics">
+        <div class="metric"><div class="m-label">Gasto (7d)</div><div class="m-value gold">$${fmt(ins.spend)}</div></div>
+        <div class="metric"><div class="m-label">Alcance</div><div class="m-value">${fmt(ins.reach)}</div></div>
+        <div class="metric"><div class="m-label">Impressões</div><div class="m-value">${fmt(ins.impressions)}</div></div>
+        <div class="metric"><div class="m-label">Cliques</div><div class="m-value teal">${fmt(ins.clicks)}</div></div>
+        <div class="metric"><div class="m-label">CTR</div><div class="m-value">${fmt(ins.ctr)}%</div></div>
+        <div class="metric"><div class="m-label">CPC</div><div class="m-value">$${fmt(ins.cpc)}</div></div>
+      </div>` : '<div class="no-insights" style="margin-bottom:12px;">Sem dados nos últimos 7 dias</div>';
+
+    const adsetRows = c.adsets.map(a => {
+      const adBudget = a.daily_budget ? (a.daily_budget / 100).toFixed(2) : '';
+      return `<div class="adset-row">
+        <span class="status-badge status-${a.status}" style="font-size:0.6rem">${a.status === 'ACTIVE' ? '●' : '○'}</span>
+        <span class="adset-name">${a.name}</span>
+        <span class="adset-budget">Budget: $<input class="budget-input" id="budget-${a.id}" value="${adBudget}" placeholder="0.00"/>/dia</span>
+        <button class="btn-action" onclick="saveBudget('${a.id}')">Salvar</button>
+        <button class="btn-action ${a.status === 'ACTIVE' ? 'danger' : 'success'}" onclick="toggleAdset('${a.id}','${a.status === 'ACTIVE' ? 'PAUSED' : 'ACTIVE'}',this)">
+          ${a.status === 'ACTIVE' ? 'Pausar' : 'Ativar'}
+        </button>
+      </div>`;
+    }).join('');
+
+    return `<div class="campaign-row" id="camp-${c.id}">
+      <div class="campaign-top">
+        <span class="campaign-name">${c.name}</span>
+        <span class="status-badge status-${c.status}">${c.status === 'ACTIVE' ? '● Ativa' : '○ Pausada'}</span>
+        <span style="font-size:0.78rem;color:var(--muted)">${budget}</span>
+      </div>
+      ${metrics}
+      <div class="campaign-actions">
+        <button class="btn-action ${c.status === 'ACTIVE' ? 'danger' : 'success'}" onclick="toggleCampaign('${c.id}','${c.status === 'ACTIVE' ? 'PAUSED' : 'ACTIVE'}',this)">
+          ${c.status === 'ACTIVE' ? '⏸ Pausar campanha' : '▶ Ativar campanha'}
+        </button>
+        ${c.adsets.length ? `<button class="btn-action" onclick="toggleAdsets('adsets-${c.id}')">Conjuntos de anúncios (${c.adsets.length})</button>` : ''}
+      </div>
+      ${c.adsets.length ? `<div class="adsets-wrap" id="adsets-${c.id}">${adsetRows}</div>` : ''}
+    </div>`;
+  }).join('');
+
+  document.getElementById('campaigns-content').innerHTML = html;
+}
+
+function toggleAdsets(id) {
+  document.getElementById(id).classList.toggle('open');
+}
+
+async function metaAction(payload, btn) {
+  if (btn) { btn.disabled = true; btn.textContent = '...'; }
+  try {
+    const res = await fetch('/api/meta-action', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const json = await res.json();
+    if (!json.ok) throw new Error(json.error);
+    await loadCampaigns();
+  } catch (e) {
+    alert('Erro: ' + e.message);
+    if (btn) { btn.disabled = false; }
+  }
+}
+
+function toggleCampaign(id, newStatus, btn) {
+  if (!confirm(`Confirmar: ${newStatus === 'PAUSED' ? 'pausar' : 'ativar'} esta campanha?`)) return;
+  metaAction({ action: 'toggle_campaign', id, value: newStatus }, btn);
+}
+
+function toggleAdset(id, newStatus, btn) {
+  metaAction({ action: 'toggle_adset', id, value: newStatus }, btn);
+}
+
+function saveBudget(id) {
+  const val = parseFloat(document.getElementById('budget-' + id).value);
+  if (isNaN(val) || val <= 0) return alert('Digite um valor válido em dólares.');
+  if (!confirm(`Confirmar: alterar budget para $${val.toFixed(2)}/dia?`)) return;
+  metaAction({ action: 'set_budget', id, value: Math.round(val * 100) });
+}
+
 loadAll();
 loadReport();
+loadCampaigns();
 setInterval(loadAll, 30000); // auto-refresh every 30s
 </script>
 </body>
