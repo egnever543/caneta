@@ -116,7 +116,12 @@ module.exports = async (req, res) => {
         const ir = await fetch(`${base}/${accountId}/adimages?hashes=["${hash}"]&fields=url,url_128,width,height&access_token=${token}`);
         adimagesResult = await ir.json();
       }
-      return res.status(200).json({ raw, adimagesResult });
+      let postResult = null;
+      if (raw.effective_object_story_id) {
+        const pr = await fetch(`${base}/${raw.effective_object_story_id}?fields=full_picture,picture&access_token=${token}`);
+        postResult = await pr.json();
+      }
+      return res.status(200).json({ raw, adimagesResult, postResult });
     }
     const filterParam = singleCreativeId ? '' : `&filtering=[{"field":"campaign.effective_status","operator":"IN","value":["ACTIVE"]}]`;
     const [adsRes, insightsRes] = await Promise.all([
