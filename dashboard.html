@@ -1238,10 +1238,18 @@ function renderSuggestion(s) {
         <div class="suggest-prompt" id="prompt-${type}">${data.image_prompt}</div>
       </div>
       <input type="hidden" id="template-${type}" value="${data.template_used || ''}"/>
-      <button class="btn-generate" id="btn-gen-${type}" onclick="generateImage('${type}')">✦ Criar Ideia</button>
-      <div class="generated-img-wrap" id="img-wrap-${type}">
-        <img id="generated-img-${type}" src="" alt="Criativo gerado"/>
-        <a class="btn-download" id="btn-dl-${type}" href="#" download="criativo-${type}.png">⬇ Baixar</a>
+      <button class="btn-generate" id="btn-gen-${type}" onclick="generateImage('${type}')">✦ Criar Ideia (3 formatos)</button>
+      <div id="img-formats-${type}" style="display:none;margin-top:16px;">
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:8px;">
+          ${['feed','reels','audience'].map(f => `
+          <div style="text-align:center;">
+            <div style="font-size:0.7rem;color:var(--muted);margin-bottom:6px;" id="fmt-label-${type}-${f}">—</div>
+            <div id="fmt-wrap-${type}-${f}" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;overflow:hidden;min-height:80px;display:flex;align-items:center;justify-content:center;">
+              <span style="color:var(--muted);font-size:0.75rem;">⏳</span>
+            </div>
+            <a id="fmt-dl-${type}-${f}" href="#" download="criativo-${type}-${f}.png" style="display:none;font-size:0.7rem;color:var(--teal);margin-top:4px;text-decoration:none;">⬇ Baixar</a>
+          </div>`).join('')}
+        </div>
       </div>
     </div>`;
   };
@@ -1259,7 +1267,15 @@ async function generateImage(type) {
   if (!prompt) return;
 
   btn.disabled = true;
-  btn.textContent = '⏳ Gerando com Imagen 4...';
+  btn.textContent = '⏳ Gerando 3 formatos...';
+
+  // Show format grid with loading state
+  const fmtWrap = document.getElementById('img-formats-' + type);
+  fmtWrap.style.display = 'block';
+  ['feed','reels','audience'].forEach(f => {
+    document.getElementById(`fmt-wrap-${type}-${f}`).innerHTML = '<span style="color:var(--muted);font-size:0.75rem;padding:20px;display:block;">⏳ gerando...</span>';
+    document.getElementById(`fmt-dl-${type}-${f}`).style.display = 'none';
+  });
 
   try {
     const res = await fetch('/api/generate-image', {
@@ -1267,26 +1283,35 @@ async function generateImage(type) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         prompt,
-        aspectRatio: '1:1',
         model: localStorage.getItem('image_model') || '',
         template_used: document.getElementById('template-' + type)?.value || '',
       }),
     });
     const json = await res.json();
-    if (!json.ok) throw new Error(json.error);
+    if (!json.ok && !json.images) throw new Error(json.error);
 
-    const dataUrl = `data:${json.mimeType};base64,${json.imageBase64}`;
-    const imgEl   = document.getElementById('generated-img-' + type);
-    const wrapEl  = document.getElementById('img-wrap-' + type);
-    const dlEl    = document.getElementById('btn-dl-' + type);
+    const formatLabels = { feed: 'Feed / Post · 1:1', reels: 'Reels / Stories · 9:16', audience: 'Audience Network · 16:9' };
 
-    imgEl.src    = dataUrl;
-    dlEl.href    = dataUrl;
-    wrapEl.style.display = 'block';
+    (json.images || []).forEach(img => {
+      const labelEl = document.getElementById(`fmt-label-${type}-${img.key}`);
+      const wrapEl  = document.getElementById(`fmt-wrap-${type}-${img.key}`);
+      const dlEl    = document.getElementById(`fmt-dl-${type}-${img.key}`);
+      if (labelEl) labelEl.textContent = formatLabels[img.key] || img.label;
+      if (!wrapEl) return;
+      if (img.ok) {
+        const dataUrl = `data:${img.mimeType};base64,${img.imageBase64}`;
+        wrapEl.innerHTML = `<img src="${dataUrl}" style="width:100%;display:block;border-radius:8px;" alt="${img.label}"/>`;
+        if (dlEl) { dlEl.href = dataUrl; dlEl.style.display = 'inline-block'; }
+      } else {
+        wrapEl.innerHTML = `<span style="color:#ff7070;font-size:0.7rem;padding:12px;display:block;">Erro: ${img.error}</span>`;
+      }
+    });
+
     btn.textContent = '✦ Gerar Novamente';
   } catch(e) {
     alert('Erro ao gerar imagem: ' + e.message);
-    btn.textContent = '✦ Criar Ideia';
+    btn.textContent = '✦ Criar Ideia (3 formatos)';
+    fmtWrap.style.display = 'none';
   } finally {
     btn.disabled = false;
   }
