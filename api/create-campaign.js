@@ -24,7 +24,10 @@ async function metaPost(path, payload, token) {
     body: JSON.stringify(payload),
   });
   const json = await res.json();
-  if (json.error) throw new Error(json.error.message);
+  if (json.error) {
+    const detail = json.error.error_user_msg || json.error.error_data || '';
+    throw new Error(`${json.error.message}${detail ? ` — ${detail}` : ''} [code ${json.error.code}] payload: ${JSON.stringify(payload)}`);
+  }
   return json;
 }
 
@@ -98,22 +101,33 @@ module.exports = async (req, res) => {
 
       // ── 3. Create adset ──
       log.push('Criando ad set...');
+      // daily_budget comes as float (e.g. 10.00 USD) — Meta expects cents (integer)
+      const budgetCents = Math.round(parseFloat(daily_budget) * 100);
+
+      // start_time from HTML date input is "YYYY-MM-DD" — convert to ISO timestamp
+      const startTs = start_time
+        ? new Date(start_time + 'T00:00:00Z').toISOString()
+        : new Date().toISOString();
+      const endTs = end_time
+        ? new Date(end_time + 'T23:59:59Z').toISOString()
+        : null;
+
       const adsetPayload = {
         name: `${campaign_name || 'SWF'} — Ad Set`,
         campaign_id: finalCampaignId,
-        daily_budget: Math.round(daily_budget * 100), // reais → centavos
+        daily_budget: budgetCents,
         billing_event: 'IMPRESSIONS',
         optimization_goal: pixel_id ? 'OFFSITE_CONVERSIONS' : 'LINK_CLICKS',
         targeting: {
           geo_locations: { countries: Array.isArray(countries) ? countries : [countries] },
-          age_min: parseInt(age_min),
-          age_max: parseInt(age_max),
-          ...(genders?.length ? { genders } : {}),
+          age_min: parseInt(age_min) || 35,
+          age_max: parseInt(age_max) || 65,
+          ...(Array.isArray(genders) && genders.length ? { genders } : {}),
         },
-        start_time,
+        start_time: startTs,
         status: 'PAUSED',
       };
-      if (end_time) adsetPayload.end_time = end_time;
+      if (endTs) adsetPayload.end_time = endTs;
       if (pixel_id) {
         adsetPayload.promoted_object = { pixel_id, custom_event_type: 'PURCHASE' };
       }
