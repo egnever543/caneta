@@ -562,13 +562,18 @@ async function runReport() {
 }
 
 // Campaigns
+const PAGE_SIZE = 5;
+let allCampaigns = [], campPage = 0;
+
 async function loadCampaigns() {
   document.getElementById('campaigns-content').innerHTML = '<div class="loading">Carregando campanhas...</div>';
   try {
     const res = await fetch('/api/meta-insights?t=' + Date.now());
     const json = await res.json();
     if (!json.ok) throw new Error(json.error);
-    renderCampaigns(json.campaigns);
+    allCampaigns = json.campaigns;
+    campPage = 0;
+    renderCampaigns();
   } catch (e) {
     document.getElementById('campaigns-content').innerHTML = `<div class="loading" style="color:#ff7070">Erro: ${e.message}</div>`;
   }
@@ -581,15 +586,18 @@ function fmt(n, prefix='') {
   return prefix + num.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
 }
 
-function renderCampaigns(campaigns) {
-  if (!campaigns.length) {
+function renderCampaigns() {
+  if (!allCampaigns.length) {
     document.getElementById('campaigns-content').innerHTML = '<div class="loading">Nenhuma campanha encontrada.</div>';
     return;
   }
 
-  const html = campaigns.map(c => {
+  const total = allCampaigns.length;
+  const totalPages = Math.ceil(total / PAGE_SIZE);
+  const slice = allCampaigns.slice(campPage * PAGE_SIZE, (campPage + 1) * PAGE_SIZE);
+
+  const html = slice.map(c => {
     const ins = c.insights;
-    const purchases = ins?.actions?.find(a => a.action_type === 'purchase')?.value || 0;
     const budget = c.daily_budget ? '$' + (c.daily_budget / 100).toFixed(2) + '/dia' : c.lifetime_budget ? '$' + (c.lifetime_budget / 100).toFixed(2) + ' total' : '—';
 
     const metrics = ins ? `
@@ -615,6 +623,17 @@ function renderCampaigns(campaigns) {
       </div>`;
     }).join('');
 
+    const adRows = c.ads.map(a => `
+      <div class="adset-row">
+        <span class="status-badge status-${a.status}" style="font-size:0.6rem">${a.status === 'ACTIVE' ? '●' : '○'}</span>
+        <span class="adset-name">${a.name}</span>
+        ${a.creative?.thumbnail_url ? `<img src="${a.creative.thumbnail_url}" style="width:36px;height:36px;border-radius:4px;object-fit:cover;flex-shrink:0"/>` : ''}
+        <button class="btn-action ${a.status === 'ACTIVE' ? 'danger' : 'success'}" onclick="toggleAdset('${a.id}','${a.status === 'ACTIVE' ? 'PAUSED' : 'ACTIVE'}',this)">
+          ${a.status === 'ACTIVE' ? 'Pausar' : 'Ativar'}
+        </button>
+      </div>`).join('');
+
+    const hasChildren = c.adsets.length || c.ads.length;
     return `<div class="campaign-row" id="camp-${c.id}">
       <div class="campaign-top">
         <span class="campaign-name">${c.name}</span>
@@ -624,18 +643,33 @@ function renderCampaigns(campaigns) {
       ${metrics}
       <div class="campaign-actions">
         <button class="btn-action ${c.status === 'ACTIVE' ? 'danger' : 'success'}" onclick="toggleCampaign('${c.id}','${c.status === 'ACTIVE' ? 'PAUSED' : 'ACTIVE'}',this)">
-          ${c.status === 'ACTIVE' ? '⏸ Pausar campanha' : '▶ Ativar campanha'}
+          ${c.status === 'ACTIVE' ? '⏸ Pausar' : '▶ Ativar'}
         </button>
-        ${c.adsets.length ? `<button class="btn-action" onclick="toggleAdsets('adsets-${c.id}')">Conjuntos de anúncios (${c.adsets.length})</button>` : ''}
+        ${c.adsets.length ? `<button class="btn-action" onclick="toggleWrap('adsets-${c.id}')">Conjuntos (${c.adsets.length})</button>` : ''}
+        ${c.ads.length ? `<button class="btn-action" onclick="toggleWrap('ads-${c.id}')">Criativos (${c.ads.length})</button>` : ''}
       </div>
       ${c.adsets.length ? `<div class="adsets-wrap" id="adsets-${c.id}">${adsetRows}</div>` : ''}
+      ${c.ads.length ? `<div class="adsets-wrap" id="ads-${c.id}">${adRows}</div>` : ''}
     </div>`;
   }).join('');
 
-  document.getElementById('campaigns-content').innerHTML = html;
+  const pagination = totalPages > 1 ? `
+    <div style="display:flex;align-items:center;justify-content:center;gap:12px;margin-top:16px;">
+      <button class="btn-action" onclick="changePage(-1)" ${campPage === 0 ? 'disabled' : ''}>← Anterior</button>
+      <span style="font-size:0.82rem;color:var(--muted)">${campPage + 1} / ${totalPages} — ${total} campanhas</span>
+      <button class="btn-action" onclick="changePage(1)" ${campPage >= totalPages - 1 ? 'disabled' : ''}>Próxima →</button>
+    </div>` : `<div style="font-size:0.78rem;color:var(--muted);margin-top:12px;text-align:center">${total} campanhas</div>`;
+
+  document.getElementById('campaigns-content').innerHTML = html + pagination;
 }
 
-function toggleAdsets(id) {
+function changePage(dir) {
+  const totalPages = Math.ceil(allCampaigns.length / PAGE_SIZE);
+  campPage = Math.max(0, Math.min(totalPages - 1, campPage + dir));
+  renderCampaigns();
+}
+
+function toggleWrap(id) {
   document.getElementById(id).classList.toggle('open');
 }
 
