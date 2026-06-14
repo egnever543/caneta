@@ -538,6 +538,8 @@ async function loadAll() {
   }
 
   const referrerLabel = e => {
+    // fbclid present = traffic from Meta Ads even if referrer is missing
+    if (e.metadata?.fbclid) return 'meta (fbclid)';
     const ref = e.metadata?.referrer || '';
     if (!ref) return 'direct';
     if (ref.includes('facebook') || ref.includes('fb.com')) return 'facebook';
