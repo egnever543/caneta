@@ -9,7 +9,8 @@ const supabase = createClient(
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 async function fetchMetaInsights() {
-  const accountId = process.env.META_AD_ACCOUNT_ID;
+  const rawId = process.env.META_AD_ACCOUNT_ID || '';
+  const accountId = rawId.startsWith('act_') ? rawId : `act_${rawId}`;
   const token = process.env.META_ACCESS_TOKEN;
   const base = 'https://graph.facebook.com/v19.0';
 

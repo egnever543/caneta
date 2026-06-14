@@ -4,7 +4,8 @@ module.exports = async (req, res) => {
   if (req.method !== 'GET') return res.status(405).end();
 
   const token = process.env.META_ACCESS_TOKEN;
-  const accountId = process.env.META_AD_ACCOUNT_ID;
+  const rawId = process.env.META_AD_ACCOUNT_ID || '';
+  const accountId = rawId.startsWith('act_') ? rawId : `act_${rawId}`;
   const base = 'https://graph.facebook.com/v19.0';
 
   try {
