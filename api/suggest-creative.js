@@ -202,12 +202,29 @@ module.exports = async (req, res) => {
       return `- ${key} (${t.label}): ${perf}\n  Estrutura base: "${t.structure}"`;
     }).join('\n');
 
+    // ── Fetch persona ──
+    let personaCtx = 'Produto: Shot Without Fear — ebook $9. Público: EUA, 35-65 anos, mulheres.';
+    try {
+      const pRes = await fetch(`${SUPABASE_URL}/rest/v1/persona?id=eq.1&select=*`, {
+        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` }
+      });
+      const pRows = await pRes.json();
+      const p = pRows[0];
+      if (p && p.product_name) {
+        const desires = (p.desires || []).join('; ');
+        const pains = (p.pains || []).join('; ');
+        personaCtx = `Produto: ${p.product_name} (${p.product_price}) — ${p.product_description || ''}
+Público: ${p.gender || ''}, ${p.age_range || ''}, ${p.location || ''}. ${p.target_audience || ''}
+Desejos: ${desires} | Dores: ${pains}
+Proposta de valor: ${p.value_proposition || ''} | Tom: ${p.tone || ''} | Objetivo: ${p.goals || ''}`;
+      }
+    } catch(_) {}
+
     // ── CLAUDE: generate suggestions ──
     const prompt = `Você é um especialista em performance marketing e criação de anúncios para Meta Ads. Analise os dados de performance abaixo e gere sugestões de criativos usando os templates de prompt disponíveis.
 
-## Produto
-"Shot Without Fear" — ebook digital de $9 para usuários de GLP-1 (Ozempic, Mounjaro, Wegovy) que ensinam a aplicar injeções sem medo.
-Público: EUA, 35-65 anos, maioria mulheres com dores relacionadas ao medo de injeção.
+## Produto & Persona (fonte de verdade)
+${personaCtx}
 
 ## Dados de Performance (${mathSummary.total_creatives} criativos analisados)
 

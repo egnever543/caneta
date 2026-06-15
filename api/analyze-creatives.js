@@ -51,8 +51,34 @@ async function fetchImageBase64(url, token) {
   return { base64: Buffer.from(buffer).toString('base64'), mediaType };
 }
 
-async function analyzeWithClaude(base64, mediaType) {
-  const prompt = `Você é um especialista em marketing direto e análise de criativos para Meta Ads. Analise este anúncio do produto "Shot Without Fear" — ebook de $9 para usuários de GLP-1 (Ozempic, Mounjaro, Wegovy) que ensinam a aplicar injeções sem medo. Público: EUA, 35-65 anos, maioria mulheres.
+async function fetchPersona() {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/persona?id=eq.1&select=*`, {
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` }
+    });
+    const rows = await res.json();
+    return rows[0] || {};
+  } catch(_) { return {}; }
+}
+
+function personaBlock(p) {
+  if (!p || !p.product_name) return 'Produto: Shot Without Fear — ebook $9 para usuários de GLP-1. Público: EUA, 35-65 anos, maioria mulheres.';
+  const desires = (p.desires || []).join('; ');
+  const pains = (p.pains || []).join('; ');
+  return `Produto: ${p.product_name} (${p.product_price}) — ${p.product_description || ''}
+Público: ${p.gender || 'Mulheres'}, ${p.age_range || '35-65'}, ${p.location || 'EUA'}. ${p.target_audience || ''}
+Desejos: ${desires || 'n/a'} | Dores: ${pains || 'n/a'}
+Proposta de valor: ${p.value_proposition || ''} | Tom: ${p.tone || ''}`;
+}
+
+async function analyzeWithClaude(base64, mediaType, persona) {
+  const context = personaBlock(persona);
+  const prompt = `Você é um especialista em marketing direto e análise de criativos para Meta Ads.
+
+CONTEXTO (fonte de verdade):
+${context}
+
+Analise este criativo e avalie se ele ressoa com os desejos e dores da persona acima.
 
 Analise a imagem e responda APENAS com JSON válido, sem texto adicional:
 {
@@ -102,6 +128,8 @@ module.exports = async (req, res) => {
   const forceReanalyze = req.query.force === '1';
   const singleCreativeId = req.query.creative_id || null;
   const debugMode = req.query.debug === '1';
+
+  const persona = await fetchPersona();
 
   try {
     // Debug mode: return raw fields from Meta for a specific creative
@@ -222,7 +250,7 @@ module.exports = async (req, res) => {
       if (forceReanalyze || !alreadyAnalyzed) {
         try {
           const { base64, mediaType } = await fetchImageBase64(imageUrl, token);
-          analysis = await analyzeWithClaude(base64, mediaType);
+          analysis = await analyzeWithClaude(base64, mediaType, persona);
         } catch (e) {
           console.error(`Creative ${creative.id} analysis failed:`, e.message);
           results.push({ id: creative.id, error: e.message });
