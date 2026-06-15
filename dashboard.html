@@ -154,6 +154,9 @@
   /* AI Report */
   .ai-report-card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:24px; margin-top:20px; }
   /* ── Apply button ── */
+  .period-btn { background:transparent; border:1px solid var(--border); color:var(--muted); padding:6px 14px; border-radius:8px; cursor:pointer; font-size:0.8rem; font-weight:600; transition:all .15s; }
+  .period-btn:hover { border-color:var(--teal); color:var(--text); }
+  .period-btn.active { background:rgba(92,156,143,0.12); border-color:var(--teal); color:var(--teal); }
   .btn-apply { flex-shrink:0; align-self:center; background:transparent; border:1px solid rgba(92,156,143,0.4); color:var(--teal); padding:7px 14px; border-radius:8px; cursor:pointer; font-size:0.78rem; font-weight:600; transition:all .2s; white-space:nowrap; }
   .btn-apply:hover { background:rgba(92,156,143,0.12); border-color:var(--teal); }
   .btn-apply:disabled { opacity:0.4; cursor:default; }
@@ -444,6 +447,16 @@
 
 <!-- ── ABA 1: SITE ── -->
 <div id="tab-site" class="tab-panel active">
+
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:20px;flex-wrap:wrap">
+    <span style="font-size:0.78rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.08em">Período:</span>
+    <div style="display:flex;gap:6px">
+      <button class="period-btn active" data-days="7" onclick="setSitePeriod(7,this)">7 dias</button>
+      <button class="period-btn" data-days="14" onclick="setSitePeriod(14,this)">14 dias</button>
+      <button class="period-btn" data-days="30" onclick="setSitePeriod(30,this)">30 dias</button>
+      <button class="period-btn" data-days="0" onclick="setSitePeriod(0,this)">Tudo</button>
+    </div>
+  </div>
 
   <div class="kpi-grid">
     <div class="kpi">
@@ -1055,8 +1068,12 @@ function switchTab(id, btn) {
 let visitChart, eventChart;
 
 async function loadAll() {
-  const all = await query('page_events', { select: '*', order: 'created_at.desc', limit: 1000 });
-  if (!Array.isArray(all)) return;
+  const raw = await query('page_events', { select: '*', order: 'created_at.desc', limit: 1000 });
+  if (!Array.isArray(raw)) return;
+  const all = sitePeriodDays === 0 ? raw : raw.filter(e => {
+    const cutoff = Date.now() - sitePeriodDays * 24 * 60 * 60 * 1000;
+    return new Date(e.created_at).getTime() >= cutoff;
+  });
 
   // KPIs
   const sessions = new Set(all.map(e => e.session_id));
@@ -1358,6 +1375,13 @@ async function runSiteReport() {
 
 // Campaigns
 const PAGE_SIZE = 5;
+let sitePeriodDays = 7;
+function setSitePeriod(days, btn) {
+  sitePeriodDays = days;
+  document.querySelectorAll('.period-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  loadAll();
+}
 let allCampaigns = [], campPage = 0, campPeriodDays = 'today', campCurrencySym = '$', campFilter = 'ACTIVE';
 let campTrendChart = null;
 
