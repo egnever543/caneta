@@ -152,8 +152,10 @@
   .ai-report-card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:24px; margin-top:20px; }
   .persona-field { display:flex; flex-direction:column; gap:6px; }
   .persona-field label { font-size:0.72rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em; font-weight:600; }
-  .persona-field input, .persona-field textarea { background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:10px 13px; color:var(--text); font-size:0.88rem; outline:none; resize:vertical; font-family:inherit; transition:border-color .2s; }
+  .persona-field input, .persona-field textarea { background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:10px 13px; color:var(--text); font-size:0.88rem; outline:none; resize:vertical; font-family:inherit; transition:border-color .2s; width:100%; }
   .persona-field input:focus, .persona-field textarea:focus { border-color:var(--teal); }
+  .persona-field textarea { min-height:90px; }
+  .persona-field textarea.tall { min-height:130px; }
   .ai-report-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
   .ai-report-header h3 { font-size:0.85rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.09em; margin-bottom:4px; }
   .ai-badge { background:rgba(206,155,76,0.15); color:var(--gold); font-size:0.65rem; padding:2px 7px; border-radius:99px; font-weight:700; letter-spacing:0.05em; vertical-align:middle; margin-left:6px; }
@@ -641,7 +643,7 @@
 
 <!-- ── ABA 4: PERSONA ── -->
 <div id="tab-persona" class="tab-panel">
-  <div class="ai-report-card" style="max-width:860px">
+  <div class="ai-report-card">
     <div class="ai-report-header" style="margin-bottom:24px">
       <div>
         <div class="ai-report-title">Persona & Produto</div>
@@ -666,11 +668,11 @@
         </div>
         <div class="persona-field">
           <label>Descrição Curta</label>
-          <textarea id="p-product_description" rows="3" placeholder="O que é o produto e qual problema resolve…"></textarea>
+          <textarea id="p-product_description" rows="4" class="tall" placeholder="O que é o produto e qual problema resolve…"></textarea>
         </div>
         <div class="persona-field">
           <label>Proposta de Valor Única</label>
-          <textarea id="p-value_proposition" rows="3" placeholder="Por que escolher este produto vs alternativas…"></textarea>
+          <textarea id="p-value_proposition" rows="4" class="tall" placeholder="Por que escolher este produto vs alternativas…"></textarea>
         </div>
         <div class="persona-field">
           <label>Objetivo Principal</label>
@@ -702,18 +704,18 @@
         </div>
         <div class="persona-field">
           <label>Público-Alvo (descrição livre)</label>
-          <textarea id="p-target_audience" rows="3" placeholder="Descreva quem é essa pessoa: estilo de vida, contexto, situação…"></textarea>
+          <textarea id="p-target_audience" rows="4" class="tall" placeholder="Descreva quem é essa pessoa: estilo de vida, contexto, situação…"></textarea>
         </div>
 
         <div style="font-size:0.7rem;color:var(--teal);text-transform:uppercase;letter-spacing:.1em;font-weight:600;border-bottom:1px solid var(--border);padding-bottom:8px;margin-top:8px">Desejos & Dores</div>
 
         <div class="persona-field">
           <label>Desejos <span style="color:var(--muted);font-weight:400">(1 por linha)</span></label>
-          <textarea id="p-desires" rows="4" placeholder="Quer aprender a aplicar a injeção sem medo&#10;Quer resultados rápidos e duradouros&#10;Quer se sentir no controle da própria saúde"></textarea>
+          <textarea id="p-desires" rows="6" class="tall" placeholder="Quer aprender a aplicar a injeção sem medo&#10;Quer resultados rápidos e duradouros&#10;Quer se sentir no controle da própria saúde"></textarea>
         </div>
         <div class="persona-field">
           <label>Dores <span style="color:var(--muted);font-weight:400">(1 por linha)</span></label>
-          <textarea id="p-pains" rows="4" placeholder="Medo de agulha / dor da injeção&#10;Não sabe a técnica correta&#10;Vergonha de pedir ajuda&#10;Medo de errar a dose"></textarea>
+          <textarea id="p-pains" rows="6" class="tall" placeholder="Medo de agulha / dor da injeção&#10;Não sabe a técnica correta&#10;Vergonha de pedir ajuda&#10;Medo de errar a dose"></textarea>
         </div>
       </div>
 
