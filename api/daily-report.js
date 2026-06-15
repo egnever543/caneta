@@ -112,8 +112,10 @@ Responda em JSON com esta estrutura exata:
     messages: [{ role: 'user', content: prompt }],
   });
 
-  const text = response.content[0].text;
-  // Strip markdown fences, find outermost JSON object, fix trailing commas
+  return parseJSON(response.content[0].text);
+}
+
+function parseJSON(text) {
   const cleaned = text.replace(/```(?:json)?\n?/g, '').replace(/```/g, '');
   const start = cleaned.indexOf('{');
   if (start === -1) return { summary: text, recommendations: [], alerts: [] };
@@ -133,41 +135,112 @@ Responda em JSON com esta estrutura exata:
 }
 
 async function getSiteData() {
+  const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
   const { data } = await supabase
     .from('page_events')
-    .select('event_type, session_id, country')
-    .gte('created_at', new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
+    .select('event_type, session_id, country, metadata, created_at')
+    .gte('created_at', since);
 
-  if (!data) return { visits: 0, ctas: 0, purchases: 0, ctr: 0, countries: 'N/A' };
+  if (!data) return { visits: 0, ctas: 0, purchases: 0, ctr: 0, countries: 'N/A', sources: {}, daily: {} };
 
-  const visits = new Set(data.filter(e => e.event_type === 'page_view').map(e => e.session_id)).size;
+  const sessions = data.filter(e => e.event_type === 'page_view');
+  const visits = new Set(sessions.map(e => e.session_id)).size;
   const ctas = data.filter(e => e.event_type === 'cta_click').length;
   const purchases = data.filter(e => e.event_type === 'purchase').length;
   const countries = [...new Set(data.map(e => e.country).filter(Boolean))].slice(0, 5).join(', ');
 
-  return { visits, ctas, purchases, ctr: visits ? Math.round(ctas / visits * 100) : 0, countries };
+  // UTM source breakdown
+  const sources = {};
+  sessions.forEach(e => {
+    const src = e.metadata?.utm_source || 'direct';
+    sources[src] = (sources[src] || 0) + 1;
+  });
+
+  // Daily visits (last 7 days)
+  const daily = {};
+  sessions.forEach(e => {
+    const day = e.created_at?.slice(0, 10);
+    if (day) daily[day] = (daily[day] || 0) + 1;
+  });
+
+  return { visits, ctas, purchases, ctr: visits ? Math.round(ctas / visits * 100) : 0, countries, sources, daily };
+}
+
+async function analyzeSiteWithClaude(siteData) {
+  const prompt = `Você é um especialista em CRO (Conversion Rate Optimization) e analytics de landing pages para produtos digitais.
+
+## Dados do Site — Últimos 7 dias
+- Visitas únicas: ${siteData.visits}
+- Cliques no CTA: ${siteData.ctas}
+- Compras confirmadas: ${siteData.purchases}
+- Taxa visitas → CTA: ${siteData.ctr}%
+- Taxa CTA → Compra: ${siteData.ctas ? Math.round(siteData.purchases / siteData.ctas * 100) : 0}%
+- Taxa geral de conversão: ${siteData.visits ? ((siteData.purchases / siteData.visits) * 100).toFixed(2) : 0}%
+- Principais países: ${siteData.countries}
+
+## Fontes de Tráfego
+${JSON.stringify(siteData.sources, null, 2)}
+
+## Visitas por Dia
+${JSON.stringify(siteData.daily, null, 2)}
+
+## Contexto
+- Produto: "Shot Without Fear" — ebook de $9 para usuários de GLP-1 (Ozempic, Mounjaro, Wegovy)
+- Público: EUA, 35-65 anos, maioria mulheres
+- Landing page simples com 1 CTA de compra
+
+## Sua Tarefa
+Analise o funil de conversão do site e responda APENAS em JSON:
+{
+  "summary": "2-3 frases sobre a saúde geral do funil",
+  "funnel_health": "saudável|atenção|crítico",
+  "working": ["o que está funcionando no site/funil"],
+  "friction_points": ["onde os usuários estão abandonando e por quê"],
+  "recommendations": [
+    { "priority": 1, "action": "ação concreta", "reason": "motivo baseado nos dados", "impact": "high|medium|low" }
+  ],
+  "best_source": "fonte de tráfego com melhor potencial e por quê",
+  "alerts": ["qualquer métrica crítica que exige atenção imediata"]
+}`;
+
+  const response = await anthropic.messages.create({
+    model: 'claude-haiku-4-5-20251001',
+    max_tokens: 2048,
+    messages: [{ role: 'user', content: prompt }],
+  });
+
+  return parseJSON(response.content[0].text);
 }
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
-
-  // Allow manual trigger via GET, cron via GET too
   if (req.method !== 'GET' && req.method !== 'POST') return res.status(405).end();
 
+  const type = req.query.type || 'campaign';
+
   try {
+    // ── Site report ──
+    if (type === 'site') {
+      const siteData = await getSiteData();
+      const analysis = await analyzeSiteWithClaude(siteData);
+      const today = new Date().toISOString().slice(0, 10);
+      await supabase.from('ai_site_reports').upsert(
+        { report_date: today, analysis },
+        { onConflict: 'report_date' }
+      );
+      return res.status(200).json({ ok: true, date: today, analysis });
+    }
+
+    // ── Campaign + creative report (default) ──
     const [metaData, siteData, creatives] = await Promise.all([fetchMetaInsights(), getSiteData(), fetchCreatives()]);
     const analysis = await analyzeWithClaude(metaData, siteData, creatives);
-
     const today = new Date().toISOString().slice(0, 10);
-
-    // Upsert — replace today's report if already exists
     const { error } = await supabase
       .from('ai_reports')
       .upsert({ report_date: today, meta_data: metaData, analysis: analysis.summary, recommendations: analysis }, { onConflict: 'report_date' });
-
     if (error) throw error;
+    return res.status(200).json({ ok: true, date: today, analysis });
 
-    res.status(200).json({ ok: true, date: today, analysis });
   } catch (err) {
     console.error('Daily report error:', err.message);
     res.status(500).json({ error: err.message });

@@ -481,6 +481,18 @@
     <div id="recent-events"><div class="loading">Loading...</div></div>
   </div>
 
+  <!-- AI Site Analysis -->
+  <div class="ai-report-card" id="site-report-wrap">
+    <div class="ai-report-header">
+      <div>
+        <h3>AI Site Report <span class="ai-badge">Claude</span></h3>
+        <span class="ai-date" id="site-report-date"></span>
+      </div>
+      <button class="btn-refresh" onclick="runSiteReport()" id="btn-run-site-report">↻ Analisar Site</button>
+    </div>
+    <div id="site-report-content"><div class="loading">Clique em "Analisar Site" para a IA avaliar o funil de conversão.</div></div>
+  </div>
+
 </div><!-- /tab-site -->
 
 <!-- ── ABA 2: CAMPANHA ── -->
@@ -1055,6 +1067,73 @@ async function runReport() {
     document.getElementById('ai-report-content').innerHTML = `<div class="loading" style="color:#ff7070">Network error: ${e.message}</div>`;
   }
   btn.textContent = '↻ Generate now';
+  btn.disabled = false;
+}
+
+// ── Site Report ──
+async function loadSiteReport() {
+  try {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/ai_site_reports?select=*&order=report_date.desc&limit=1`, {
+      headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` }
+    });
+    const data = await res.json();
+    if (Array.isArray(data) && data.length) renderSiteReport(data[0]);
+  } catch(e) { console.error('loadSiteReport:', e); }
+}
+
+function renderSiteReport(data) {
+  const r = data.analysis || {};
+  document.getElementById('site-report-date').textContent = 'Última análise: ' + data.report_date;
+
+  const healthColor = { saudável: 'var(--teal)', atenção: 'var(--gold)', crítico: '#ff7070' }[r.funnel_health] || 'var(--muted)';
+  const working = (r.working || []).map(w => `<li>${w}</li>`).join('');
+  const friction = (r.friction_points || []).map(f => `<li>${f}</li>`).join('');
+  const recs = (r.recommendations || []).map(rec => `
+    <div class="rec-item">
+      <div class="rec-priority ${rec.impact}">${rec.priority}</div>
+      <div class="rec-body">
+        <div class="rec-action">${rec.action}</div>
+        <div class="rec-reason">${rec.reason}</div>
+      </div>
+    </div>`).join('');
+  const alerts = (r.alerts || []).map(a => `<div class="alert-item">⚠ ${a}</div>`).join('');
+
+  document.getElementById('site-report-content').innerHTML = `
+    <div class="report-summary">${r.summary || '—'}</div>
+    ${r.funnel_health ? `<div style="display:inline-block;padding:4px 14px;border-radius:99px;background:${healthColor}22;color:${healthColor};font-size:0.75rem;font-weight:600;margin-bottom:16px;border:1px solid ${healthColor}44">Funil: ${r.funnel_health.toUpperCase()}</div>` : ''}
+    <div class="report-grid">
+      <div class="report-block">
+        <h4>✅ O que está funcionando</h4>
+        <ul>${working || '<li style="color:var(--muted)">Sem dados suficientes</li>'}</ul>
+      </div>
+      <div class="report-block bad">
+        <h4>🔴 Pontos de fricção</h4>
+        <ul>${friction || '<li style="color:var(--muted)">Nenhum identificado</li>'}</ul>
+      </div>
+    </div>
+    ${recs ? `<div class="report-block" style="margin-bottom:16px"><h4>Recomendações</h4><div class="recs-list">${recs}</div></div>` : ''}
+    ${r.best_source ? `<div class="report-block" style="margin-bottom:16px;border-color:rgba(92,156,143,0.3);background:rgba(92,156,143,0.05)"><h4>🎯 Melhor Fonte de Tráfego</h4><p style="font-size:0.85rem;color:var(--text);line-height:1.6;margin:0">${r.best_source}</p></div>` : ''}
+    ${alerts ? `<div class="report-block"><h4>Alertas</h4><div class="alerts-wrap">${alerts}</div></div>` : ''}
+  `;
+}
+
+async function runSiteReport() {
+  const btn = document.getElementById('btn-run-site-report');
+  btn.textContent = '⏳ Analisando...';
+  btn.disabled = true;
+  document.getElementById('site-report-content').innerHTML = '<div class="loading">Analisando funil com Claude — aguarde...</div>';
+  try {
+    const res = await fetch('/api/daily-report?type=site');
+    const json = await res.json();
+    if (json.ok) {
+      await loadSiteReport();
+    } else {
+      document.getElementById('site-report-content').innerHTML = `<div class="loading" style="color:#ff7070">Erro: ${json.error}</div>`;
+    }
+  } catch(e) {
+    document.getElementById('site-report-content').innerHTML = `<div class="loading" style="color:#ff7070">Erro: ${e.message}</div>`;
+  }
+  btn.textContent = '↻ Analisar Site';
   btn.disabled = false;
 }
 
@@ -2004,6 +2083,7 @@ function copyPrompt(btn) {
 
 loadAll();
 loadReport();
+loadSiteReport();
 loadCampaigns();
 loadCreatives();
 loadSuggestion();
