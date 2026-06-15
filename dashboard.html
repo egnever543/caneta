@@ -481,18 +481,6 @@
     <div id="recent-events"><div class="loading">Loading...</div></div>
   </div>
 
-  <!-- AI Site Analysis -->
-  <div class="ai-report-card" id="site-report-wrap">
-    <div class="ai-report-header">
-      <div>
-        <h3>AI Site Report <span class="ai-badge">Claude</span></h3>
-        <span class="ai-date" id="site-report-date"></span>
-      </div>
-      <button class="btn-refresh" onclick="runSiteReport()" id="btn-run-site-report">↻ Analisar Site</button>
-    </div>
-    <div id="site-report-content"><div class="loading">Clique em "Analisar Site" para a IA avaliar o funil de conversão.</div></div>
-  </div>
-
 </div><!-- /tab-site -->
 
 <!-- ── ABA 2: CAMPANHA ── -->
@@ -545,6 +533,18 @@
 
 <!-- ── ABA 3: IA ANALYTICS ── -->
 <div id="tab-ia" class="tab-panel">
+
+  <!-- AI Site Report -->
+  <div class="ai-report-card" id="site-report-wrap">
+    <div class="ai-report-header">
+      <div>
+        <h3>AI Site Report <span class="ai-badge">Claude</span></h3>
+        <span class="ai-date" id="site-report-date"></span>
+      </div>
+      <button class="btn-refresh" onclick="runSiteReport()" id="btn-run-site-report">↻ Analisar Site</button>
+    </div>
+    <div id="site-report-content"><div class="loading">Clique em "Analisar Site" para a IA avaliar o funil de conversão.</div></div>
+  </div>
 
   <!-- AI Campaign Report -->
   <div class="ai-report-card" id="ai-report-wrap">

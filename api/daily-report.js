@@ -224,10 +224,11 @@ module.exports = async (req, res) => {
       const siteData = await getSiteData();
       const analysis = await analyzeSiteWithClaude(siteData);
       const today = new Date().toISOString().slice(0, 10);
-      await supabase.from('ai_site_reports').upsert(
+      // Non-blocking upsert — table may not exist yet
+      supabase.from('ai_site_reports').upsert(
         { report_date: today, analysis },
         { onConflict: 'report_date' }
-      );
+      ).then(({ error }) => { if (error) console.error('ai_site_reports upsert:', error.message); });
       return res.status(200).json({ ok: true, date: today, analysis });
     }
 
