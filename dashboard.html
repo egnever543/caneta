@@ -153,6 +153,38 @@
 
   /* AI Report */
   .ai-report-card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:24px; margin-top:20px; }
+  /* ── Change log timeline ── */
+  .change-item { position:relative; padding:18px 18px 18px 52px; border-bottom:1px solid var(--border); }
+  .change-item:last-child { border-bottom:none; }
+  .change-dot { position:absolute; left:16px; top:22px; width:12px; height:12px; border-radius:50%; flex-shrink:0; }
+  .change-dot.copy { background:#CE9B4C; }
+  .change-dot.design { background:#5C9C8F; }
+  .change-dot.offer { background:#9B59B6; }
+  .change-dot.targeting { background:#3498DB; }
+  .change-dot.creative { background:#E74C3C; }
+  .change-dot.cta { background:#2ECC71; }
+  .change-dot.other { background:#7A8FA6; }
+  .change-line { position:absolute; left:21px; top:34px; bottom:-1px; width:1px; background:var(--border); }
+  .change-item:last-child .change-line { display:none; }
+  .change-meta { display:flex; align-items:center; gap:10px; margin-bottom:6px; flex-wrap:wrap; }
+  .change-date { font-size:0.78rem; color:var(--muted); }
+  .change-badge { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; padding:2px 8px; border-radius:99px; }
+  .change-badge.copy { background:rgba(206,155,76,.15); color:#CE9B4C; }
+  .change-badge.design { background:rgba(92,156,143,.15); color:#5C9C8F; }
+  .change-badge.offer { background:rgba(155,89,182,.15); color:#9B59B6; }
+  .change-badge.targeting { background:rgba(52,152,219,.15); color:#3498DB; }
+  .change-badge.creative { background:rgba(231,76,60,.15); color:#E74C3C; }
+  .change-badge.cta { background:rgba(46,204,113,.15); color:#2ECC71; }
+  .change-badge.other { background:rgba(122,143,166,.15); color:#7A8FA6; }
+  .change-title { font-weight:700; font-size:0.95rem; color:var(--text); margin-bottom:4px; }
+  .change-desc { font-size:0.85rem; color:var(--muted); margin-bottom:10px; line-height:1.5; }
+  .change-hypothesis { font-size:0.8rem; color:var(--teal); font-style:italic; margin-bottom:10px; }
+  .change-metrics { display:flex; gap:16px; flex-wrap:wrap; }
+  .change-metric { display:flex; flex-direction:column; gap:2px; background:var(--bg); border-radius:8px; padding:8px 12px; }
+  .change-metric .m-label { font-size:0.65rem; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; }
+  .change-metric .m-value { font-size:0.95rem; font-weight:700; color:var(--text); }
+  .change-days { font-size:0.75rem; color:var(--muted); margin-top:8px; }
+
   .persona-field { display:flex; flex-direction:column; gap:6px; }
   .persona-field label { font-size:0.72rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em; font-weight:600; }
   .persona-field input, .persona-field textarea { background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:10px 13px; color:var(--text); font-size:0.88rem; outline:none; resize:vertical; font-family:inherit; transition:border-color .2s; width:100%; }
@@ -396,6 +428,7 @@
   <button class="tab-btn" onclick="switchTab('campanha',this)">Análise de Campanha</button>
   <button class="tab-btn" onclick="switchTab('ia',this)">IA Analytics <span class="tab-badge">Claude</span></button>
   <button class="tab-btn" onclick="switchTab('persona',this)">Persona</button>
+  <button class="tab-btn" onclick="switchTab('historico',this)">Histórico</button>
 </nav>
 
 <!-- ── ABA 1: SITE ── -->
@@ -733,6 +766,74 @@
     <div id="persona-status" style="margin-top:20px;font-size:0.82rem;color:var(--muted);text-align:right;min-height:20px"></div>
   </div>
 </div><!-- /tab-persona -->
+
+<!-- ── ABA 5: HISTÓRICO ── -->
+<div id="tab-historico" class="tab-panel">
+  <div style="display:grid;grid-template-columns:1fr 1.6fr;gap:24px;align-items:start">
+
+    <!-- Formulário de registro -->
+    <div class="ai-report-card">
+      <div class="ai-report-header" style="margin-bottom:20px">
+        <div>
+          <div class="ai-report-title">Registrar Mudança</div>
+          <div style="font-size:0.8rem;color:var(--muted);margin-top:4px">Métricas atuais são capturadas automaticamente</div>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="persona-field">
+          <label>Data da mudança</label>
+          <input id="ch-date" type="date"/>
+        </div>
+        <div class="persona-field">
+          <label>Categoria</label>
+          <select id="ch-category" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-size:0.88rem;width:100%">
+            <option value="copy">Copy / Texto</option>
+            <option value="design">Design / Layout</option>
+            <option value="offer">Oferta / Preço</option>
+            <option value="targeting">Segmentação de Anúncio</option>
+            <option value="creative">Criativo</option>
+            <option value="cta">CTA</option>
+            <option value="other">Outro</option>
+          </select>
+        </div>
+        <div class="persona-field">
+          <label>Título da mudança</label>
+          <input id="ch-title" type="text" placeholder="ex: Hero reescrito — foco em rebound"/>
+        </div>
+        <div class="persona-field">
+          <label>O que foi mudado</label>
+          <textarea id="ch-description" rows="5" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-size:0.88rem;width:100%;resize:vertical" placeholder="Descreva o que foi alterado e por quê…"></textarea>
+        </div>
+        <div class="persona-field">
+          <label>Hipótese <span style="color:var(--muted);font-weight:400">(o que você espera que melhore)</span></label>
+          <input id="ch-hypothesis" type="text" placeholder="ex: CTR vai subir de 0% para 2%+"/>
+        </div>
+
+        <div style="background:rgba(92,156,143,0.07);border:1px solid rgba(92,156,143,0.15);border-radius:10px;padding:14px;font-size:0.82rem;color:var(--muted)">
+          <span style="color:var(--teal);font-weight:600">📸 Snapshot automático:</span> visitas, CTA clicks, compras e CTR dos últimos 7 dias serão gravados junto com esta mudança.
+        </div>
+
+        <button id="btn-save-change" onclick="saveChange()" style="background:var(--teal);color:#0F1923;border:none;border-radius:10px;padding:12px;font-size:0.92rem;font-weight:700;cursor:pointer;transition:opacity .2s">
+          Registrar Mudança
+        </button>
+        <div id="ch-status" style="font-size:0.82rem;color:var(--muted);text-align:center;min-height:18px"></div>
+      </div>
+    </div>
+
+    <!-- Timeline -->
+    <div class="ai-report-card">
+      <div class="ai-report-header" style="margin-bottom:20px">
+        <div class="ai-report-title">Timeline de Mudanças</div>
+        <button class="btn-refresh" onclick="loadChanges()">↺ Atualizar</button>
+      </div>
+      <div id="changes-list">
+        <div style="color:var(--muted);font-size:0.88rem;text-align:center;padding:40px 0">Carregando histórico…</div>
+      </div>
+    </div>
+
+  </div>
+</div><!-- /tab-historico -->
 
 </div><!-- /page-wrap -->
 
@@ -2229,6 +2330,7 @@ loadCreatives();
 loadSuggestion();
 loadImageModels();
 loadPersona();
+loadChanges();
 setInterval(loadAll, 30000); // auto-refresh every 30s
 
 const PERSONA_DEFAULTS = {
@@ -2322,6 +2424,101 @@ async function savePersona() {
   }
   btn.textContent = '💾 Salvar';
   btn.disabled = false;
+}
+
+// ── Histórico de Mudanças ──────────────────────────────────────────
+
+// Set today as default date on first load
+document.addEventListener('DOMContentLoaded', () => {
+  const d = document.getElementById('ch-date');
+  if (d) d.value = new Date().toISOString().slice(0, 10);
+});
+
+async function saveChange() {
+  const btn = document.getElementById('btn-save-change');
+  const status = document.getElementById('ch-status');
+  const title = document.getElementById('ch-title').value.trim();
+  if (!title) { status.textContent = 'Preencha o título da mudança.'; status.style.color = '#ff7070'; return; }
+
+  btn.disabled = true;
+  btn.textContent = 'Salvando…';
+  status.textContent = 'Capturando métricas atuais…';
+  status.style.color = 'var(--muted)';
+
+  try {
+    const payload = {
+      change_date: document.getElementById('ch-date').value || new Date().toISOString().slice(0, 10),
+      category: document.getElementById('ch-category').value,
+      title,
+      description: document.getElementById('ch-description').value.trim(),
+      hypothesis: document.getElementById('ch-hypothesis').value.trim(),
+    };
+
+    const res = await fetch('/api/daily-report?type=changes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const json = await res.json();
+    if (!json.ok) throw new Error(json.error || 'Erro desconhecido');
+
+    status.textContent = '✓ Mudança registrada com snapshot de métricas!';
+    status.style.color = 'var(--teal)';
+
+    // Clear form
+    document.getElementById('ch-title').value = '';
+    document.getElementById('ch-description').value = '';
+    document.getElementById('ch-hypothesis').value = '';
+
+    loadChanges();
+  } catch(e) {
+    status.textContent = 'Erro: ' + e.message;
+    status.style.color = '#ff7070';
+  }
+  btn.disabled = false;
+  btn.textContent = 'Registrar Mudança';
+}
+
+async function loadChanges() {
+  const list = document.getElementById('changes-list');
+  if (!list) return;
+  try {
+    const res = await fetch('/api/daily-report?type=changes');
+    const json = await res.json();
+    if (!json.ok || !json.changes?.length) {
+      list.innerHTML = '<div style="color:var(--muted);font-size:0.88rem;text-align:center;padding:40px 0">Nenhuma mudança registrada ainda.</div>';
+      return;
+    }
+    const CATEGORY_LABELS = { copy:'Copy', design:'Design', offer:'Oferta', targeting:'Segmentação', creative:'Criativo', cta:'CTA', other:'Outro' };
+    list.innerHTML = json.changes.map((c, i) => {
+      const m = c.metrics_before || {};
+      const daysSince = Math.floor((Date.now() - new Date(c.change_date).getTime()) / 86400000);
+      const daysLabel = daysSince === 0 ? 'Hoje' : daysSince === 1 ? 'Ontem' : `${daysSince} dias atrás`;
+      const cat = c.category || 'other';
+      return `
+      <div class="change-item">
+        <div class="change-dot ${cat}"></div>
+        <div class="change-line"></div>
+        <div class="change-meta">
+          <span class="change-date">${c.change_date}</span>
+          <span class="change-badge ${cat}">${CATEGORY_LABELS[cat] || cat}</span>
+        </div>
+        <div class="change-title">${c.title}</div>
+        ${c.description ? `<div class="change-desc">${c.description}</div>` : ''}
+        ${c.hypothesis ? `<div class="change-hypothesis">Hipótese: ${c.hypothesis}</div>` : ''}
+        <div class="change-metrics">
+          <div class="change-metric"><span class="m-label">Visitas</span><span class="m-value">${m.visits ?? '—'}</span></div>
+          <div class="change-metric"><span class="m-label">CTA Clicks</span><span class="m-value">${m.ctas ?? '—'}</span></div>
+          <div class="change-metric"><span class="m-label">CTR</span><span class="m-value">${m.ctr != null ? m.ctr + '%' : '—'}</span></div>
+          <div class="change-metric"><span class="m-label">Compras</span><span class="m-value">${m.purchases ?? '—'}</span></div>
+          <div class="change-metric"><span class="m-label">Conv%</span><span class="m-value">${m.visits && m.purchases ? ((m.purchases/m.visits)*100).toFixed(1)+'%' : '—'}</span></div>
+        </div>
+        <div class="change-days">${daysLabel}</div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    list.innerHTML = `<div style="color:#ff7070;font-size:0.85rem;padding:20px">Erro ao carregar: ${e.message}</div>`;
+  }
 }
 </script>
 </body>

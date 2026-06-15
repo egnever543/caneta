@@ -218,6 +218,43 @@ module.exports = async (req, res) => {
   const type = req.query.type || 'campaign';
 
   try {
+    // ── Changes GET ──
+    if (type === 'changes' && req.method === 'GET') {
+      const { data, error } = await supabase
+        .from('change_log')
+        .select('*')
+        .order('change_date', { ascending: false })
+        .limit(50);
+      if (error) return res.status(200).json({ ok: false, error: error.message });
+      return res.status(200).json({ ok: true, changes: data });
+    }
+
+    // ── Changes POST ──
+    if (type === 'changes' && req.method === 'POST') {
+      const { change_date, category, title, description, hypothesis } = req.body;
+      if (!title) return res.status(400).json({ ok: false, error: 'title required' });
+      // Capture current site metrics as snapshot
+      const siteData = await getSiteData();
+      const metrics_before = {
+        visits: siteData.visits,
+        ctas: siteData.ctas,
+        purchases: siteData.purchases,
+        ctr: siteData.ctr,
+        countries: siteData.countries,
+        sources: siteData.sources,
+      };
+      const { error } = await supabase.from('change_log').insert({
+        change_date: change_date || new Date().toISOString().slice(0, 10),
+        category: category || 'other',
+        title,
+        description: description || null,
+        hypothesis: hypothesis || null,
+        metrics_before,
+      });
+      if (error) return res.status(200).json({ ok: false, error: error.message });
+      return res.status(200).json({ ok: true });
+    }
+
     // ── Persona GET ──
     if (type === 'persona' && req.method === 'GET') {
       const { data, error } = await supabase.from('persona').select('*').eq('id', 1).single();
