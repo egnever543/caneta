@@ -69,6 +69,16 @@ module.exports = async (req, res) => {
   try {
     const log = [];
 
+    // ── 0. Append UTM params to destination URL ──
+    function buildUrl(baseUrl, utmParams) {
+      try {
+        const u = new URL(baseUrl);
+        Object.entries(utmParams).forEach(([k, v]) => { if (v) u.searchParams.set(k, v); });
+        return u.toString();
+      } catch(_) { return baseUrl; }
+    }
+    const campSlug = (campaign_name || 'swf').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '').slice(0, 40);
+
     // ── 1. Upload images ──
     log.push('Fazendo upload das imagens...');
     const formatDefs = [
@@ -142,16 +152,22 @@ module.exports = async (req, res) => {
 
         // ── Creative ──
         log.push(`Criando creative ${fmt.label}...`);
+        const utmUrl = buildUrl(destination_url, {
+          utm_source: fmt.key === 'audience' ? 'audience_network' : fmt.key === 'reels' ? 'instagram' : 'facebook',
+          utm_medium: 'paid',
+          utm_campaign: campSlug,
+          utm_content: fmt.key,
+        });
         const creative = await metaPost(`${accountId}/adcreatives`, {
           name: `SWF — ${fmt.label} — ${headline?.slice(0, 30)}`,
           object_story_spec: {
             page_id,
             link_data: {
               image_hash: hash,
-              link: destination_url,
+              link: utmUrl,
               message: body,
               name: headline,
-              call_to_action: { type: cta_type, value: { link: destination_url } },
+              call_to_action: { type: cta_type, value: { link: utmUrl } },
             },
           },
         }, token);
@@ -171,16 +187,22 @@ module.exports = async (req, res) => {
       const primaryHash = imageHashes.reels || imageHashes.feed || Object.values(imageHashes)[0];
       if (!primaryHash) throw new Error('Nenhuma imagem disponível');
       log.push('Criando creative...');
+      const utmUrl = buildUrl(destination_url, {
+        utm_source: 'facebook',
+        utm_medium: 'paid',
+        utm_campaign: campSlug,
+        utm_content: 'existing',
+      });
       const creative = await metaPost(`${accountId}/adcreatives`, {
         name: `SWF — ${headline?.slice(0, 40)}`,
         object_story_spec: {
           page_id,
           link_data: {
             image_hash: primaryHash,
-            link: destination_url,
+            link: utmUrl,
             message: body,
             name: headline,
-            call_to_action: { type: cta_type, value: { link: destination_url } },
+            call_to_action: { type: cta_type, value: { link: utmUrl } },
           },
         },
       }, token);
