@@ -1131,7 +1131,7 @@ async function runSiteReport() {
     clearTimeout(tid);
     const json = await res.json();
     if (json.ok) {
-      await loadSiteReport();
+      renderSiteReport({ analysis: json.analysis, report_date: json.date });
     } else {
       document.getElementById('site-report-content').innerHTML = `<div class="loading" style="color:#ff7070">Erro: ${json.error}</div>`;
     }
