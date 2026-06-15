@@ -249,7 +249,10 @@ module.exports = async (req, res) => {
       supabase.from('ai_site_reports').upsert(
         { report_date: today, analysis },
         { onConflict: 'report_date' }
-      ).then(({ error }) => { if (error) console.error('ai_site_reports upsert:', error.message); });
+      ).then((result) => {
+        if (result?.error) console.error('ai_site_reports upsert error:', JSON.stringify(result.error));
+        else console.log('ai_site_reports upsert ok');
+      }).catch(e => console.error('ai_site_reports upsert catch:', e.message));
       return res.status(200).json({ ok: true, date: today, analysis });
     }
 
