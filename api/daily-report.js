@@ -246,14 +246,13 @@ module.exports = async (req, res) => {
       const [siteData, persona] = await Promise.all([getSiteData(), fetchPersona()]);
       const analysis = await Promise.race([analyzeSiteWithClaude(siteData, persona), timeout]);
       const today = new Date().toISOString().slice(0, 10);
-      supabase.from('ai_site_reports').upsert(
+      const { error: siteUpsertErr } = await supabase.from('ai_site_reports').upsert(
         { report_date: today, analysis },
         { onConflict: 'report_date' }
-      ).then((result) => {
-        if (result?.error) console.error('ai_site_reports upsert error:', JSON.stringify(result.error));
-        else console.log('ai_site_reports upsert ok');
-      }).catch(e => console.error('ai_site_reports upsert catch:', e.message));
-      return res.status(200).json({ ok: true, date: today, analysis });
+      );
+      if (siteUpsertErr) console.error('ai_site_reports error:', JSON.stringify(siteUpsertErr));
+      else console.log('ai_site_reports saved ok:', today);
+      return res.status(200).json({ ok: true, date: today, analysis, saved: !siteUpsertErr, saveError: siteUpsertErr?.message });
     }
 
     // ── Campaign + creative report (default) ──
