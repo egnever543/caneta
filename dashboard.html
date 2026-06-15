@@ -331,7 +331,7 @@
 <nav class="tabs-nav">
   <button class="tab-btn active" onclick="switchTab('site',this)">Análise de Site</button>
   <button class="tab-btn" onclick="switchTab('campanha',this)">Análise de Campanha</button>
-  <button class="tab-btn" onclick="switchTab('criativo',this)">Análise de Criativo <span class="tab-badge">Em breve</span></button>
+  <button class="tab-btn" onclick="switchTab('ia',this)">IA Analytics <span class="tab-badge">Claude</span></button>
 </nav>
 
 <!-- ── ABA 1: SITE ── -->
@@ -478,6 +478,12 @@
     <div id="campaigns-content"><div class="loading">Carregando campanhas...</div></div>
   </div>
 
+</div><!-- /tab-campanha -->
+
+<!-- ── ABA 3: IA ANALYTICS ── -->
+<div id="tab-ia" class="tab-panel">
+
+  <!-- AI Campaign Report -->
   <div class="ai-report-card" id="ai-report-wrap">
     <div class="ai-report-header">
       <div>
@@ -489,14 +495,10 @@
     <div id="ai-report-content"><div class="loading">No report yet — click "Generate now" to run the first analysis.</div></div>
   </div>
 
-</div><!-- /tab-campanha -->
-
-<!-- ── ABA 3: CRIATIVO ── -->
-<div id="tab-criativo" class="tab-panel">
-
-  <div class="criativo-header">
+  <!-- Análise de Criativos -->
+  <div class="criativo-header" style="margin-top:32px;">
     <div>
-      <h2>Análise de Criativos <span style="color:var(--teal);font-size:0.7rem;margin-left:6px;">IA + Meta Ads</span></h2>
+      <h2>Análise de Criativos <span style="color:var(--teal);font-size:0.7rem;margin-left:6px;">Claude Vision</span></h2>
       <p class="criativo-status" id="criativo-status">—</p>
     </div>
     <button class="btn-refresh" id="btn-analyze" onclick="runCreativeAnalysis()">✦ Analisar Criativos</button>
@@ -562,7 +564,7 @@
     </div>
   </div>
 
-</div><!-- /tab-criativo -->
+</div><!-- /tab-ia -->
 
 </div><!-- /page-wrap -->
 
@@ -928,6 +930,7 @@ function renderReport(data) {
       </div>
     </div>
     ${recs ? `<div class="report-block" style="margin-bottom:16px"><h4>Recommendations</h4><div class="recs-list">${recs}</div></div>` : ''}
+    ${r.next_creative ? `<div class="report-block" style="margin-bottom:16px;border-color:rgba(92,156,143,0.3);background:rgba(92,156,143,0.05)"><h4>🎨 Próximo Criativo Ideal</h4><p style="font-size:0.85rem;color:var(--text);line-height:1.6;margin:0">${r.next_creative}</p></div>` : ''}
     ${alerts ? `<div class="report-block"><h4>Alerts</h4><div class="alerts-wrap">${alerts}</div></div>` : ''}
   `;
 }

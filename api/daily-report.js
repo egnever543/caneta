@@ -14,44 +14,60 @@ async function fetchMetaInsights() {
   const token = process.env.META_ACCESS_TOKEN;
   const base = 'https://graph.facebook.com/v19.0';
 
-  // Campaign-level insights for yesterday
+  // Last 7 days at campaign level
   const insightsRes = await fetch(
-    `${base}/${accountId}/insights?fields=campaign_name,campaign_id,impressions,clicks,spend,cpm,cpc,ctr,reach,actions&date_preset=yesterday&level=campaign&access_token=${token}`
+    `${base}/${accountId}/insights?fields=campaign_name,campaign_id,ad_name,ad_id,impressions,clicks,spend,cpm,cpc,ctr,reach,actions&date_preset=last_7d&level=ad&limit=50&access_token=${token}`
   );
   const insights = await insightsRes.json();
 
   // Active campaigns
   const campaignsRes = await fetch(
-    `${base}/${accountId}/campaigns?fields=id,name,status,daily_budget,lifetime_budget&access_token=${token}`
+    `${base}/${accountId}/campaigns?fields=id,name,status,daily_budget,lifetime_budget&filtering=[{"field":"effective_status","operator":"IN","value":["ACTIVE"]}]&access_token=${token}`
   );
   const campaigns = await campaignsRes.json();
-
-  // Ad sets
-  const adsetsRes = await fetch(
-    `${base}/${accountId}/adsets?fields=id,name,status,daily_budget,targeting&limit=20&access_token=${token}`
-  );
-  const adsets = await adsetsRes.json();
 
   return {
     insights: insights.data || [],
     campaigns: campaigns.data || [],
-    adsets: adsets.data || [],
   };
 }
 
-async function analyzeWithClaude(metaData, siteData) {
+async function fetchCreatives() {
+  const res = await fetch(
+    `${process.env.SUPABASE_URL}/rest/v1/creatives?select=name,hook_type,hook_score,visual_elements,dominant_colors,has_person,tone,ctr,cpc,impressions,clicks,spend,analysis_notes,analyzed_at&analyzed_at=not.is.null&order=ctr.desc&limit=20`,
+    { headers: { apikey: process.env.SUPABASE_ANON_KEY, Authorization: `Bearer ${process.env.SUPABASE_ANON_KEY}` } }
+  );
+  return res.json();
+}
+
+async function analyzeWithClaude(metaData, siteData, creatives) {
+  const topCreatives = (creatives || []).slice(0, 10).map(c => ({
+    name: c.name,
+    hook_type: c.hook_type,
+    hook_score: c.hook_score,
+    tone: c.tone,
+    has_person: c.has_person,
+    visual_elements: c.visual_elements,
+    ctr: c.ctr,
+    cpc: c.cpc,
+    impressions: c.impressions,
+    clicks: c.clicks,
+    spend: c.spend,
+    notes: c.analysis_notes,
+  }));
+
   const prompt = `Você é um analista de performance especializado em Meta Ads para produtos digitais. Responda sempre em português do Brasil, de forma direta e objetiva.
 
-## Dados Meta Ads (Ontem)
+## Dados Meta Ads (Últimos 7 dias — nível de anúncio)
 
-### Campaign Insights
+### Performance por Anúncio
 ${JSON.stringify(metaData.insights, null, 2)}
 
-### Active Campaigns
+### Campanhas Ativas
 ${JSON.stringify(metaData.campaigns, null, 2)}
 
-### Ad Sets
-${JSON.stringify(metaData.adsets, null, 2)}
+## Análise de Criativos (Claude Vision — top ${topCreatives.length} por CTR)
+${JSON.stringify(topCreatives, null, 2)}
 
 ## Analytics do Site (Últimos 7 dias)
 - Visitas únicas: ${siteData.visits}
@@ -66,15 +82,16 @@ ${JSON.stringify(metaData.adsets, null, 2)}
 - Objetivo: maximizar compras com o menor CPA possível
 
 ## Sua Tarefa
-Analise a performance da campanha e forneça:
+Cruze os dados de performance dos anúncios com a análise dos criativos e forneça:
 
 1. **Resumo** — 2-3 frases sobre a performance geral em linguagem simples
-2. **O que está funcionando** — pontos positivos com dados concretos
-3. **O que não está funcionando** — problemas identificados com dados
-4. **Recomendações** — 3 ações concretas por prioridade (inclua o nome da campanha/conjunto quando relevante)
-5. **Alertas** — qualquer coisa que precise de atenção imediata
+2. **O que está funcionando** — quais tipos de hook, elementos visuais e tons estão gerando melhor CTR/CPC com dados concretos
+3. **O que não está funcionando** — criativos, hooks ou padrões visuais com performance abaixo da média
+4. **Recomendações** — 3-5 ações concretas por prioridade: pausar criativos fracos, duplicar os que funcionam, testar variações específicas
+5. **Próximo criativo** — descreva em 2-3 frases o criativo ideal a criar baseado nos padrões vencedores identificados
+6. **Alertas** — qualquer coisa crítica que precise de atenção imediata
 
-Seja direto, específico e baseado em dados. Se os dados forem insuficientes (campanha recém-iniciada), diga isso e recomende aguardar mais dados antes de fazer mudanças. Nunca recomende alterações durante a fase de aprendizado (primeiros 7 dias) a menos que haja um problema crítico.
+Seja direto, específico e baseado em dados. Mencione nomes de criativos quando relevante.
 
 Responda em JSON com esta estrutura exata:
 {
@@ -84,6 +101,7 @@ Responda em JSON com esta estrutura exata:
   "recommendations": [
     { "priority": 1, "action": "string", "reason": "string", "impact": "high|medium|low" }
   ],
+  "next_creative": "string",
   "alerts": ["string"],
   "learning_phase": true|false
 }`;
@@ -137,8 +155,8 @@ module.exports = async (req, res) => {
   if (req.method !== 'GET' && req.method !== 'POST') return res.status(405).end();
 
   try {
-    const [metaData, siteData] = await Promise.all([fetchMetaInsights(), getSiteData()]);
-    const analysis = await analyzeWithClaude(metaData, siteData);
+    const [metaData, siteData, creatives] = await Promise.all([fetchMetaInsights(), getSiteData(), fetchCreatives()]);
+    const analysis = await analyzeWithClaude(metaData, siteData, creatives);
 
     const today = new Date().toISOString().slice(0, 10);
 
