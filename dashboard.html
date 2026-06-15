@@ -57,6 +57,9 @@
   @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
   .btn-refresh { background:var(--card); border:1px solid var(--border); color:var(--text); padding:9px 18px; border-radius:8px; cursor:pointer; font-size:0.84rem; transition:border-color .2s; }
   .btn-refresh:hover { border-color:var(--teal); }
+  .btn-copy { background:transparent; border:1px solid var(--border); color:var(--muted); padding:9px 14px; border-radius:8px; cursor:pointer; font-size:0.82rem; transition:all .2s; }
+  .btn-copy:hover { border-color:var(--teal); color:var(--teal); }
+  .btn-copy.copied { border-color:var(--teal); color:var(--teal); }
 
   /* KPI Grid — 6 colunas em desktop */
   .kpi-grid { display:grid; grid-template-columns:repeat(7, 1fr); gap:16px; margin-bottom:28px; }
@@ -553,7 +556,10 @@
         <h3>AI Site Report <span class="ai-badge">Claude</span></h3>
         <span class="ai-date" id="site-report-date"></span>
       </div>
-      <button class="btn-refresh" onclick="runSiteReport()" id="btn-run-site-report">↻ Analisar Site</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn-copy" onclick="copyReport('site-report-content')" title="Copiar análise">⎘ Copiar</button>
+        <button class="btn-refresh" onclick="runSiteReport()" id="btn-run-site-report">↻ Analisar Site</button>
+      </div>
     </div>
     <div id="site-report-content"><div class="loading">Clique em "Analisar Site" para a IA avaliar o funil de conversão.</div></div>
   </div>
@@ -565,7 +571,10 @@
         <h3>AI Campaign Report <span class="ai-badge">Claude</span></h3>
         <span class="ai-date" id="ai-report-date"></span>
       </div>
-      <button class="btn-refresh" onclick="runReport()" id="btn-run-report">↻ Generate now</button>
+      <div style="display:flex;gap:8px">
+        <button class="btn-copy" onclick="copyReport('ai-report-content')" title="Copiar análise">⎘ Copiar</button>
+        <button class="btn-refresh" onclick="runReport()" id="btn-run-report">↻ Generate now</button>
+      </div>
     </div>
     <div id="ai-report-content"><div class="loading">No report yet — click "Generate now" to run the first analysis.</div></div>
   </div>
@@ -1213,6 +1222,21 @@ function renderSiteReport(data) {
     ${r.best_source ? `<div class="report-block" style="margin-bottom:16px;border-color:rgba(92,156,143,0.3);background:rgba(92,156,143,0.05)"><h4>🎯 Melhor Fonte de Tráfego</h4><p style="font-size:0.85rem;color:var(--text);line-height:1.6;margin:0">${r.best_source}</p></div>` : ''}
     ${alerts ? `<div class="report-block"><h4>Alertas</h4><div class="alerts-wrap">${alerts}</div></div>` : ''}
   `;
+}
+
+function copyReport(contentId) {
+  const el = document.getElementById(contentId);
+  if (!el) return;
+  const text = el.innerText || el.textContent || '';
+  if (!text.trim()) return;
+  navigator.clipboard.writeText(text.trim()).then(() => {
+    const btn = el.closest('.ai-report-card')?.querySelector('.btn-copy');
+    if (!btn) return;
+    const orig = btn.textContent;
+    btn.textContent = '✓ Copiado!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 2000);
+  });
 }
 
 async function runSiteReport() {
