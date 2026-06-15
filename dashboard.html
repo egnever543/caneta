@@ -17,6 +17,37 @@
   }
   * { margin:0; padding:0; box-sizing:border-box; }
   body { font-family: 'Inter', system-ui, sans-serif; background:var(--bg); color:var(--text); min-height:100vh; padding:32px 40px; }
+
+  /* ── Login overlay ── */
+  #login-overlay {
+    position:fixed; inset:0; background:var(--bg); z-index:9999;
+    display:flex; align-items:center; justify-content:center;
+  }
+  #login-overlay.hidden { display:none; }
+  .login-card {
+    background:var(--card); border:1px solid var(--border); border-radius:20px;
+    padding:48px 40px; width:100%; max-width:400px;
+    display:flex; flex-direction:column; gap:20px;
+  }
+  .login-logo { font-size:1.4rem; font-weight:700; color:var(--text); }
+  .login-logo span { color:var(--teal); }
+  .login-sub { font-size:0.82rem; color:var(--muted); margin-top:-12px; }
+  .login-field { display:flex; flex-direction:column; gap:6px; }
+  .login-field label { font-size:0.72rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em; }
+  .login-field input {
+    background:var(--bg); border:1px solid var(--border); border-radius:8px;
+    padding:11px 14px; color:var(--text); font-size:0.9rem; outline:none;
+    transition:border-color .2s;
+  }
+  .login-field input:focus { border-color:var(--teal); }
+  .login-btn {
+    background:var(--teal); color:#0F1923; border:none; border-radius:10px;
+    padding:13px; font-size:0.92rem; font-weight:700; cursor:pointer;
+    transition:opacity .2s; margin-top:4px;
+  }
+  .login-btn:hover { opacity:0.88; }
+  .login-btn:disabled { opacity:0.5; cursor:default; }
+  .login-error { font-size:0.8rem; color:#ff7070; text-align:center; min-height:18px; }
   .page-wrap { max-width:1400px; margin:0 auto; }
   h1 { font-size:1.6rem; font-weight:700; margin-bottom:4px; }
   .subtitle { color:var(--muted); font-size:0.88rem; margin-bottom:36px; }
@@ -314,7 +345,25 @@
 </head>
 <body>
 
-<div class="page-wrap">
+<!-- Login overlay -->
+<div id="login-overlay">
+  <div class="login-card">
+    <div class="login-logo">Shot Without <span>Fear</span></div>
+    <p class="login-sub">Dashboard — acesso restrito</p>
+    <div class="login-field">
+      <label>Email</label>
+      <input type="email" id="login-email" placeholder="seu@email.com" autocomplete="email"/>
+    </div>
+    <div class="login-field">
+      <label>Senha</label>
+      <input type="password" id="login-password" placeholder="••••••••" autocomplete="current-password"/>
+    </div>
+    <div class="login-error" id="login-error"></div>
+    <button class="login-btn" id="login-btn" onclick="doLogin()">Entrar</button>
+  </div>
+</div>
+
+<div class="page-wrap" id="page-wrap" style="display:none">
 
 <div class="header">
   <div>
@@ -567,6 +616,59 @@
 </div><!-- /tab-ia -->
 
 </div><!-- /page-wrap -->
+
+<script>
+async function sha256hex(str) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  const errEl = document.getElementById('login-error');
+  const btn = document.getElementById('login-btn');
+  errEl.textContent = '';
+  if (!email || !password) { errEl.textContent = 'Preencha email e senha.'; return; }
+  btn.disabled = true; btn.textContent = 'Verificando...';
+  try {
+    const hash = await sha256hex(password);
+    const res = await fetch(
+      `${SUPABASE_URL}/rest/v1/dashboard_users?email=eq.${encodeURIComponent(email)}&password_hash=eq.${hash}&select=id`,
+      { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
+    );
+    const data = await res.json();
+    if (Array.isArray(data) && data.length > 0) {
+      sessionStorage.setItem('swf_auth', JSON.stringify({ email, ts: Date.now() }));
+      showDashboard();
+    } else {
+      errEl.textContent = 'Email ou senha incorretos.';
+    }
+  } catch(e) {
+    errEl.textContent = 'Erro de conexão. Tente novamente.';
+  }
+  btn.disabled = false; btn.textContent = 'Entrar';
+}
+
+function showDashboard() {
+  document.getElementById('login-overlay').classList.add('hidden');
+  document.getElementById('page-wrap').style.display = '';
+}
+
+// Allow Enter key on password field
+document.getElementById('login-password').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doLogin();
+});
+
+// Check existing session on load
+(function checkSession() {
+  try {
+    const s = JSON.parse(sessionStorage.getItem('swf_auth') || '{}');
+    if (s.email && s.ts) { showDashboard(); return; }
+  } catch(_) {}
+  // Show login — keep overlay visible
+})();
+</script>
 
 <!-- Campaign Modal -->
 <div class="modal-overlay" id="campaign-modal">
