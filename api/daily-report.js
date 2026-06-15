@@ -167,45 +167,19 @@ async function getSiteData() {
 }
 
 async function analyzeSiteWithClaude(siteData) {
-  const prompt = `Você é um especialista em CRO (Conversion Rate Optimization) e analytics de landing pages para produtos digitais.
+  const convRate = siteData.visits ? ((siteData.purchases / siteData.visits) * 100).toFixed(2) : 0;
+  const ctaConv = siteData.ctas ? Math.round(siteData.purchases / siteData.ctas * 100) : 0;
+  const topSources = Object.entries(siteData.sources || {}).slice(0, 3).map(([k,v]) => `${k}:${v}`).join(', ');
 
-## Dados do Site — Últimos 7 dias
-- Visitas únicas: ${siteData.visits}
-- Cliques no CTA: ${siteData.ctas}
-- Compras confirmadas: ${siteData.purchases}
-- Taxa visitas → CTA: ${siteData.ctr}%
-- Taxa CTA → Compra: ${siteData.ctas ? Math.round(siteData.purchases / siteData.ctas * 100) : 0}%
-- Taxa geral de conversão: ${siteData.visits ? ((siteData.purchases / siteData.visits) * 100).toFixed(2) : 0}%
-- Principais países: ${siteData.countries}
+  const prompt = `Analise funil CRO. Produto: ebook $9 GLP-1 (EUA, mulheres 35-65).
+Dados 7 dias: visitas=${siteData.visits} cta_cliques=${siteData.ctas} compras=${siteData.purchases} ctr=${siteData.ctr}% conv_cta=${ctaConv}% conv_total=${convRate}% fontes=${topSources||'n/a'}
 
-## Fontes de Tráfego
-${JSON.stringify(siteData.sources, null, 2)}
-
-## Visitas por Dia
-${JSON.stringify(siteData.daily, null, 2)}
-
-## Contexto
-- Produto: "Shot Without Fear" — ebook de $9 para usuários de GLP-1 (Ozempic, Mounjaro, Wegovy)
-- Público: EUA, 35-65 anos, maioria mulheres
-- Landing page simples com 1 CTA de compra
-
-## Sua Tarefa
-Analise o funil de conversão do site e responda APENAS em JSON:
-{
-  "summary": "2-3 frases sobre a saúde geral do funil",
-  "funnel_health": "saudável|atenção|crítico",
-  "working": ["o que está funcionando no site/funil"],
-  "friction_points": ["onde os usuários estão abandonando e por quê"],
-  "recommendations": [
-    { "priority": 1, "action": "ação concreta", "reason": "motivo baseado nos dados", "impact": "high|medium|low" }
-  ],
-  "best_source": "fonte de tráfego com melhor potencial e por quê",
-  "alerts": ["qualquer métrica crítica que exige atenção imediata"]
-}`;
+Responda APENAS JSON (sem markdown):
+{"summary":"frase curta","funnel_health":"saudável|atenção|crítico","working":["item"],"friction_points":["item"],"recommendations":[{"priority":1,"action":"ação","reason":"motivo","impact":"high|medium|low"}],"best_source":"fonte","alerts":["item"]}`;
 
   const response = await anthropic.messages.create({
     model: 'claude-haiku-4-5-20251001',
-    max_tokens: 1024,
+    max_tokens: 512,
     messages: [{ role: 'user', content: prompt }],
   });
 
