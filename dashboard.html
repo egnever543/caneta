@@ -150,6 +150,10 @@
 
   /* AI Report */
   .ai-report-card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:24px; margin-top:20px; }
+  .persona-field { display:flex; flex-direction:column; gap:6px; }
+  .persona-field label { font-size:0.72rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em; font-weight:600; }
+  .persona-field input, .persona-field textarea { background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:10px 13px; color:var(--text); font-size:0.88rem; outline:none; resize:vertical; font-family:inherit; transition:border-color .2s; }
+  .persona-field input:focus, .persona-field textarea:focus { border-color:var(--teal); }
   .ai-report-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
   .ai-report-header h3 { font-size:0.85rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.09em; margin-bottom:4px; }
   .ai-badge { background:rgba(206,155,76,0.15); color:var(--gold); font-size:0.65rem; padding:2px 7px; border-radius:99px; font-weight:700; letter-spacing:0.05em; vertical-align:middle; margin-left:6px; }
@@ -381,6 +385,7 @@
   <button class="tab-btn active" onclick="switchTab('site',this)">Análise de Site</button>
   <button class="tab-btn" onclick="switchTab('campanha',this)">Análise de Campanha</button>
   <button class="tab-btn" onclick="switchTab('ia',this)">IA Analytics <span class="tab-badge">Claude</span></button>
+  <button class="tab-btn" onclick="switchTab('persona',this)">Persona</button>
 </nav>
 
 <!-- ── ABA 1: SITE ── -->
@@ -628,6 +633,90 @@
   </div>
 
 </div><!-- /tab-ia -->
+
+<!-- ── ABA 4: PERSONA ── -->
+<div id="tab-persona" class="tab-panel">
+  <div class="ai-report-card" style="max-width:860px">
+    <div class="ai-report-header" style="margin-bottom:24px">
+      <div>
+        <div class="ai-report-title">Persona & Produto</div>
+        <div style="font-size:0.8rem;color:var(--muted);margin-top:4px">Fonte de verdade para todas as análises de IA</div>
+      </div>
+      <button class="btn-refresh" id="btn-save-persona" onclick="savePersona()">💾 Salvar</button>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+
+      <!-- Coluna esquerda: Produto -->
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div style="font-size:0.7rem;color:var(--teal);text-transform:uppercase;letter-spacing:.1em;font-weight:600;border-bottom:1px solid var(--border);padding-bottom:8px">Produto</div>
+
+        <div class="persona-field">
+          <label>Nome do Produto</label>
+          <input id="p-product_name" type="text" placeholder="ex: Shot Without Fear"/>
+        </div>
+        <div class="persona-field">
+          <label>Preço</label>
+          <input id="p-product_price" type="text" placeholder="ex: $9"/>
+        </div>
+        <div class="persona-field">
+          <label>Descrição Curta</label>
+          <textarea id="p-product_description" rows="3" placeholder="O que é o produto e qual problema resolve…"></textarea>
+        </div>
+        <div class="persona-field">
+          <label>Proposta de Valor Única</label>
+          <textarea id="p-value_proposition" rows="3" placeholder="Por que escolher este produto vs alternativas…"></textarea>
+        </div>
+        <div class="persona-field">
+          <label>Objetivo Principal</label>
+          <input id="p-goals" type="text" placeholder="ex: maximizar compras com CPA < $5"/>
+        </div>
+        <div class="persona-field">
+          <label>Tom de Voz</label>
+          <input id="p-tone" type="text" placeholder="ex: empático, direto, científico"/>
+        </div>
+      </div>
+
+      <!-- Coluna direita: Público -->
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div style="font-size:0.7rem;color:var(--teal);text-transform:uppercase;letter-spacing:.1em;font-weight:600;border-bottom:1px solid var(--border);padding-bottom:8px">Público-Alvo</div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+          <div class="persona-field">
+            <label>Gênero</label>
+            <input id="p-gender" type="text" placeholder="ex: Mulheres"/>
+          </div>
+          <div class="persona-field">
+            <label>Faixa Etária</label>
+            <input id="p-age_range" type="text" placeholder="ex: 35-65"/>
+          </div>
+          <div class="persona-field">
+            <label>Localização</label>
+            <input id="p-location" type="text" placeholder="ex: EUA"/>
+          </div>
+        </div>
+        <div class="persona-field">
+          <label>Público-Alvo (descrição livre)</label>
+          <textarea id="p-target_audience" rows="3" placeholder="Descreva quem é essa pessoa: estilo de vida, contexto, situação…"></textarea>
+        </div>
+
+        <div style="font-size:0.7rem;color:var(--teal);text-transform:uppercase;letter-spacing:.1em;font-weight:600;border-bottom:1px solid var(--border);padding-bottom:8px;margin-top:8px">Desejos & Dores</div>
+
+        <div class="persona-field">
+          <label>Desejos <span style="color:var(--muted);font-weight:400">(1 por linha)</span></label>
+          <textarea id="p-desires" rows="4" placeholder="Quer aprender a aplicar a injeção sem medo&#10;Quer resultados rápidos e duradouros&#10;Quer se sentir no controle da própria saúde"></textarea>
+        </div>
+        <div class="persona-field">
+          <label>Dores <span style="color:var(--muted);font-weight:400">(1 por linha)</span></label>
+          <textarea id="p-pains" rows="4" placeholder="Medo de agulha / dor da injeção&#10;Não sabe a técnica correta&#10;Vergonha de pedir ajuda&#10;Medo de errar a dose"></textarea>
+        </div>
+      </div>
+
+    </div>
+
+    <div id="persona-status" style="margin-top:20px;font-size:0.82rem;color:var(--muted);text-align:right;min-height:20px"></div>
+  </div>
+</div><!-- /tab-persona -->
 
 </div><!-- /page-wrap -->
 
@@ -2108,7 +2197,68 @@ loadCampaigns();
 loadCreatives();
 loadSuggestion();
 loadImageModels();
+loadPersona();
 setInterval(loadAll, 30000); // auto-refresh every 30s
+
+async function loadPersona() {
+  try {
+    const res = await fetch('/api/daily-report?type=persona');
+    const json = await res.json();
+    if (!json.ok) return;
+    const p = json.persona;
+    const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
+    set('p-product_name', p.product_name);
+    set('p-product_price', p.product_price);
+    set('p-product_description', p.product_description);
+    set('p-value_proposition', p.value_proposition);
+    set('p-goals', p.goals);
+    set('p-tone', p.tone);
+    set('p-gender', p.gender);
+    set('p-age_range', p.age_range);
+    set('p-location', p.location);
+    set('p-target_audience', p.target_audience);
+    set('p-desires', (p.desires || []).join('\n'));
+    set('p-pains', (p.pains || []).join('\n'));
+  } catch(e) { console.error('loadPersona:', e); }
+}
+
+async function savePersona() {
+  const btn = document.getElementById('btn-save-persona');
+  const status = document.getElementById('persona-status');
+  btn.disabled = true;
+  btn.textContent = '⏳ Salvando...';
+  const get = id => document.getElementById(id)?.value?.trim() || '';
+  const splitLines = id => get(id).split('\n').map(s => s.trim()).filter(Boolean);
+  const body = {
+    product_name: get('p-product_name'),
+    product_price: get('p-product_price'),
+    product_description: get('p-product_description'),
+    value_proposition: get('p-value_proposition'),
+    goals: get('p-goals'),
+    tone: get('p-tone'),
+    gender: get('p-gender'),
+    age_range: get('p-age_range'),
+    location: get('p-location'),
+    target_audience: get('p-target_audience'),
+    desires: splitLines('p-desires'),
+    pains: splitLines('p-pains'),
+  };
+  try {
+    const res = await fetch('/api/daily-report?type=persona', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    const json = await res.json();
+    status.textContent = json.ok ? '✓ Persona salva — análises de IA vão usar esses dados.' : 'Erro: ' + json.error;
+    status.style.color = json.ok ? 'var(--teal)' : '#ff7070';
+  } catch(e) {
+    status.textContent = 'Erro: ' + e.message;
+    status.style.color = '#ff7070';
+  }
+  btn.textContent = '💾 Salvar';
+  btn.disabled = false;
+}
 </script>
 </body>
 </html>

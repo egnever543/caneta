@@ -40,7 +40,7 @@ async function fetchCreatives() {
   return res.json();
 }
 
-async function analyzeWithClaude(metaData, siteData, creatives) {
+async function analyzeWithClaude(metaData, siteData, creatives, persona) {
   const topCreatives = (creatives || []).slice(0, 10).map(c => ({
     name: c.name,
     hook_type: c.hook_type,
@@ -57,6 +57,8 @@ async function analyzeWithClaude(metaData, siteData, creatives) {
   }));
 
   const prompt = `Você é um analista de performance especializado em Meta Ads para produtos digitais. Responda sempre em português do Brasil, de forma direta e objetiva.
+
+${personaContext(persona)}
 
 ## Dados Meta Ads (Últimos 7 dias — nível de anúncio)
 
@@ -166,12 +168,14 @@ async function getSiteData() {
   return { visits, ctas, purchases, ctr: visits ? Math.round(ctas / visits * 100) : 0, countries, sources, daily };
 }
 
-async function analyzeSiteWithClaude(siteData) {
+async function analyzeSiteWithClaude(siteData, persona) {
   const convRate = siteData.visits ? ((siteData.purchases / siteData.visits) * 100).toFixed(2) : 0;
   const ctaConv = siteData.ctas ? Math.round(siteData.purchases / siteData.ctas * 100) : 0;
   const topSources = Object.entries(siteData.sources || {}).slice(0, 3).map(([k,v]) => `${k}:${v}`).join(', ');
 
-  const prompt = `Funil CRO: ebook $9 GLP-1 (EUA, mulheres 35-65). 7 dias: visitas=${siteData.visits} ctas=${siteData.ctas} compras=${siteData.purchases} ctr=${siteData.ctr}% conv=${convRate}% fontes=${topSources||'n/a'}
+  const prompt = `${personaContext(persona)}
+
+Funil CRO. 7 dias: visitas=${siteData.visits} ctas=${siteData.ctas} compras=${siteData.purchases} ctr=${siteData.ctr}% conv=${convRate}% fontes=${topSources||'n/a'}
 
 Responda SOMENTE com JSON válido, sem markdown, texto curto por campo, máximo 2 recomendações:
 {"summary":"…","funnel_health":"saudável|atenção|crítico","working":["…"],"friction_points":["…"],"recommendations":[{"priority":1,"action":"…","reason":"…","impact":"high"}],"best_source":"…","alerts":["…"]}`;
@@ -185,20 +189,62 @@ Responda SOMENTE com JSON válido, sem markdown, texto curto por campo, máximo 
   return parseJSON(response.content[0].text);
 }
 
+async function fetchPersona() {
+  const { data } = await supabase.from('persona').select('*').eq('id', 1).single();
+  return data || {};
+}
+
+function personaContext(p) {
+  if (!p || !p.product_name) return '';
+  const desires = (p.desires || []).join('; ');
+  const pains = (p.pains || []).join('; ');
+  return `
+PERSONA & PRODUTO (fonte de verdade — priorize sempre):
+Produto: ${p.product_name} | Preço: ${p.product_price || '?'} | ${p.product_description || ''}
+Público: ${p.gender || ''}, ${p.age_range || ''}, ${p.location || ''}
+Desejos: ${desires || 'não definidos'}
+Dores: ${pains || 'não definidas'}
+Proposta de valor: ${p.value_proposition || ''}
+Tom: ${p.tone || ''}
+Objetivo: ${p.goals || ''}`.trim();
+}
+
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
-  if (req.method !== 'GET' && req.method !== 'POST') return res.status(405).end();
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  if (req.method === 'OPTIONS') return res.status(200).end();
 
   const type = req.query.type || 'campaign';
 
   try {
+    // ── Persona GET ──
+    if (type === 'persona' && req.method === 'GET') {
+      const { data, error } = await supabase.from('persona').select('*').eq('id', 1).single();
+      if (error) return res.status(200).json({ ok: true, persona: {} });
+      return res.status(200).json({ ok: true, persona: data });
+    }
+
+    // ── Persona POST (save) ──
+    if (type === 'persona' && req.method === 'POST') {
+      const fields = req.body;
+      const { error } = await supabase.from('persona').upsert(
+        { id: 1, ...fields, updated_at: new Date().toISOString() },
+        { onConflict: 'id' }
+      );
+      if (error) throw error;
+      return res.status(200).json({ ok: true });
+    }
+
+    if (req.method !== 'GET') return res.status(405).end();
+
     // ── Site report ──
     if (type === 'site') {
       const timeout = new Promise((_, reject) =>
         setTimeout(() => reject(new Error('Timeout: análise demorou mais de 8s')), 8000)
       );
-      const siteData = await getSiteData();
-      const analysis = await Promise.race([analyzeSiteWithClaude(siteData), timeout]);
+      const [siteData, persona] = await Promise.all([getSiteData(), fetchPersona()]);
+      const analysis = await Promise.race([analyzeSiteWithClaude(siteData, persona), timeout]);
       const today = new Date().toISOString().slice(0, 10);
       supabase.from('ai_site_reports').upsert(
         { report_date: today, analysis },
@@ -208,8 +254,10 @@ module.exports = async (req, res) => {
     }
 
     // ── Campaign + creative report (default) ──
-    const [metaData, siteData, creatives] = await Promise.all([fetchMetaInsights(), getSiteData(), fetchCreatives()]);
-    const analysis = await analyzeWithClaude(metaData, siteData, creatives);
+    const [metaData, siteData, creatives, persona] = await Promise.all([
+      fetchMetaInsights(), getSiteData(), fetchCreatives(), fetchPersona()
+    ]);
+    const analysis = await analyzeWithClaude(metaData, siteData, creatives, persona);
     const today = new Date().toISOString().slice(0, 10);
     const { error } = await supabase
       .from('ai_reports')
