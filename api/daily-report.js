@@ -205,7 +205,7 @@ Analise o funil de conversão do site e responda APENAS em JSON:
 
   const response = await anthropic.messages.create({
     model: 'claude-haiku-4-5-20251001',
-    max_tokens: 2048,
+    max_tokens: 1024,
     messages: [{ role: 'user', content: prompt }],
   });
 
@@ -221,10 +221,12 @@ module.exports = async (req, res) => {
   try {
     // ── Site report ──
     if (type === 'site') {
+      const timeout = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Timeout: análise demorou mais de 8s')), 8000)
+      );
       const siteData = await getSiteData();
-      const analysis = await analyzeSiteWithClaude(siteData);
+      const analysis = await Promise.race([analyzeSiteWithClaude(siteData), timeout]);
       const today = new Date().toISOString().slice(0, 10);
-      // Non-blocking upsert — table may not exist yet
       supabase.from('ai_site_reports').upsert(
         { report_date: today, analysis },
         { onConflict: 'report_date' }

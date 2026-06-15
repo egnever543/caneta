@@ -1125,7 +1125,10 @@ async function runSiteReport() {
   btn.disabled = true;
   document.getElementById('site-report-content').innerHTML = '<div class="loading">Analisando funil com Claude — aguarde...</div>';
   try {
-    const res = await fetch('/api/daily-report?type=site');
+    const controller = new AbortController();
+    const tid = setTimeout(() => controller.abort(), 9000);
+    const res = await fetch('/api/daily-report?type=site', { signal: controller.signal });
+    clearTimeout(tid);
     const json = await res.json();
     if (json.ok) {
       await loadSiteReport();
@@ -1133,7 +1136,8 @@ async function runSiteReport() {
       document.getElementById('site-report-content').innerHTML = `<div class="loading" style="color:#ff7070">Erro: ${json.error}</div>`;
     }
   } catch(e) {
-    document.getElementById('site-report-content').innerHTML = `<div class="loading" style="color:#ff7070">Erro: ${e.message}</div>`;
+    const msg = e.name === 'AbortError' ? 'Tempo limite atingido — tente novamente' : e.message;
+    document.getElementById('site-report-content').innerHTML = `<div class="loading" style="color:#ff7070">Erro: ${msg}</div>`;
   }
   btn.textContent = '↻ Analisar Site';
   btn.disabled = false;
