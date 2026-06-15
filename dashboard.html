@@ -344,6 +344,11 @@
     .campaign-metrics { grid-template-columns:repeat(2,1fr); }
     .report-grid { grid-template-columns:1fr; }
     .subtitle { margin-bottom:16px; }
+    .persona-two-col { grid-template-columns:1fr !important; }
+    .persona-three-col { grid-template-columns:1fr !important; }
+  }
+  @media(max-width:1200px) and (min-width:769px) {
+    .persona-two-col { grid-template-columns:1fr 1fr; }
   }
 </style>
 </head>
@@ -645,7 +650,7 @@
       <button class="btn-refresh" id="btn-save-persona" onclick="savePersona()">💾 Salvar</button>
     </div>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+    <div class="persona-two-col" style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
 
       <!-- Coluna esquerda: Produto -->
       <div style="display:flex;flex-direction:column;gap:16px">
@@ -681,7 +686,7 @@
       <div style="display:flex;flex-direction:column;gap:16px">
         <div style="font-size:0.7rem;color:var(--teal);text-transform:uppercase;letter-spacing:.1em;font-weight:600;border-bottom:1px solid var(--border);padding-bottom:8px">Público-Alvo</div>
 
-        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
+        <div class="persona-three-col" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
           <div class="persona-field">
             <label>Gênero</label>
             <input id="p-gender" type="text" placeholder="ex: Mulheres"/>
@@ -2200,25 +2205,58 @@ loadImageModels();
 loadPersona();
 setInterval(loadAll, 30000); // auto-refresh every 30s
 
+const PERSONA_DEFAULTS = {
+  product_name: 'Shot Without Fear',
+  product_price: '$9',
+  product_description: 'Ebook digital passo a passo para usuários de GLP-1 (Ozempic, Mounjaro, Wegovy) que ensinam como autoaplicar injeções com confiança e segurança, eliminando o medo e a ansiedade.',
+  value_proposition: 'O único guia prático que transforma o medo da injeção em confiança — com técnica correta, dicas de manejo da dor e suporte emocional, tudo em menos de 30 minutos de leitura.',
+  goals: 'Maximizar compras com CPA < $5. Escalar campanhas com criativos que convertam mulheres 35-65 nos EUA.',
+  tone: 'Empático, direto e encorajador — como uma amiga que já passou pela mesma situação.',
+  gender: 'Mulheres',
+  age_range: '35-65',
+  location: 'EUA',
+  target_audience: 'Mulheres americanas de 35 a 65 anos, em tratamento com GLP-1 (Ozempic, Mounjaro, Wegovy) ou considerando iniciar. Geralmente têm medo de agulha, pouca experiência com autoaplicação e buscam orientação prática e acolhedora.',
+  desires: [
+    'Aplicar a injeção GLP-1 sem sentir medo ou ansiedade',
+    'Sentir-se confiante e no controle do próprio tratamento',
+    'Aprender a técnica correta de autoaplicação rápida e segura',
+    'Obter os melhores resultados com Ozempic / Mounjaro / Wegovy',
+    'Ter independência no tratamento sem depender de outra pessoa',
+  ],
+  pains: [
+    'Medo de agulha e da dor da injeção',
+    'Ansiedade e procrastinação antes de cada aplicação',
+    'Não saber a técnica correta — local, ângulo, pressão',
+    'Medo de errar a dose ou aplicar no lugar errado',
+    'Vergonha de pedir ajuda ou parecer incapaz',
+    'Sensação de estar sozinha no processo',
+  ],
+};
+
 async function loadPersona() {
   try {
     const res = await fetch('/api/daily-report?type=persona');
     const json = await res.json();
-    if (!json.ok) return;
-    const p = json.persona;
-    const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
-    set('p-product_name', p.product_name);
-    set('p-product_price', p.product_price);
-    set('p-product_description', p.product_description);
-    set('p-value_proposition', p.value_proposition);
-    set('p-goals', p.goals);
-    set('p-tone', p.tone);
-    set('p-gender', p.gender);
-    set('p-age_range', p.age_range);
-    set('p-location', p.location);
-    set('p-target_audience', p.target_audience);
-    set('p-desires', (p.desires || []).join('\n'));
-    set('p-pains', (p.pains || []).join('\n'));
+    const p = (json.ok && json.persona) ? json.persona : {};
+    const def = PERSONA_DEFAULTS;
+    const set = (id, val, fallback) => {
+      const el = document.getElementById(id);
+      if (el) el.value = (val && String(val).trim()) ? val : (fallback || '');
+    };
+    set('p-product_name',        p.product_name,        def.product_name);
+    set('p-product_price',       p.product_price,       def.product_price);
+    set('p-product_description', p.product_description, def.product_description);
+    set('p-value_proposition',   p.value_proposition,   def.value_proposition);
+    set('p-goals',               p.goals,               def.goals);
+    set('p-tone',                p.tone,                def.tone);
+    set('p-gender',              p.gender,              def.gender);
+    set('p-age_range',           p.age_range,           def.age_range);
+    set('p-location',            p.location,            def.location);
+    set('p-target_audience',     p.target_audience,     def.target_audience);
+    const desires = (p.desires && p.desires.length) ? p.desires : def.desires;
+    const pains   = (p.pains   && p.pains.length)   ? p.pains   : def.pains;
+    set('p-desires', desires.join('\n'), '');
+    set('p-pains',   pains.join('\n'),   '');
   } catch(e) { console.error('loadPersona:', e); }
 }
 
