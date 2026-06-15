@@ -1518,12 +1518,12 @@ function renderCampaigns() {
 
     const metrics = ins ? `
       <div class="campaign-metrics">
-        <div class="metric"><div class="m-label">Gasto (7d)</div><div class="m-value gold">$${fmt(ins.spend)}</div></div>
+        <div class="metric"><div class="m-label">Gasto (7d)</div><div class="m-value gold">${campCurrencySym}${fmt(ins.spend)}</div></div>
         <div class="metric"><div class="m-label">Alcance</div><div class="m-value">${fmt(ins.reach)}</div></div>
         <div class="metric"><div class="m-label">Impressões</div><div class="m-value">${fmt(ins.impressions)}</div></div>
         <div class="metric"><div class="m-label">Cliques</div><div class="m-value teal">${fmt(ins.clicks)}</div></div>
         <div class="metric"><div class="m-label">CTR</div><div class="m-value">${fmt(ins.ctr)}%</div></div>
-        <div class="metric"><div class="m-label">CPC</div><div class="m-value">$${fmt(ins.cpc)}</div></div>
+        <div class="metric"><div class="m-label">CPC</div><div class="m-value">${campCurrencySym}${fmt(ins.cpc)}</div></div>
       </div>` : '<div class="no-insights" style="margin-bottom:12px;">Sem dados nos últimos 7 dias</div>';
 
     const adsetRows = c.adsets.map(a => {
