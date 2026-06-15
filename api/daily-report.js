@@ -171,15 +171,14 @@ async function analyzeSiteWithClaude(siteData) {
   const ctaConv = siteData.ctas ? Math.round(siteData.purchases / siteData.ctas * 100) : 0;
   const topSources = Object.entries(siteData.sources || {}).slice(0, 3).map(([k,v]) => `${k}:${v}`).join(', ');
 
-  const prompt = `Analise funil CRO. Produto: ebook $9 GLP-1 (EUA, mulheres 35-65).
-Dados 7 dias: visitas=${siteData.visits} cta_cliques=${siteData.ctas} compras=${siteData.purchases} ctr=${siteData.ctr}% conv_cta=${ctaConv}% conv_total=${convRate}% fontes=${topSources||'n/a'}
+  const prompt = `Funil CRO: ebook $9 GLP-1 (EUA, mulheres 35-65). 7 dias: visitas=${siteData.visits} ctas=${siteData.ctas} compras=${siteData.purchases} ctr=${siteData.ctr}% conv=${convRate}% fontes=${topSources||'n/a'}
 
-Responda APENAS JSON (sem markdown):
-{"summary":"frase curta","funnel_health":"saudável|atenção|crítico","working":["item"],"friction_points":["item"],"recommendations":[{"priority":1,"action":"ação","reason":"motivo","impact":"high|medium|low"}],"best_source":"fonte","alerts":["item"]}`;
+Responda SOMENTE com JSON válido, sem markdown, texto curto por campo, máximo 2 recomendações:
+{"summary":"…","funnel_health":"saudável|atenção|crítico","working":["…"],"friction_points":["…"],"recommendations":[{"priority":1,"action":"…","reason":"…","impact":"high"}],"best_source":"…","alerts":["…"]}`;
 
   const response = await anthropic.messages.create({
     model: 'claude-haiku-4-5-20251001',
-    max_tokens: 512,
+    max_tokens: 900,
     messages: [{ role: 'user', content: prompt }],
   });
 
