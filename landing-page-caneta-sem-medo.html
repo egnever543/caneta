@@ -376,6 +376,13 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
 </footer>
 
 <script>
+  // Fire Meta Lead event on every CTA click
+  document.querySelectorAll('.btn-primary, .nav-cta').forEach(el => {
+    el.addEventListener('click', function() {
+      if (typeof fbq === 'function') fbq('track', 'Lead');
+    });
+  });
+
   document.querySelectorAll('.faq-item').forEach(item => {
     const q = item.querySelector('.faq-q');
     const a = item.querySelector('.faq-a');

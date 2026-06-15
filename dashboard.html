@@ -515,13 +515,15 @@
       <div class="camp-kpi"><div class="ck-label">Cliques</div><div class="ck-value teal" id="ck-clicks">—</div></div>
       <div class="camp-kpi"><div class="ck-label">CTR</div><div class="ck-value" id="ck-ctr">—</div></div>
       <div class="camp-kpi"><div class="ck-label">CPC</div><div class="ck-value" id="ck-cpc">—</div></div>
+      <div class="camp-kpi"><div class="ck-label">Leads</div><div class="ck-value" style="color:#a78bfa" id="ck-leads">—</div></div>
+      <div class="camp-kpi"><div class="ck-label">CPL</div><div class="ck-value" style="color:#a78bfa" id="ck-cpl">—</div></div>
     </div>
     <div class="camp-chart-wrap">
       <canvas id="camp-trend-chart" height="90"></canvas>
     </div>
     <table class="camp-daily-table">
-      <thead><tr><th>Data</th><th>Gasto</th><th>Impressões</th><th>Alcance</th><th>Cliques</th><th>CTR</th><th>CPC</th><th>CPM</th></tr></thead>
-      <tbody id="camp-daily-tbody"><tr><td colspan="8" class="loading">Carregando...</td></tr></tbody>
+      <thead><tr><th>Data</th><th>Gasto</th><th>Impressões</th><th>Alcance</th><th>Cliques</th><th>CTR</th><th>CPC</th><th>CPM</th><th style="color:#a78bfa">Leads</th><th style="color:#a78bfa">CPL</th></tr></thead>
+      <tbody id="camp-daily-tbody"><tr><td colspan="10" class="loading">Carregando...</td></tr></tbody>
     </table>
   </div>
 
@@ -1168,6 +1170,12 @@ async function loadCampaigns() {
   }
 }
 
+function getLeads(d) {
+  const actions = d.actions || [];
+  const a = actions.find(a => a.action_type === 'lead' || a.action_type === 'onsite_conversion.lead_grouped');
+  return a ? parseInt(a.value || 0) : 0;
+}
+
 function renderCampAnalytics(daily, currency) {
   const sym = currency === 'BRL' ? 'R$' : currency === 'EUR' ? '€' : '$';
   const fmtMoney = v => v ? sym + parseFloat(v).toFixed(2) : '—';
@@ -1176,8 +1184,10 @@ function renderCampAnalytics(daily, currency) {
   const totImpr   = daily.reduce((s, d) => s + parseInt(d.impressions || 0), 0);
   const totReach  = daily.reduce((s, d) => s + parseInt(d.reach || 0), 0);
   const totClicks = daily.reduce((s, d) => s + parseInt(d.clicks || 0), 0);
+  const totLeads  = daily.reduce((s, d) => s + getLeads(d), 0);
   const avgCtr    = totImpr ? (totClicks / totImpr * 100) : 0;
   const avgCpc    = totClicks ? (totSpend / totClicks) : 0;
+  const avgCpl    = totLeads ? (totSpend / totLeads) : 0;
 
   document.getElementById('ck-spend').textContent  = fmtMoney(totSpend);
   document.getElementById('ck-impr').textContent   = totImpr   ? totImpr.toLocaleString('pt-BR') : '—';
@@ -1185,6 +1195,8 @@ function renderCampAnalytics(daily, currency) {
   document.getElementById('ck-clicks').textContent = totClicks ? totClicks.toLocaleString('pt-BR') : '—';
   document.getElementById('ck-ctr').textContent    = totImpr   ? avgCtr.toFixed(2) + '%' : '—';
   document.getElementById('ck-cpc').textContent    = fmtMoney(avgCpc);
+  document.getElementById('ck-leads').textContent  = totLeads  ? totLeads.toLocaleString('pt-BR') : '—';
+  document.getElementById('ck-cpl').textContent    = totLeads  ? fmtMoney(avgCpl) : '—';
 
   // Chart
   const labels = daily.map(d => {
@@ -1250,6 +1262,8 @@ function renderCampAnalytics(daily, currency) {
     const ctr    = parseFloat(d.ctr || 0);
     const cpc    = parseFloat(d.cpc || 0);
     const cpm    = parseFloat(d.cpm || 0);
+    const leads  = getLeads(d);
+    const cpl    = leads ? (spend / leads) : 0;
     const [,m,day] = d.date_start.split('-');
     return `<tr>
       <td>${day}/${m}</td>
@@ -1260,6 +1274,8 @@ function renderCampAnalytics(daily, currency) {
       <td class="td-ctr">${ctr ? ctr.toFixed(2)+'%' : '—'}</td>
       <td>${fmtMoney(cpc)}</td>
       <td>${fmtMoney(cpm)}</td>
+      <td style="color:#a78bfa">${leads || '—'}</td>
+      <td style="color:#a78bfa">${leads ? fmtMoney(cpl) : '—'}</td>
     </tr>`;
   }).join('');
   document.getElementById('camp-daily-tbody').innerHTML = rows;
