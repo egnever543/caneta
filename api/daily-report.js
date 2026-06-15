@@ -240,10 +240,10 @@ module.exports = async (req, res) => {
 
     // ── Site report ──
     if (type === 'site') {
-      const timeout = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Timeout: análise demorou mais de 8s')), 8000)
-      );
       const [siteData, persona] = await Promise.all([getSiteData(), fetchPersona()]);
+      const timeout = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Timeout: análise demorou mais de 9s')), 9000)
+      );
       const analysis = await Promise.race([analyzeSiteWithClaude(siteData, persona), timeout]);
       const today = new Date().toISOString().slice(0, 10);
       const { error: siteUpsertErr } = await supabase.from('ai_site_reports').upsert(
