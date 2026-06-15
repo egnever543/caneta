@@ -153,6 +153,27 @@
 
   /* AI Report */
   .ai-report-card { background:var(--card); border:1px solid var(--border); border-radius:16px; padding:24px; margin-top:20px; }
+  /* ── Apply button ── */
+  .btn-apply { flex-shrink:0; align-self:center; background:transparent; border:1px solid rgba(92,156,143,0.4); color:var(--teal); padding:7px 14px; border-radius:8px; cursor:pointer; font-size:0.78rem; font-weight:600; transition:all .2s; white-space:nowrap; }
+  .btn-apply:hover { background:rgba(92,156,143,0.12); border-color:var(--teal); }
+  .btn-apply:disabled { opacity:0.4; cursor:default; }
+  .btn-apply.applying { color:var(--gold); border-color:var(--gold); }
+  .btn-apply.done { color:#2ECC71; border-color:#2ECC71; }
+  .btn-apply.error { color:#ff7070; border-color:#ff7070; }
+  /* ── Confirm modal ── */
+  #apply-modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:1000; align-items:center; justify-content:center; }
+  #apply-modal.open { display:flex; }
+  .modal-box { background:var(--card); border:1px solid var(--border); border-radius:20px; padding:36px; max-width:560px; width:90%; display:flex; flex-direction:column; gap:18px; }
+  .modal-title { font-size:1.1rem; font-weight:700; color:var(--text); }
+  .modal-body { font-size:0.88rem; color:var(--muted); line-height:1.6; }
+  .modal-action { font-size:0.92rem; color:var(--text); background:var(--bg); border:1px solid var(--border); border-radius:10px; padding:14px; line-height:1.5; }
+  .modal-btns { display:flex; gap:12px; justify-content:flex-end; }
+  .modal-cancel { background:transparent; border:1px solid var(--border); color:var(--muted); padding:10px 20px; border-radius:8px; cursor:pointer; font-size:0.88rem; }
+  .modal-confirm { background:var(--teal); border:none; color:#0F1923; padding:10px 24px; border-radius:8px; cursor:pointer; font-size:0.88rem; font-weight:700; }
+  .modal-confirm:hover { opacity:0.88; }
+  /* Make rec-item flex so button sits on the right */
+  .rec-item { display:flex; align-items:flex-start; gap:12px; }
+
   /* ── Change log timeline ── */
   .change-item { position:relative; padding:18px 18px 18px 52px; border-bottom:1px solid var(--border); }
   .change-item:last-child { border-bottom:none; }
@@ -769,71 +790,32 @@
 
 <!-- ── ABA 5: HISTÓRICO ── -->
 <div id="tab-historico" class="tab-panel">
-  <div style="display:grid;grid-template-columns:1fr 1.6fr;gap:24px;align-items:start">
-
-    <!-- Formulário de registro -->
-    <div class="ai-report-card">
-      <div class="ai-report-header" style="margin-bottom:20px">
-        <div>
-          <div class="ai-report-title">Registrar Mudança</div>
-          <div style="font-size:0.8rem;color:var(--muted);margin-top:4px">Métricas atuais são capturadas automaticamente</div>
-        </div>
+  <div class="ai-report-card">
+    <div class="ai-report-header" style="margin-bottom:20px">
+      <div>
+        <div class="ai-report-title">Histórico de Mudanças</div>
+        <div style="font-size:0.8rem;color:var(--muted);margin-top:4px">Gerado automaticamente ao aplicar sugestões da IA — inclui snapshot de métricas do momento</div>
       </div>
-
-      <div style="display:flex;flex-direction:column;gap:14px">
-        <div class="persona-field">
-          <label>Data da mudança</label>
-          <input id="ch-date" type="date"/>
-        </div>
-        <div class="persona-field">
-          <label>Categoria</label>
-          <select id="ch-category" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-size:0.88rem;width:100%">
-            <option value="copy">Copy / Texto</option>
-            <option value="design">Design / Layout</option>
-            <option value="offer">Oferta / Preço</option>
-            <option value="targeting">Segmentação de Anúncio</option>
-            <option value="creative">Criativo</option>
-            <option value="cta">CTA</option>
-            <option value="other">Outro</option>
-          </select>
-        </div>
-        <div class="persona-field">
-          <label>Título da mudança</label>
-          <input id="ch-title" type="text" placeholder="ex: Hero reescrito — foco em rebound"/>
-        </div>
-        <div class="persona-field">
-          <label>O que foi mudado</label>
-          <textarea id="ch-description" rows="5" style="background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-size:0.88rem;width:100%;resize:vertical" placeholder="Descreva o que foi alterado e por quê…"></textarea>
-        </div>
-        <div class="persona-field">
-          <label>Hipótese <span style="color:var(--muted);font-weight:400">(o que você espera que melhore)</span></label>
-          <input id="ch-hypothesis" type="text" placeholder="ex: CTR vai subir de 0% para 2%+"/>
-        </div>
-
-        <div style="background:rgba(92,156,143,0.07);border:1px solid rgba(92,156,143,0.15);border-radius:10px;padding:14px;font-size:0.82rem;color:var(--muted)">
-          <span style="color:var(--teal);font-weight:600">📸 Snapshot automático:</span> visitas, CTA clicks, compras e CTR dos últimos 7 dias serão gravados junto com esta mudança.
-        </div>
-
-        <button id="btn-save-change" onclick="saveChange()" style="background:var(--teal);color:#0F1923;border:none;border-radius:10px;padding:12px;font-size:0.92rem;font-weight:700;cursor:pointer;transition:opacity .2s">
-          Registrar Mudança
-        </button>
-        <div id="ch-status" style="font-size:0.82rem;color:var(--muted);text-align:center;min-height:18px"></div>
-      </div>
+      <button class="btn-refresh" onclick="loadChanges()">↺ Atualizar</button>
     </div>
-
-    <!-- Timeline -->
-    <div class="ai-report-card">
-      <div class="ai-report-header" style="margin-bottom:20px">
-        <div class="ai-report-title">Timeline de Mudanças</div>
-        <button class="btn-refresh" onclick="loadChanges()">↺ Atualizar</button>
-      </div>
-      <div id="changes-list">
-        <div style="color:var(--muted);font-size:0.88rem;text-align:center;padding:40px 0">Carregando histórico…</div>
-      </div>
+    <div id="changes-list">
+      <div style="color:var(--muted);font-size:0.88rem;text-align:center;padding:40px 0">Carregando histórico…</div>
     </div>
-
   </div>
 </div><!-- /tab-historico -->
+
+<!-- ── Modal confirmação aplicar ── -->
+<div id="apply-modal">
+  <div class="modal-box">
+    <div class="modal-title">Aplicar sugestão da IA?</div>
+    <div class="modal-body">Claude vai modificar a landing page no GitHub e fazer o commit automaticamente. O histórico será registrado com as métricas atuais.</div>
+    <div class="modal-action" id="modal-action-text"></div>
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="closeApplyModal()">Cancelar</button>
+      <button class="modal-confirm" id="modal-confirm-btn" onclick="confirmApply()">✦ Aplicar agora</button>
+    </div>
+  </div>
+</div>
 
 </div><!-- /page-wrap -->
 
@@ -1296,14 +1278,19 @@ function renderSiteReport(data) {
   const healthColor = { saudável: 'var(--teal)', atenção: 'var(--gold)', crítico: '#ff7070' }[r.funnel_health] || 'var(--muted)';
   const working = (r.working || []).map(w => `<li>${w}</li>`).join('');
   const friction = (r.friction_points || []).map(f => `<li>${f}</li>`).join('');
-  const recs = (r.recommendations || []).map(rec => `
+  const recs = (r.recommendations || []).map(rec => {
+    const action = JSON.stringify(rec.action);
+    const reason = JSON.stringify(rec.reason || '');
+    return `
     <div class="rec-item">
       <div class="rec-priority ${rec.impact}">${rec.priority}</div>
       <div class="rec-body">
         <div class="rec-action">${rec.action}</div>
         <div class="rec-reason">${rec.reason}</div>
       </div>
-    </div>`).join('');
+      <button class="btn-apply" onclick="applyRecommendation(this, ${action}, ${reason})">✦ Aplicar</button>
+    </div>`;
+  }).join('');
   const alerts = (r.alerts || []).map(a => `<div class="alert-item">⚠ ${a}</div>`).join('');
 
   document.getElementById('site-report-content').innerHTML = `
@@ -2428,55 +2415,62 @@ async function savePersona() {
 
 // ── Histórico de Mudanças ──────────────────────────────────────────
 
-// Set today as default date on first load
-document.addEventListener('DOMContentLoaded', () => {
-  const d = document.getElementById('ch-date');
-  if (d) d.value = new Date().toISOString().slice(0, 10);
-});
+let _pendingApplyBtn = null;
+let _pendingAction = '';
+let _pendingReason = '';
 
-async function saveChange() {
-  const btn = document.getElementById('btn-save-change');
-  const status = document.getElementById('ch-status');
-  const title = document.getElementById('ch-title').value.trim();
-  if (!title) { status.textContent = 'Preencha o título da mudança.'; status.style.color = '#ff7070'; return; }
+function applyRecommendation(btn, action, reason) {
+  _pendingApplyBtn = btn;
+  _pendingAction = action;
+  _pendingReason = reason;
+  document.getElementById('modal-action-text').textContent = action;
+  document.getElementById('apply-modal').classList.add('open');
+}
+
+function closeApplyModal() {
+  document.getElementById('apply-modal').classList.remove('open');
+  _pendingApplyBtn = null;
+}
+
+async function confirmApply() {
+  const btn = _pendingApplyBtn;
+  const action = _pendingAction;
+  const reason = _pendingReason;
+  closeApplyModal();
+  if (!btn) return;
 
   btn.disabled = true;
-  btn.textContent = 'Salvando…';
-  status.textContent = 'Capturando métricas atuais…';
-  status.style.color = 'var(--muted)';
+  btn.classList.add('applying');
+  btn.textContent = '…aplicando';
 
   try {
-    const payload = {
-      change_date: document.getElementById('ch-date').value || new Date().toISOString().slice(0, 10),
-      category: document.getElementById('ch-category').value,
-      title,
-      description: document.getElementById('ch-description').value.trim(),
-      hypothesis: document.getElementById('ch-hypothesis').value.trim(),
-    };
-
-    const res = await fetch('/api/daily-report?type=changes', {
+    const res = await fetch('/api/daily-report?type=apply', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({ recommendation: action, reason }),
     });
     const json = await res.json();
     if (!json.ok) throw new Error(json.error || 'Erro desconhecido');
 
-    status.textContent = '✓ Mudança registrada com snapshot de métricas!';
-    status.style.color = 'var(--teal)';
-
-    // Clear form
-    document.getElementById('ch-title').value = '';
-    document.getElementById('ch-description').value = '';
-    document.getElementById('ch-hypothesis').value = '';
-
+    btn.classList.remove('applying');
+    btn.classList.add('done');
+    btn.textContent = '✓ Aplicado';
     loadChanges();
+    // Switch to Histórico tab to show the new entry
+    setTimeout(() => {
+      document.querySelector('[onclick*="historico"]')?.click();
+    }, 1200);
   } catch(e) {
-    status.textContent = 'Erro: ' + e.message;
-    status.style.color = '#ff7070';
+    btn.classList.remove('applying');
+    btn.classList.add('error');
+    btn.textContent = '✗ Erro';
+    btn.title = e.message;
+    setTimeout(() => {
+      btn.classList.remove('error');
+      btn.textContent = '✦ Aplicar';
+      btn.disabled = false;
+    }, 4000);
   }
-  btn.disabled = false;
-  btn.textContent = 'Registrar Mudança';
 }
 
 async function loadChanges() {

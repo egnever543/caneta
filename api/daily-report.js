@@ -218,6 +218,96 @@ module.exports = async (req, res) => {
   const type = req.query.type || 'campaign';
 
   try {
+    // ── Apply AI suggestion (read → Claude → commit → log) ──
+    if (type === 'apply' && req.method === 'POST') {
+      const { recommendation, reason } = req.body;
+      if (!recommendation) return res.status(400).json({ ok: false, error: 'recommendation required' });
+
+      const GITHUB_TOKEN = process.env.GITHUB_TOKEN;
+      const GITHUB_REPO = process.env.GITHUB_REPO || 'egnever543/caneta';
+      const FILE_PATH = 'landing-page-needle-no-fear.html';
+      const API = `https://api.github.com/repos/${GITHUB_REPO}/contents/${FILE_PATH}`;
+
+      // 1. Fetch current file from GitHub
+      const ghRes = await fetch(API, {
+        headers: { Authorization: `Bearer ${GITHUB_TOKEN}`, 'User-Agent': 'ShotWithoutFear-Bot' }
+      });
+      if (!ghRes.ok) throw new Error(`GitHub read failed: ${ghRes.status}`);
+      const ghJson = await ghRes.json();
+      const currentSha = ghJson.sha;
+      const currentHtml = Buffer.from(ghJson.content, 'base64').toString('utf-8');
+
+      // 2. Ask Claude to apply the change
+      const persona = await fetchPersona();
+      const pCtx = personaContext(persona);
+      const applyPrompt = `Você é um especialista em CRO e copywriting para landing pages.
+
+${pCtx ? pCtx + '\n\n' : ''}Aplique EXATAMENTE esta mudança na landing page abaixo:
+
+MUDANÇA A APLICAR:
+${recommendation}
+
+REGRAS OBRIGATÓRIAS:
+- Retorne SOMENTE o HTML completo modificado, sem explicações, sem markdown
+- Não altere nada além do que a mudança especifica
+- Preserve todos os scripts, tracking, estilos e estrutura existentes
+- Mantenha o Clarity e Meta Pixel intactos
+
+HTML ATUAL:
+${currentHtml}`;
+
+      const applyTimeout = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('Timeout ao aplicar mudança — tente novamente')), 25000)
+      );
+      const claudeCall = anthropic.messages.create({
+        model: 'claude-sonnet-4-6',
+        max_tokens: 8192,
+        messages: [{ role: 'user', content: applyPrompt }],
+      });
+      const applyRes = await Promise.race([claudeCall, applyTimeout]);
+      const newHtml = applyRes.content[0].text.trim();
+
+      // 3. Commit to GitHub
+      const commitMsg = `AI: ${recommendation.slice(0, 80)}`;
+      const putRes = await fetch(API, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${GITHUB_TOKEN}`,
+          'User-Agent': 'ShotWithoutFear-Bot',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          message: commitMsg,
+          content: Buffer.from(newHtml, 'utf-8').toString('base64'),
+          sha: currentSha,
+        }),
+      });
+      if (!putRes.ok) {
+        const errText = await putRes.text();
+        throw new Error(`GitHub commit failed: ${putRes.status} ${errText.slice(0, 200)}`);
+      }
+
+      // 4. Auto-log to change_log with metrics snapshot
+      const siteData = await getSiteData();
+      const today = new Date().toISOString().slice(0, 10);
+      await supabase.from('change_log').insert({
+        change_date: today,
+        category: 'copy',
+        title: recommendation.slice(0, 120),
+        description: recommendation,
+        hypothesis: reason || null,
+        metrics_before: {
+          visits: siteData.visits,
+          ctas: siteData.ctas,
+          purchases: siteData.purchases,
+          ctr: siteData.ctr,
+          sources: siteData.sources,
+        },
+      });
+
+      return res.status(200).json({ ok: true, committed: commitMsg });
+    }
+
     // ── Changes GET ──
     if (type === 'changes' && req.method === 'GET') {
       const { data, error } = await supabase
