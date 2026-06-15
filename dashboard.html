@@ -540,6 +540,21 @@
     <div id="recent-events"><div class="loading">Loading...</div></div>
   </div>
 
+  <!-- Trend chart -->
+  <div class="ai-report-card" style="margin-top:24px">
+    <div class="ai-report-header" style="margin-bottom:20px">
+      <div>
+        <div class="ai-report-title">Tendência 30 dias</div>
+        <div style="font-size:0.8rem;color:var(--muted);margin-top:4px">CTR e visitas diárias · linhas douradas = mudanças aplicadas</div>
+      </div>
+      <button class="btn-refresh" onclick="loadTrend()">↺</button>
+    </div>
+    <div style="position:relative;height:220px">
+      <canvas id="trend-chart"></canvas>
+    </div>
+    <div id="trend-empty" style="display:none;text-align:center;color:var(--muted);font-size:0.85rem;padding:40px 0">Sem dados ainda — aguardando eventos de página.</div>
+  </div>
+
 </div><!-- /tab-site -->
 
 <!-- ── ABA 2: CAMPANHA ── -->
@@ -2308,6 +2323,7 @@ loadSuggestion();
 loadImageModels();
 loadPersona();
 loadChanges();
+loadTrend();
 setInterval(loadAll, 30000); // auto-refresh every 30s
 
 const PERSONA_DEFAULTS = {
@@ -2403,6 +2419,122 @@ async function savePersona() {
   btn.disabled = false;
 }
 
+// ── Trend Chart ───────────────────────────────────────────────────
+let trendChartInstance = null;
+
+const changeMarkerPlugin = {
+  id: 'changeMarkers',
+  afterDraw(chart) {
+    const markers = chart._changeMarkers;
+    if (!markers?.length) return;
+    const ctx = chart.ctx;
+    const xAxis = chart.scales.x;
+    const yAxis = chart.scales.y;
+    markers.forEach(m => {
+      const idx = chart.data.labels.indexOf(m.date);
+      if (idx === -1) return;
+      const x = xAxis.getPixelForValue(idx);
+      ctx.save();
+      ctx.setLineDash([4, 3]);
+      ctx.strokeStyle = 'rgba(206,155,76,0.55)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(x, yAxis.top);
+      ctx.lineTo(x, yAxis.bottom);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = 'rgba(206,155,76,0.85)';
+      ctx.font = '600 9px Inter,sans-serif';
+      ctx.save();
+      ctx.translate(x + 4, yAxis.top + 10);
+      ctx.fillText(m.title.slice(0, 22), 0, 0);
+      ctx.restore();
+      ctx.restore();
+    });
+  }
+};
+Chart.register(changeMarkerPlugin);
+
+async function loadTrend() {
+  try {
+    const res = await fetch('/api/daily-report?type=trend');
+    const json = await res.json();
+    if (!json.ok || !json.daily?.length) {
+      document.getElementById('trend-empty').style.display = 'block';
+      document.getElementById('trend-chart').style.display = 'none';
+      return;
+    }
+    document.getElementById('trend-empty').style.display = 'none';
+    document.getElementById('trend-chart').style.display = 'block';
+    renderTrend(json.daily, json.changes || []);
+  } catch(e) { console.error('loadTrend:', e); }
+}
+
+function renderTrend(daily, changes) {
+  const labels = daily.map(d => d.date.slice(5)); // MM-DD
+  const ctrData = daily.map(d => d.ctr);
+  const visitData = daily.map(d => d.visits);
+
+  if (trendChartInstance) trendChartInstance.destroy();
+  const ctx = document.getElementById('trend-chart').getContext('2d');
+  trendChartInstance = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: 'CTR %',
+          data: ctrData,
+          borderColor: '#5C9C8F',
+          backgroundColor: 'rgba(92,156,143,0.08)',
+          borderWidth: 2,
+          pointRadius: 3,
+          pointHoverRadius: 5,
+          tension: 0.3,
+          fill: true,
+          yAxisID: 'y',
+        },
+        {
+          label: 'Visitas',
+          data: visitData,
+          borderColor: 'rgba(206,155,76,0.6)',
+          backgroundColor: 'transparent',
+          borderWidth: 1.5,
+          borderDash: [4, 3],
+          pointRadius: 2,
+          tension: 0.3,
+          yAxisID: 'y2',
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { labels: { color: '#7A8FA6', font: { size: 11 }, boxWidth: 12 } },
+        tooltip: {
+          backgroundColor: '#1A2634',
+          borderColor: 'rgba(255,255,255,0.07)',
+          borderWidth: 1,
+          titleColor: '#E8EDF2',
+          bodyColor: '#7A8FA6',
+        },
+      },
+      scales: {
+        x: { ticks: { color: '#7A8FA6', font: { size: 10 }, maxTicksLimit: 10 }, grid: { color: 'rgba(255,255,255,0.04)' } },
+        y: { position: 'left', ticks: { color: '#5C9C8F', font: { size: 10 }, callback: v => v + '%' }, grid: { color: 'rgba(255,255,255,0.04)' } },
+        y2: { position: 'right', ticks: { color: 'rgba(206,155,76,0.6)', font: { size: 10 } }, grid: { display: false } },
+      },
+    },
+  });
+  // Attach change markers using full dates for lookup
+  trendChartInstance._changeMarkers = changes.map(c => ({
+    date: c.change_date.slice(5), // MM-DD to match labels
+    title: c.title,
+  }));
+}
+
 // ── Histórico de Mudanças ──────────────────────────────────────────
 
 let _pendingApplyBtn = null;
@@ -2474,12 +2606,23 @@ async function loadChanges() {
       return;
     }
     const CATEGORY_LABELS = { copy:'Copy', design:'Design', offer:'Oferta', targeting:'Segmentação', creative:'Criativo', cta:'CTA', other:'Outro' };
+    const VERDICT_STYLE = {
+      confirmada:            { color: '#2ECC71', icon: '✓', label: 'Confirmada' },
+      rejeitada:             { color: '#ff7070', icon: '✗', label: 'Rejeitada' },
+      inconclusivo:          { color: 'var(--muted)', icon: '↔', label: 'Inconclusivo' },
+      aguardando_dados:      { color: 'var(--gold)', icon: '⏳', label: 'Aguardando dados' },
+      baseline_insuficiente: { color: 'var(--muted)', icon: '?', label: 'Baseline insuficiente' },
+    };
     const rows = json.changes.map(c => {
       const m = c.metrics_before || {};
       const daysSince = Math.floor((Date.now() - new Date(c.change_date).getTime()) / 86400000);
       const daysLabel = daysSince === 0 ? 'Hoje' : daysSince === 1 ? 'Ontem' : `${daysSince}d atrás`;
       const cat = c.category || 'other';
       const conv = m.visits && m.purchases ? ((m.purchases / m.visits) * 100).toFixed(1) + '%' : '—';
+      const vs = c.verdict ? VERDICT_STYLE[c.verdict] : null;
+      const verdictHtml = vs
+        ? `<div style="display:inline-flex;align-items:center;gap:5px;font-size:0.78rem;font-weight:600;color:${vs.color}">${vs.icon} ${vs.label}</div>${c.verdict_note ? `<div style="font-size:0.72rem;color:var(--muted);margin-top:2px">${c.verdict_note}</div>` : ''}`
+        : `<div style="font-size:0.75rem;color:var(--muted)">${daysSince < 7 ? `em ${7-daysSince}d` : '—'}</div>`;
       return `
       <tr>
         <td>
@@ -2499,16 +2642,14 @@ async function loadChanges() {
             <div class="change-metric-pill"><span class="mp-val">${conv}</span><span class="mp-lbl">conv%</span></div>
           </div>
         </td>
+        <td>${verdictHtml}</td>
       </tr>`;
     }).join('');
     list.innerHTML = `
       <table class="change-table">
         <thead>
           <tr>
-            <th>Data</th>
-            <th>Tipo</th>
-            <th>Mudança & Hipótese</th>
-            <th>Métricas no momento</th>
+            <th>Data</th><th>Tipo</th><th>Mudança & Hipótese</th><th>Métricas no momento</th><th>Veredicto</th>
           </tr>
         </thead>
         <tbody>${rows}</tbody>

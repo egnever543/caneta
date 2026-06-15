@@ -143,7 +143,7 @@ async function getSiteData() {
     .select('event_type, session_id, country, metadata, created_at')
     .gte('created_at', since);
 
-  if (!data) return { visits: 0, ctas: 0, purchases: 0, ctr: 0, countries: 'N/A', sources: {}, daily: {} };
+  if (!data) return { visits: 0, ctas: 0, purchases: 0, ctr: 0, countries: 'N/A', sources: {}, daily: {}, scrollDepth: {}, utmFunnel: {} };
 
   const sessions = data.filter(e => e.event_type === 'page_view');
   const visits = new Set(sessions.map(e => e.session_id)).size;
@@ -158,25 +158,68 @@ async function getSiteData() {
     sources[src] = (sources[src] || 0) + 1;
   });
 
-  // Daily visits (last 7 days)
+  // Daily visits
   const daily = {};
   sessions.forEach(e => {
     const day = e.created_at?.slice(0, 10);
     if (day) daily[day] = (daily[day] || 0) + 1;
   });
 
-  return { visits, ctas, purchases, ctr: visits ? Math.round(ctas / visits * 100) : 0, countries, sources, daily };
+  // Scroll depth — % of sessions that reached each threshold
+  const sessionScrollMax = {};
+  data.filter(e => e.event_type === 'scroll_depth').forEach(e => {
+    const pct = e.metadata?.percent || 0;
+    if (!sessionScrollMax[e.session_id] || sessionScrollMax[e.session_id] < pct)
+      sessionScrollMax[e.session_id] = pct;
+  });
+  const scrollDepth = {};
+  [25, 50, 75, 90].forEach(t => {
+    const n = Object.values(sessionScrollMax).filter(p => p >= t).length;
+    scrollDepth[t] = visits ? Math.round(n / visits * 100) : 0;
+  });
+
+  // UTM funnel — visits/ctas/purchases per source (join by session_id)
+  const sessionToUtm = {};
+  sessions.forEach(e => { sessionToUtm[e.session_id] = e.metadata?.utm_source || 'direct'; });
+  const utmFunnel = {};
+  data.forEach(e => {
+    const src = sessionToUtm[e.session_id] || 'direct';
+    if (!utmFunnel[src]) utmFunnel[src] = { visits: 0, ctas: 0, purchases: 0 };
+    if (e.event_type === 'page_view') utmFunnel[src].visits++;
+    if (e.event_type === 'cta_click') utmFunnel[src].ctas++;
+    if (e.event_type === 'purchase') utmFunnel[src].purchases++;
+  });
+
+  return { visits, ctas, purchases, ctr: visits ? Math.round(ctas / visits * 100) : 0, countries, sources, daily, scrollDepth, utmFunnel };
 }
 
 async function fetchRecentChanges() {
   const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
   const { data } = await supabase
     .from('change_log')
-    .select('change_date, category, title, hypothesis, metrics_before')
+    .select('id, change_date, category, title, hypothesis, metrics_before, verdict, verdict_note, verdict_at')
     .gte('change_date', since)
     .order('change_date', { ascending: false })
     .limit(10);
   return data || [];
+}
+
+function computeVerdict(change, currentMetrics) {
+  const before = change.metrics_before || {};
+  const daysAgo = Math.floor((Date.now() - new Date(change.change_date)) / 86400000);
+  if (daysAgo < 7) return null;
+  if (!before.visits || before.visits < 15)
+    return { verdict: 'baseline_insuficiente', verdict_note: `Menos de 15 visitas registradas antes da mudança.` };
+  if (!currentMetrics.visits || currentMetrics.visits < 15)
+    return { verdict: 'aguardando_dados', verdict_note: `Menos de 15 visitas após a mudança — aguardando tráfego.` };
+  const ctrBefore = before.ctr || 0;
+  const ctrNow = currentMetrics.ctr || 0;
+  const delta = ctrBefore > 0 ? (ctrNow - ctrBefore) / ctrBefore : (ctrNow > 0 ? 1 : 0);
+  const sign = delta >= 0 ? '+' : '';
+  const note = `CTR ${ctrBefore}% → ${ctrNow}% (${sign}${Math.round(delta * 100)}%)`;
+  if (delta >= 0.15) return { verdict: 'confirmada', verdict_note: note };
+  if (delta <= -0.15) return { verdict: 'rejeitada', verdict_note: note };
+  return { verdict: 'inconclusivo', verdict_note: note };
 }
 
 function changesContext(changes) {
@@ -194,12 +237,25 @@ async function analyzeSiteWithClaude(siteData, persona, changes) {
   const convRate = siteData.visits ? ((siteData.purchases / siteData.visits) * 100).toFixed(2) : 0;
   const topSources = Object.entries(siteData.sources || {}).slice(0, 3).map(([k,v]) => `${k}:${v}`).join(', ');
 
+  const sd = siteData.scrollDepth || {};
+  const scrollCtx = Object.keys(sd).length
+    ? `Scroll depth (% sessões): ${Object.entries(sd).map(([t,p]) => `até ${t}%→${p}% users`).join(', ')}`
+    : '';
+
+  const utmCtx = Object.entries(siteData.utmFunnel || {}).slice(0, 5)
+    .map(([src, f]) => `${src}: ${f.visits}v / ${f.ctas}c / ${f.purchases}p`)
+    .join(' | ');
+
   const prompt = `${personaContext(persona)}
 ${changesContext(changes)}
-Funil CRO. 7 dias: visitas=${siteData.visits} ctas=${siteData.ctas} compras=${siteData.purchases} ctr=${siteData.ctr}% conv=${convRate}% fontes=${topSources||'n/a'}
+Funil CRO 7d: visitas=${siteData.visits} ctas=${siteData.ctas} compras=${siteData.purchases} ctr=${siteData.ctr}% conv=${convRate}%
+Fontes: ${topSources||'n/a'}
+${scrollCtx ? scrollCtx : ''}
+${utmCtx ? `Funil por fonte: ${utmCtx}` : ''}
+Benchmarks produto digital $9: CTR esperado 1-3%, conversão 2-5%, CPC alvo <$2.
 
-Se houver mudanças recentes, avalie se as hipóteses se confirmaram comparando métricas antes vs agora.
-Responda SOMENTE com JSON válido, sem markdown, texto curto por campo, máximo 2 recomendações:
+Se houver mudanças recentes, avalie se as hipóteses se confirmaram. Use scroll depth para identificar onde usuários abandonam.
+Responda SOMENTE JSON válido, sem markdown, texto curto, máximo 2 recomendações:
 {"summary":"…","funnel_health":"saudável|atenção|crítico","working":["…"],"friction_points":["…"],"recommendations":[{"priority":1,"action":"…","reason":"…","impact":"high"}],"best_source":"…","alerts":["…"]}`;
 
   const response = await anthropic.messages.create({
@@ -331,6 +387,31 @@ ${currentHtml}`;
     }
 
     // ── Changes GET ──
+    // ── Trend (30-day daily metrics + change markers) ──
+    if (type === 'trend' && req.method === 'GET') {
+      const since30 = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+      const [{ data: events }, { data: changeMarkers }] = await Promise.all([
+        supabase.from('page_events').select('event_type, session_id, created_at').gte('created_at', since30),
+        supabase.from('change_log').select('change_date, title, category').gte('change_date', since30.slice(0, 10)).order('change_date'),
+      ]);
+      const days = {};
+      (events || []).forEach(e => {
+        const day = e.created_at?.slice(0, 10);
+        if (!day) return;
+        if (!days[day]) days[day] = { visits: new Set(), ctas: 0, purchases: 0 };
+        if (e.event_type === 'page_view') days[day].visits.add(e.session_id);
+        if (e.event_type === 'cta_click') days[day].ctas++;
+        if (e.event_type === 'purchase') days[day].purchases++;
+      });
+      const daily = Object.entries(days)
+        .map(([date, d]) => ({
+          date, visits: d.visits.size, ctas: d.ctas, purchases: d.purchases,
+          ctr: d.visits.size ? Math.round(d.ctas / d.visits.size * 100) : 0,
+        }))
+        .sort((a, b) => a.date.localeCompare(b.date));
+      return res.status(200).json({ ok: true, daily, changes: changeMarkers || [] });
+    }
+
     if (type === 'changes' && req.method === 'GET') {
       const { data, error } = await supabase
         .from('change_log')
@@ -338,7 +419,19 @@ ${currentHtml}`;
         .order('change_date', { ascending: false })
         .limit(50);
       if (error) return res.status(200).json({ ok: false, error: error.message });
-      return res.status(200).json({ ok: true, changes: data });
+      // Compute verdicts for eligible changes (>7 days old, no verdict yet)
+      const changes = data || [];
+      try {
+        const currentMetrics = await getSiteData();
+        for (const c of changes) {
+          if (c.verdict) continue;
+          const v = computeVerdict(c, currentMetrics);
+          if (!v) continue;
+          await supabase.from('change_log').update({ ...v, verdict_at: new Date().toISOString().slice(0, 10) }).eq('id', c.id);
+          Object.assign(c, v);
+        }
+      } catch(_) {}
+      return res.status(200).json({ ok: true, changes });
     }
 
     // ── Changes POST ──
