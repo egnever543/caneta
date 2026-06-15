@@ -168,15 +168,37 @@ async function getSiteData() {
   return { visits, ctas, purchases, ctr: visits ? Math.round(ctas / visits * 100) : 0, countries, sources, daily };
 }
 
-async function analyzeSiteWithClaude(siteData, persona) {
+async function fetchRecentChanges() {
+  const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const { data } = await supabase
+    .from('change_log')
+    .select('change_date, category, title, hypothesis, metrics_before')
+    .gte('change_date', since)
+    .order('change_date', { ascending: false })
+    .limit(10);
+  return data || [];
+}
+
+function changesContext(changes) {
+  if (!changes.length) return '';
+  const lines = changes.map(c => {
+    const daysAgo = Math.floor((Date.now() - new Date(c.change_date).getTime()) / 86400000);
+    const m = c.metrics_before || {};
+    const snap = `CTR ${m.ctr ?? '?'}%, ${m.visits ?? '?'} visitas, ${m.purchases ?? '?'} compras`;
+    return `- ${c.change_date} (${daysAgo}d atrás) [${c.category}]: ${c.title}${c.hypothesis ? ` | Hipótese: ${c.hypothesis}` : ''} | Métricas no momento: ${snap}`;
+  }).join('\n');
+  return `\nMUDANÇAS RECENTES (últimos 30 dias — correlacione com métricas atuais):\n${lines}\n`;
+}
+
+async function analyzeSiteWithClaude(siteData, persona, changes) {
   const convRate = siteData.visits ? ((siteData.purchases / siteData.visits) * 100).toFixed(2) : 0;
-  const ctaConv = siteData.ctas ? Math.round(siteData.purchases / siteData.ctas * 100) : 0;
   const topSources = Object.entries(siteData.sources || {}).slice(0, 3).map(([k,v]) => `${k}:${v}`).join(', ');
 
   const prompt = `${personaContext(persona)}
-
+${changesContext(changes)}
 Funil CRO. 7 dias: visitas=${siteData.visits} ctas=${siteData.ctas} compras=${siteData.purchases} ctr=${siteData.ctr}% conv=${convRate}% fontes=${topSources||'n/a'}
 
+Se houver mudanças recentes, avalie se as hipóteses se confirmaram comparando métricas antes vs agora.
 Responda SOMENTE com JSON válido, sem markdown, texto curto por campo, máximo 2 recomendações:
 {"summary":"…","funnel_health":"saudável|atenção|crítico","working":["…"],"friction_points":["…"],"recommendations":[{"priority":1,"action":"…","reason":"…","impact":"high"}],"best_source":"…","alerts":["…"]}`;
 
@@ -367,11 +389,11 @@ ${currentHtml}`;
 
     // ── Site report ──
     if (type === 'site') {
-      const [siteData, persona] = await Promise.all([getSiteData(), fetchPersona()]);
+      const [siteData, persona, changes] = await Promise.all([getSiteData(), fetchPersona(), fetchRecentChanges()]);
       const timeout = new Promise((_, reject) =>
         setTimeout(() => reject(new Error('Timeout: análise demorou mais de 9s')), 9000)
       );
-      const analysis = await Promise.race([analyzeSiteWithClaude(siteData, persona), timeout]);
+      const analysis = await Promise.race([analyzeSiteWithClaude(siteData, persona, changes), timeout]);
       const today = new Date().toISOString().slice(0, 10);
       const { error: siteUpsertErr } = await supabase.from('ai_site_reports').upsert(
         { report_date: today, analysis },

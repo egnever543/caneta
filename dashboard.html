@@ -174,22 +174,13 @@
   /* Make rec-item flex so button sits on the right */
   .rec-item { display:flex; align-items:flex-start; gap:12px; }
 
-  /* ── Change log timeline ── */
-  .change-item { position:relative; padding:18px 18px 18px 52px; border-bottom:1px solid var(--border); }
-  .change-item:last-child { border-bottom:none; }
-  .change-dot { position:absolute; left:16px; top:22px; width:12px; height:12px; border-radius:50%; flex-shrink:0; }
-  .change-dot.copy { background:#CE9B4C; }
-  .change-dot.design { background:#5C9C8F; }
-  .change-dot.offer { background:#9B59B6; }
-  .change-dot.targeting { background:#3498DB; }
-  .change-dot.creative { background:#E74C3C; }
-  .change-dot.cta { background:#2ECC71; }
-  .change-dot.other { background:#7A8FA6; }
-  .change-line { position:absolute; left:21px; top:34px; bottom:-1px; width:1px; background:var(--border); }
-  .change-item:last-child .change-line { display:none; }
-  .change-meta { display:flex; align-items:center; gap:10px; margin-bottom:6px; flex-wrap:wrap; }
-  .change-date { font-size:0.78rem; color:var(--muted); }
-  .change-badge { font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; padding:2px 8px; border-radius:99px; }
+  /* ── Change log table ── */
+  .change-table { width:100%; border-collapse:collapse; font-size:0.85rem; }
+  .change-table th { text-align:left; font-size:0.68rem; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); font-weight:600; padding:10px 14px; border-bottom:1px solid var(--border); white-space:nowrap; }
+  .change-table td { padding:14px; border-bottom:1px solid var(--border); vertical-align:top; line-height:1.5; }
+  .change-table tr:last-child td { border-bottom:none; }
+  .change-table tr:hover td { background:rgba(255,255,255,0.02); }
+  .change-badge { display:inline-block; font-size:0.68rem; font-weight:700; text-transform:uppercase; letter-spacing:.06em; padding:2px 8px; border-radius:99px; white-space:nowrap; }
   .change-badge.copy { background:rgba(206,155,76,.15); color:#CE9B4C; }
   .change-badge.design { background:rgba(92,156,143,.15); color:#5C9C8F; }
   .change-badge.offer { background:rgba(155,89,182,.15); color:#9B59B6; }
@@ -197,14 +188,13 @@
   .change-badge.creative { background:rgba(231,76,60,.15); color:#E74C3C; }
   .change-badge.cta { background:rgba(46,204,113,.15); color:#2ECC71; }
   .change-badge.other { background:rgba(122,143,166,.15); color:#7A8FA6; }
-  .change-title { font-weight:700; font-size:0.95rem; color:var(--text); margin-bottom:4px; }
-  .change-desc { font-size:0.85rem; color:var(--muted); margin-bottom:10px; line-height:1.5; }
-  .change-hypothesis { font-size:0.8rem; color:var(--teal); font-style:italic; margin-bottom:10px; }
-  .change-metrics { display:flex; gap:16px; flex-wrap:wrap; }
-  .change-metric { display:flex; flex-direction:column; gap:2px; background:var(--bg); border-radius:8px; padding:8px 12px; }
-  .change-metric .m-label { font-size:0.65rem; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; }
-  .change-metric .m-value { font-size:0.95rem; font-weight:700; color:var(--text); }
-  .change-days { font-size:0.75rem; color:var(--muted); margin-top:8px; }
+  .change-title-cell { font-weight:600; color:var(--text); margin-bottom:3px; }
+  .change-hypothesis-cell { font-size:0.78rem; color:var(--teal); margin-top:3px; }
+  .change-metric-pill { display:inline-flex; flex-direction:column; align-items:center; background:var(--bg); border-radius:6px; padding:5px 10px; min-width:52px; }
+  .change-metric-pill .mp-val { font-size:0.9rem; font-weight:700; color:var(--text); }
+  .change-metric-pill .mp-lbl { font-size:0.6rem; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
+  .change-metrics-row { display:flex; gap:6px; flex-wrap:wrap; }
+  .change-days-ago { font-size:0.75rem; color:var(--muted); white-space:nowrap; }
 
   .persona-field { display:flex; flex-direction:column; gap:6px; }
   .persona-field label { font-size:0.72rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.08em; font-weight:600; }
@@ -2480,36 +2470,49 @@ async function loadChanges() {
     const res = await fetch('/api/daily-report?type=changes');
     const json = await res.json();
     if (!json.ok || !json.changes?.length) {
-      list.innerHTML = '<div style="color:var(--muted);font-size:0.88rem;text-align:center;padding:40px 0">Nenhuma mudança registrada ainda.</div>';
+      list.innerHTML = '<div style="color:var(--muted);font-size:0.88rem;text-align:center;padding:40px 0">Nenhuma mudança registrada ainda.<br><span style="font-size:0.8rem">Aplique uma sugestão da IA na aba Análise de Site.</span></div>';
       return;
     }
     const CATEGORY_LABELS = { copy:'Copy', design:'Design', offer:'Oferta', targeting:'Segmentação', creative:'Criativo', cta:'CTA', other:'Outro' };
-    list.innerHTML = json.changes.map((c, i) => {
+    const rows = json.changes.map(c => {
       const m = c.metrics_before || {};
       const daysSince = Math.floor((Date.now() - new Date(c.change_date).getTime()) / 86400000);
-      const daysLabel = daysSince === 0 ? 'Hoje' : daysSince === 1 ? 'Ontem' : `${daysSince} dias atrás`;
+      const daysLabel = daysSince === 0 ? 'Hoje' : daysSince === 1 ? 'Ontem' : `${daysSince}d atrás`;
       const cat = c.category || 'other';
+      const conv = m.visits && m.purchases ? ((m.purchases / m.visits) * 100).toFixed(1) + '%' : '—';
       return `
-      <div class="change-item">
-        <div class="change-dot ${cat}"></div>
-        <div class="change-line"></div>
-        <div class="change-meta">
-          <span class="change-date">${c.change_date}</span>
-          <span class="change-badge ${cat}">${CATEGORY_LABELS[cat] || cat}</span>
-        </div>
-        <div class="change-title">${c.title}</div>
-        ${c.description ? `<div class="change-desc">${c.description}</div>` : ''}
-        ${c.hypothesis ? `<div class="change-hypothesis">Hipótese: ${c.hypothesis}</div>` : ''}
-        <div class="change-metrics">
-          <div class="change-metric"><span class="m-label">Visitas</span><span class="m-value">${m.visits ?? '—'}</span></div>
-          <div class="change-metric"><span class="m-label">CTA Clicks</span><span class="m-value">${m.ctas ?? '—'}</span></div>
-          <div class="change-metric"><span class="m-label">CTR</span><span class="m-value">${m.ctr != null ? m.ctr + '%' : '—'}</span></div>
-          <div class="change-metric"><span class="m-label">Compras</span><span class="m-value">${m.purchases ?? '—'}</span></div>
-          <div class="change-metric"><span class="m-label">Conv%</span><span class="m-value">${m.visits && m.purchases ? ((m.purchases/m.visits)*100).toFixed(1)+'%' : '—'}</span></div>
-        </div>
-        <div class="change-days">${daysLabel}</div>
-      </div>`;
+      <tr>
+        <td>
+          <div style="font-weight:600;color:var(--text);font-size:0.82rem">${c.change_date}</div>
+          <div class="change-days-ago">${daysLabel}</div>
+        </td>
+        <td><span class="change-badge ${cat}">${CATEGORY_LABELS[cat] || cat}</span></td>
+        <td>
+          <div class="change-title-cell">${c.title}</div>
+          ${c.hypothesis ? `<div class="change-hypothesis-cell">↳ ${c.hypothesis}</div>` : ''}
+        </td>
+        <td>
+          <div class="change-metrics-row">
+            <div class="change-metric-pill"><span class="mp-val">${m.visits ?? '—'}</span><span class="mp-lbl">visitas</span></div>
+            <div class="change-metric-pill"><span class="mp-val">${m.ctr != null ? m.ctr + '%' : '—'}</span><span class="mp-lbl">CTR</span></div>
+            <div class="change-metric-pill"><span class="mp-val">${m.purchases ?? '—'}</span><span class="mp-lbl">vendas</span></div>
+            <div class="change-metric-pill"><span class="mp-val">${conv}</span><span class="mp-lbl">conv%</span></div>
+          </div>
+        </td>
+      </tr>`;
     }).join('');
+    list.innerHTML = `
+      <table class="change-table">
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Tipo</th>
+            <th>Mudança & Hipótese</th>
+            <th>Métricas no momento</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>`;
   } catch(e) {
     list.innerHTML = `<div style="color:#ff7070;font-size:0.85rem;padding:20px">Erro ao carregar: ${e.message}</div>`;
   }
