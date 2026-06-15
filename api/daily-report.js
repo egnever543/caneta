@@ -95,8 +95,23 @@ Responda em JSON com esta estrutura exata:
   });
 
   const text = response.content[0].text;
-  const match = text.match(/\{[\s\S]*\}/);
-  return match ? JSON.parse(match[0]) : { summary: text, recommendations: [], alerts: [] };
+  // Strip markdown fences, find outermost JSON object, fix trailing commas
+  const cleaned = text.replace(/```(?:json)?\n?/g, '').replace(/```/g, '');
+  const start = cleaned.indexOf('{');
+  if (start === -1) return { summary: text, recommendations: [], alerts: [] };
+  let depth = 0, end = -1;
+  for (let i = start; i < cleaned.length; i++) {
+    if (cleaned[i] === '{') depth++;
+    else if (cleaned[i] === '}') { depth--; if (depth === 0) { end = i; break; } }
+  }
+  if (end === -1) return { summary: text, recommendations: [], alerts: [] };
+  const fixed = cleaned.slice(start, end + 1).replace(/,(\s*[}\]])/g, '$1');
+  try {
+    return JSON.parse(fixed);
+  } catch(e) {
+    console.error('JSON parse failed after repair:', e.message, fixed.slice(0, 200));
+    return { summary: text, recommendations: [], alerts: [] };
+  }
 }
 
 async function getSiteData() {
