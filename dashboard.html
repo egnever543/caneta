@@ -629,7 +629,12 @@
         <h3>AI Site Report <span class="ai-badge">Claude</span></h3>
         <span class="ai-date" id="site-report-date"></span>
       </div>
-      <div style="display:flex;gap:8px">
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <div style="display:flex;gap:4px">
+          <button class="period-btn active" id="sp-all" onclick="setSitePage(null,this)">Todas</button>
+          <button class="period-btn" id="sp-en" onclick="setSitePage('en',this)">EN</button>
+          <button class="period-btn" id="sp-pt" onclick="setSitePage('pt',this)">PT</button>
+        </div>
         <button class="btn-copy" onclick="copyReport('site-report-content')" title="Copiar análise">Copiar</button>
         <button class="btn-refresh" onclick="runSiteReport()" id="btn-run-site-report">↻ Analisar Site</button>
       </div>
@@ -1358,7 +1363,8 @@ async function runSiteReport() {
 
   try {
     // Passo 1: buscar dados (~2s)
-    const dataRes = await fetch('/api/daily-report?type=site-data');
+    const pageParam = sitePageFilter ? `&page=${sitePageFilter}` : '';
+    const dataRes = await fetch(`/api/daily-report?type=site-data${pageParam}`);
     const dataJson = await dataRes.json();
     if (!dataJson.ok) throw new Error(dataJson.error || 'Erro ao buscar dados');
 
@@ -1381,6 +1387,14 @@ async function runSiteReport() {
 
   btn.textContent = '↻ Analisar Site';
   btn.disabled = false;
+}
+
+// Site page filter (EN / PT / all)
+let sitePageFilter = null;
+function setSitePage(page, btn) {
+  sitePageFilter = page;
+  document.querySelectorAll('#sp-all,#sp-en,#sp-pt').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
 }
 
 // Campaigns

@@ -136,7 +136,7 @@ function parseJSON(text) {
   }
 }
 
-async function getSiteData() {
+async function getSiteData(pageFilter) {
   const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
   const { data } = await supabase
     .from('page_events')
@@ -144,13 +144,25 @@ async function getSiteData() {
     .gte('created_at', since)
     .limit(2000);
 
-  if (!data) return { visits: 0, ctas: 0, purchases: 0, ctr: 0, countries: 'N/A', sources: {}, daily: {}, scrollDepth: {}, utmFunnel: {} };
+  if (!data) return { visits: 0, ctas: 0, purchases: 0, ctr: 0, countries: 'N/A', sources: {}, daily: {}, scrollDepth: {}, utmFunnel: {}, page: pageFilter || 'all' };
 
-  const sessions = data.filter(e => e.event_type === 'page_view');
+  // Filter sessions by landing page URL if requested
+  const allPageViews = data.filter(e => e.event_type === 'page_view');
+  let validSessions;
+  if (pageFilter === 'pt') {
+    validSessions = new Set(allPageViews.filter(e => (e.metadata?.url || '').includes('/pt')).map(e => e.session_id));
+  } else if (pageFilter === 'en') {
+    validSessions = new Set(allPageViews.filter(e => !(e.metadata?.url || '').includes('/pt')).map(e => e.session_id));
+  } else {
+    validSessions = new Set(allPageViews.map(e => e.session_id));
+  }
+
+  const filteredData = data.filter(e => validSessions.has(e.session_id));
+  const sessions = filteredData.filter(e => e.event_type === 'page_view');
   const visits = new Set(sessions.map(e => e.session_id)).size;
-  const ctas = data.filter(e => e.event_type === 'cta_click').length;
-  const purchases = data.filter(e => e.event_type === 'purchase').length;
-  const countries = [...new Set(data.map(e => e.country).filter(Boolean))].slice(0, 5).join(', ');
+  const ctas = filteredData.filter(e => e.event_type === 'cta_click').length;
+  const purchases = filteredData.filter(e => e.event_type === 'purchase').length;
+  const countries = [...new Set(filteredData.map(e => e.country).filter(Boolean))].slice(0, 5).join(', ');
 
   // UTM source breakdown
   const sources = {};
@@ -168,7 +180,7 @@ async function getSiteData() {
 
   // Scroll depth — % of sessions that reached each threshold
   const sessionScrollMax = {};
-  data.filter(e => e.event_type === 'scroll_depth').forEach(e => {
+  filteredData.filter(e => e.event_type === 'scroll_depth').forEach(e => {
     const pct = e.metadata?.percent || 0;
     if (!sessionScrollMax[e.session_id] || sessionScrollMax[e.session_id] < pct)
       sessionScrollMax[e.session_id] = pct;
@@ -183,7 +195,7 @@ async function getSiteData() {
   const sessionToUtm = {};
   sessions.forEach(e => { sessionToUtm[e.session_id] = e.metadata?.utm_source || 'direct'; });
   const utmFunnel = {};
-  data.forEach(e => {
+  filteredData.forEach(e => {
     const src = sessionToUtm[e.session_id] || 'direct';
     if (!utmFunnel[src]) utmFunnel[src] = { visits: 0, ctas: 0, purchases: 0 };
     if (e.event_type === 'page_view') utmFunnel[src].visits++;
@@ -191,7 +203,7 @@ async function getSiteData() {
     if (e.event_type === 'purchase') utmFunnel[src].purchases++;
   });
 
-  return { visits, ctas, purchases, ctr: visits ? Math.round(ctas / visits * 100) : 0, countries, sources, daily, scrollDepth, utmFunnel };
+  return { visits, ctas, purchases, ctr: visits ? Math.round(ctas / visits * 100) : 0, countries, sources, daily, scrollDepth, utmFunnel, page: pageFilter || 'all' };
 }
 
 async function fetchRecentChanges() {
@@ -528,7 +540,8 @@ ${currentHtml}`;
 
     // ── Site data fetch (step 1 of 2) ──
     if (type === 'site-data') {
-      const [siteData, persona, changes] = await Promise.all([getSiteData(), fetchPersona(), fetchRecentChanges()]);
+      const pageFilter = req.query.page || null;
+      const [siteData, persona, changes] = await Promise.all([getSiteData(pageFilter), fetchPersona(), fetchRecentChanges()]);
       return res.status(200).json({ ok: true, siteData, persona, changes });
     }
 
