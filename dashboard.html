@@ -1083,14 +1083,13 @@ async function loadAll() {
     return new Date(e.created_at).getTime() >= cutoff;
   });
 
-  // Detect unique landing page paths from page_view events
-  const allPageViews = periodFiltered.filter(e => e.event_type === 'page_view');
-  const uniquePaths = [...new Set(allPageViews.map(e => {
-    try { return new URL(e.metadata?.url || '').pathname.replace(/\/$/, '') || '/'; }
-    catch { return '/'; }
-  }))].sort();
+  // Helper: extract pathname from a full URL stored in metadata
+  const urlPath = url => { try { return new URL(url).pathname.replace(/\/$/, '') || '/'; } catch { return null; } };
 
-  // Build filter buttons dynamically (only show if >1 page exists)
+  // Detect unique pages from all events (every event now carries metadata.url)
+  const uniquePaths = [...new Set(periodFiltered.map(e => urlPath(e.metadata?.url)).filter(Boolean))].sort();
+
+  // Build page filter buttons dynamically — hidden when only 1 page exists
   const wrap = document.getElementById('url-filter-wrap');
   const btnContainer = document.getElementById('url-filter-btns');
   if (wrap && btnContainer) {
@@ -1108,17 +1107,10 @@ async function loadAll() {
     }
   }
 
-  // Filter sessions by selected path
-  let validSessions;
-  if (siteUrlFilter) {
-    validSessions = new Set(allPageViews.filter(e => {
-      try { return (new URL(e.metadata?.url || '').pathname.replace(/\/$/, '') || '/') === siteUrlFilter; }
-      catch { return false; }
-    }).map(e => e.session_id));
-  } else {
-    validSessions = new Set(allPageViews.map(e => e.session_id));
-  }
-  const all = periodFiltered.filter(e => validSessions.has(e.session_id));
+  // Filter directly by event URL — no session-join needed
+  const all = siteUrlFilter
+    ? periodFiltered.filter(e => urlPath(e.metadata?.url) === siteUrlFilter)
+    : periodFiltered;
 
   // KPIs
   const sessions = new Set(all.map(e => e.session_id));

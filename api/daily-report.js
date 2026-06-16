@@ -146,17 +146,11 @@ async function getSiteData(pageFilter) {
 
   if (!data) return { visits: 0, ctas: 0, purchases: 0, ctr: 0, countries: 'N/A', sources: {}, daily: {}, scrollDepth: {}, utmFunnel: {}, page: pageFilter || 'all' };
 
-  // Filter sessions by landing page URL path (e.g. '/pt', '/')
-  const getPath = url => { try { return new URL(url).pathname.replace(/\/$/, '') || '/'; } catch { return '/'; } };
-  const allPageViews = data.filter(e => e.event_type === 'page_view');
-  let validSessions;
-  if (pageFilter) {
-    validSessions = new Set(allPageViews.filter(e => getPath(e.metadata?.url || '') === pageFilter).map(e => e.session_id));
-  } else {
-    validSessions = new Set(allPageViews.map(e => e.session_id));
-  }
-
-  const filteredData = data.filter(e => validSessions.has(e.session_id));
+  // Filter directly by event URL — every event now carries metadata.url
+  const getPath = url => { try { return new URL(url).pathname.replace(/\/$/, '') || '/'; } catch { return null; } };
+  const filteredData = pageFilter
+    ? data.filter(e => getPath(e.metadata?.url) === pageFilter)
+    : data;
   const sessions = filteredData.filter(e => e.event_type === 'page_view');
   const visits = new Set(sessions.map(e => e.session_id)).size;
   const ctas = filteredData.filter(e => e.event_type === 'cta_click').length;

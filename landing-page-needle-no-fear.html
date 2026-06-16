@@ -458,7 +458,7 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
     fetch('/api/track', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ session_id: SESSION_ID, event_type, section: section || null, metadata: metadata || {} })
+      body: JSON.stringify({ session_id: SESSION_ID, event_type, section: section || null, metadata: { url: location.href, ...(metadata || {}) } })
     }).catch(() => {});
   }
 

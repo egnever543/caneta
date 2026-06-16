@@ -391,12 +391,91 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
 </footer>
 
 <script>
-  // Fire Meta Lead event on every CTA click
-  document.querySelectorAll('.btn-primary, .nav-cta').forEach(el => {
-    el.addEventListener('click', function() {
-      if (typeof fbq === 'function') fbq('track', 'Lead');
+  // ── Analytics Tracking ──────────────────────────────────────────
+  const SESSION_ID = Math.random().toString(36).slice(2) + Date.now().toString(36);
+
+  function track(event_type, section, metadata) {
+    fetch('/api/track', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_id: SESSION_ID, event_type, section: section || null, metadata: { url: location.href, ...(metadata || {}) } })
+    }).catch(() => {});
+  }
+
+  // PageView — capture UTM params and fbclid
+  const _utms = {};
+  const _sp = new URLSearchParams(location.search);
+  ['utm_source','utm_medium','utm_campaign','utm_content','utm_term','fbclid','gclid'].forEach(k => {
+    if (_sp.get(k)) _utms[k] = _sp.get(k);
+  });
+  track('page_view', null, { referrer: document.referrer, ..._utms });
+
+  // CTA clicks — Pixel + CAPI + Supabase
+  document.querySelectorAll('.btn-primary, .nav-cta').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const section = btn.closest('section')?.className?.split(' ')[0] || 'nav';
+      const text = btn.innerText.trim();
+
+      // 1. Meta Pixel
+      if (typeof fbq !== 'undefined') {
+        fbq('track', 'InitiateCheckout', { content_name: 'Caneta Sem Medo Ebook', value: 45, currency: 'BRL' });
+      }
+
+      // 2. CAPI server-side
+      const _fbp = document.cookie.split(';').map(c => c.trim()).find(c => c.startsWith('_fbp='))?.split('=')[1] || null;
+      fetch('/api/daily-report?type=fb-event', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          event_name: 'InitiateCheckout',
+          event_source_url: location.href,
+          fbclid: _utms.fbclid || null,
+          fbp: _fbp,
+          external_id: SESSION_ID,
+          client_user_agent: navigator.userAgent,
+          custom_data: { content_name: 'Caneta Sem Medo Ebook', value: 45, currency: 'BRL', section, text }
+        })
+      }).catch(() => {});
+
+      // 3. Supabase
+      track('cta_click', section, { text });
     });
   });
+
+  // Scroll depth — fires once per threshold
+  const scrollThresholds = [25, 50, 75, 90, 100];
+  const firedThresholds = new Set();
+  window.addEventListener('scroll', () => {
+    const scrollable = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight) - window.innerHeight;
+    if (scrollable <= 0) return;
+    const pct = Math.round((window.scrollY / scrollable) * 100);
+    scrollThresholds.forEach(t => {
+      if (pct >= t && !firedThresholds.has(t)) {
+        firedThresholds.add(t);
+        track('scroll_depth', null, { percent: t });
+      }
+    });
+  }, { passive: true });
+
+  // Section visibility
+  const sectionMap = { hero: 'hero', problem: 'problema', who: 'para_quem', offer: 'oferta' };
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        const key = Object.keys(sectionMap).find(k => e.target.classList.contains(k));
+        if (key) track('section_viewed', sectionMap[key], {});
+        observer.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.3 });
+  document.querySelectorAll('section').forEach(s => observer.observe(s));
+
+  // Page exit
+  const pageStart = Date.now();
+  window.addEventListener('beforeunload', () => {
+    track('page_exit', null, { seconds_on_page: Math.round((Date.now() - pageStart) / 1000) });
+  });
+  // ────────────────────────────────────────────────────────────────
 
   document.querySelectorAll('.faq-item').forEach(item => {
     const q = item.querySelector('.faq-q');
