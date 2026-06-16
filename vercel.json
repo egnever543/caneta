@@ -7,6 +7,7 @@
   ],
   "rewrites": [
     { "source": "/", "destination": "/landing-page-needle-no-fear.html" },
+    { "source": "/pt", "destination": "/lps/landing-page-caneta-sem-medo.html" },
     { "source": "/success", "destination": "/success.html" }
   ]
 }
