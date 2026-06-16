@@ -141,7 +141,8 @@ async function getSiteData() {
   const { data } = await supabase
     .from('page_events')
     .select('event_type, session_id, country, metadata, created_at')
-    .gte('created_at', since);
+    .gte('created_at', since)
+    .limit(2000);
 
   if (!data) return { visits: 0, ctas: 0, purchases: 0, ctr: 0, countries: 'N/A', sources: {}, daily: {}, scrollDepth: {}, utmFunnel: {} };
 
@@ -524,7 +525,7 @@ ${currentHtml}`;
     if (type === 'site') {
       const [siteData, persona, changes] = await Promise.all([getSiteData(), fetchPersona(), fetchRecentChanges()]);
       const timeout = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Timeout: análise demorou mais de 9s')), 9000)
+        setTimeout(() => reject(new Error('Timeout: análise demorou mais de 6s')), 6000)
       );
       const analysis = await Promise.race([analyzeSiteWithClaude(siteData, persona, changes), timeout]);
       const today = new Date().toISOString().slice(0, 10);
