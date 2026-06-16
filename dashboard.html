@@ -367,7 +367,10 @@
   @media(max-width:768px) { .suggest-grid { grid-template-columns:1fr; } }
 
   /* Tabs */
-  .tabs-nav { display:flex; gap:4px; margin-bottom:28px; border-bottom:1px solid var(--border); padding-bottom:0; }
+  .tabs-nav { display:flex; align-items:flex-end; gap:4px; margin-bottom:28px; border-bottom:1px solid var(--border); padding-bottom:0; flex-wrap:wrap; }
+  .tabs-page-filter { display:none; align-items:center; gap:6px; margin-left:auto; padding-bottom:6px; }
+  .tabs-page-filter span { font-size:0.72rem; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:.08em; }
+  .tabs-page-filter.visible { display:flex; }
   .tab-btn { padding:10px 24px; border-radius:10px 10px 0 0; font-size:0.88rem; font-weight:600; cursor:pointer; border:1px solid transparent; border-bottom:none; background:transparent; color:var(--muted); transition:all .15s; position:relative; bottom:-1px; }
   .tab-btn:hover { color:var(--text); }
   .tab-btn.active { background:var(--card); border-color:var(--border); color:var(--text); border-bottom-color:var(--card); }
@@ -443,25 +446,23 @@
   <button class="tab-btn" onclick="switchTab('ia',this)">IA Analytics <span class="tab-badge">Claude</span></button>
   <button class="tab-btn" onclick="switchTab('persona',this)">Persona</button>
   <button class="tab-btn" onclick="switchTab('historico',this)">Histórico</button>
+  <div class="tabs-page-filter" id="tabs-page-filter">
+    <span>Página:</span>
+    <div style="display:flex;gap:4px" id="url-filter-btns"></div>
+  </div>
 </nav>
 
 <!-- ── ABA 1: SITE ── -->
 <div id="tab-site" class="tab-panel active">
 
-  <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;flex-wrap:wrap">
-    <div style="display:flex;align-items:center;gap:8px">
-      <span style="font-size:0.78rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.08em">Período:</span>
-      <div style="display:flex;gap:6px">
-        <button class="period-btn" data-days="1" onclick="setSitePeriod(1,this)">Hoje</button>
-        <button class="period-btn active" data-days="7" onclick="setSitePeriod(7,this)">7 dias</button>
-        <button class="period-btn" data-days="14" onclick="setSitePeriod(14,this)">14 dias</button>
-        <button class="period-btn" data-days="30" onclick="setSitePeriod(30,this)">30 dias</button>
-        <button class="period-btn" data-days="0" onclick="setSitePeriod(0,this)">Tudo</button>
-      </div>
-    </div>
-    <div style="display:flex;align-items:center;gap:8px" id="url-filter-wrap" style="display:none">
-      <span style="font-size:0.78rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.08em">Página:</span>
-      <div style="display:flex;gap:6px" id="url-filter-btns"></div>
+  <div style="display:flex;align-items:center;gap:8px;margin-bottom:20px;flex-wrap:wrap">
+    <span style="font-size:0.78rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.08em">Período:</span>
+    <div style="display:flex;gap:6px">
+      <button class="period-btn" data-days="1" onclick="setSitePeriod(1,this)">Hoje</button>
+      <button class="period-btn active" data-days="7" onclick="setSitePeriod(7,this)">7 dias</button>
+      <button class="period-btn" data-days="14" onclick="setSitePeriod(14,this)">14 dias</button>
+      <button class="period-btn" data-days="30" onclick="setSitePeriod(30,this)">30 dias</button>
+      <button class="period-btn" data-days="0" onclick="setSitePeriod(0,this)">Tudo</button>
     </div>
   </div>
 
@@ -1089,12 +1090,12 @@ async function loadAll() {
   // Detect unique pages from all events (every event now carries metadata.url)
   const uniquePaths = [...new Set(periodFiltered.map(e => urlPath(e.metadata?.url)).filter(Boolean))].sort();
 
-  // Build page filter buttons dynamically — hidden when only 1 page exists
-  const wrap = document.getElementById('url-filter-wrap');
+  // Build page filter buttons dynamically in the global nav — hidden when only 1 page
+  const tabsFilter = document.getElementById('tabs-page-filter');
   const btnContainer = document.getElementById('url-filter-btns');
-  if (wrap && btnContainer) {
+  if (tabsFilter && btnContainer) {
     if (uniquePaths.length > 1) {
-      wrap.style.display = 'flex';
+      tabsFilter.classList.add('visible');
       btnContainer.innerHTML =
         `<button class="period-btn ${!siteUrlFilter ? 'active' : ''}" onclick="setSiteUrlFilter(null,this)">Todas</button>` +
         uniquePaths.map(p => {
@@ -1103,7 +1104,7 @@ async function loadAll() {
           return `<button class="period-btn ${active}" onclick="setSiteUrlFilter('${p}',this)">${label}</button>`;
         }).join('');
     } else {
-      wrap.style.display = 'none';
+      tabsFilter.classList.remove('visible');
     }
   }
 
