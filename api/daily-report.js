@@ -519,24 +519,27 @@ ${currentHtml}`;
       return res.status(200).json({ ok: true });
     }
 
-    if (req.method !== 'GET') return res.status(405).end();
-
-    // ── Site report ──
-    if (type === 'site') {
+    // ── Site data fetch (step 1 of 2) ──
+    if (type === 'site-data') {
       const [siteData, persona, changes] = await Promise.all([getSiteData(), fetchPersona(), fetchRecentChanges()]);
-      const timeout = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('Timeout: análise demorou mais de 6s')), 6000)
-      );
-      const analysis = await Promise.race([analyzeSiteWithClaude(siteData, persona, changes), timeout]);
+      return res.status(200).json({ ok: true, siteData, persona, changes });
+    }
+
+    // ── Site analyze (step 2 of 2) — receives pre-fetched data, calls Claude ──
+    if (type === 'site-analyze' && req.method === 'POST') {
+      const { siteData, persona, changes } = req.body || {};
+      if (!siteData) return res.status(400).json({ ok: false, error: 'siteData required' });
+      const analysis = await analyzeSiteWithClaude(siteData, persona || {}, changes || []);
       const today = new Date().toISOString().slice(0, 10);
       const { error: siteUpsertErr } = await supabase.from('ai_site_reports').upsert(
         { report_date: today, analysis },
         { onConflict: 'report_date' }
       );
       if (siteUpsertErr) console.error('ai_site_reports error:', JSON.stringify(siteUpsertErr));
-      else console.log('ai_site_reports saved ok:', today);
-      return res.status(200).json({ ok: true, date: today, analysis, saved: !siteUpsertErr, saveError: siteUpsertErr?.message });
+      return res.status(200).json({ ok: true, date: today, analysis, saved: !siteUpsertErr });
     }
+
+    if (req.method !== 'GET') return res.status(405).end();
 
     // ── Campaign + creative report (default) ──
     const [metaData, siteData, creatives, persona] = await Promise.all([
