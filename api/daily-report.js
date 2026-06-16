@@ -540,14 +540,14 @@ ${currentHtml}`;
 
     // ── Site analyze (step 2 of 2) — receives pre-fetched data, calls Claude ──
     if (type === 'site-analyze' && req.method === 'POST') {
-      const { siteData, persona, changes } = req.body || {};
+      const { siteData, persona, changes, site_id } = req.body || {};
       if (!siteData) return res.status(400).json({ ok: false, error: 'siteData required' });
       const analysis = await analyzeSiteWithClaude(siteData, persona || {}, changes || []);
       const today = new Date().toISOString().slice(0, 10);
-      const { error: siteUpsertErr } = await supabase.from('ai_site_reports').upsert(
-        { report_date: today, analysis },
-        { onConflict: 'report_date' }
-      );
+      const upsertRow = { report_date: today, analysis };
+      if (site_id) upsertRow.site_id = site_id;
+      const conflictCol = site_id ? 'site_id,report_date' : 'report_date';
+      const { error: siteUpsertErr } = await supabase.from('ai_site_reports').upsert(upsertRow, { onConflict: conflictCol });
       if (siteUpsertErr) console.error('ai_site_reports error:', JSON.stringify(siteUpsertErr));
       return res.status(200).json({ ok: true, date: today, analysis, saved: !siteUpsertErr });
     }
