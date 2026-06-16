@@ -307,15 +307,22 @@ module.exports = async (req, res) => {
         event_name = 'InitiateCheckout',
         event_source_url,
         fbclid,
+        fbp,
+        external_id,
         client_user_agent,
         event_time,
         custom_data = {}
       } = req.body || {};
 
       const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket?.remoteAddress || null;
-      const userData = { client_user_agent: client_user_agent || null };
-      if (fbclid) userData.fbc = `fb.1.${Date.now()}.${fbclid}`;
+      // Prefer user-agent from HTTP header (always present), fall back to client-sent value
+      const ua = req.headers['user-agent'] || client_user_agent || null;
+      const userData = {};
+      if (ua) userData.client_user_agent = ua;
       if (ip) userData.client_ip_address = ip;
+      if (fbclid) userData.fbc = `fb.1.${Date.now()}.${fbclid}`;
+      if (fbp) userData.fbp = fbp;
+      if (external_id) userData.external_id = external_id;
 
       const payload = {
         data: [{

@@ -482,6 +482,7 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
       }
 
       // 2. Conversions API (server-side — não perde por ad blocker)
+      const _fbp = document.cookie.split(';').map(c => c.trim()).find(c => c.startsWith('_fbp='))?.split('=')[1] || null;
       fetch('/api/daily-report?type=fb-event', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -489,6 +490,8 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
           event_name: 'InitiateCheckout',
           event_source_url: location.href,
           fbclid: _utms.fbclid || null,
+          fbp: _fbp,
+          external_id: SESSION_ID,
           client_user_agent: navigator.userAgent,
           custom_data: { content_name: 'Shot Without Fear Ebook', value: 9, currency: 'USD', section, text }
         })
