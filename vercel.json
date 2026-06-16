@@ -2,6 +2,7 @@
   "outputDirectory": ".",
   "crons": [
     { "path": "/api/daily-report", "schedule": "0 11 * * *" },
+    { "path": "/api/daily-report?type=site", "schedule": "0 13 * * *" },
     { "path": "/api/analyze-creatives", "schedule": "0 12 * * *" }
   ],
   "rewrites": [

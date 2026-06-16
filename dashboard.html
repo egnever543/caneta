@@ -1352,26 +1352,39 @@ function copyReport(contentId) {
 
 async function runSiteReport() {
   const btn = document.getElementById('btn-run-site-report');
-  btn.textContent = '⏳ Analisando...';
+  btn.textContent = '⏳ Processando...';
   btn.disabled = true;
-  document.getElementById('site-report-content').innerHTML = '<div class="loading">Analisando funil com Claude — aguarde...</div>';
-  try {
-    const controller = new AbortController();
-    const tid = setTimeout(() => controller.abort(), 9000);
-    const res = await fetch('/api/daily-report?type=site', { signal: controller.signal });
-    clearTimeout(tid);
-    const json = await res.json();
-    if (json.ok) {
-      renderSiteReport({ analysis: json.analysis, report_date: json.date });
-    } else {
-      document.getElementById('site-report-content').innerHTML = `<div class="loading" style="color:#ff7070">Erro: ${json.error}</div>`;
+  document.getElementById('site-report-content').innerHTML = '<div class="loading">Análise iniciada em background — o resultado aparece aqui em ~30s...</div>';
+
+  // Dispara em background sem esperar (evita timeout)
+  fetch('/api/daily-report?type=site').catch(() => {});
+
+  // Polling: tenta carregar o resultado novo do Supabase por até 60s
+  const startedAt = Date.now();
+  const previousDate = document.getElementById('site-report-date').textContent;
+  const poll = setInterval(async () => {
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/ai_site_reports?select=*&order=report_date.desc&limit=1`, {
+        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` }
+      });
+      const data = await res.json();
+      if (Array.isArray(data) && data.length) {
+        const newDate = 'Última análise: ' + data[0].report_date;
+        if (newDate !== previousDate || Date.now() - startedAt > 50000) {
+          clearInterval(poll);
+          renderSiteReport(data[0]);
+          btn.textContent = '↻ Analisar Site';
+          btn.disabled = false;
+        }
+      }
+    } catch(e) {}
+    if (Date.now() - startedAt > 60000) {
+      clearInterval(poll);
+      document.getElementById('site-report-content').innerHTML = '<div class="loading" style="color:#ff7070">Tempo esgotado — recarregue a página para ver o resultado.</div>';
+      btn.textContent = '↻ Analisar Site';
+      btn.disabled = false;
     }
-  } catch(e) {
-    const msg = e.name === 'AbortError' ? 'Tempo limite atingido — tente novamente' : e.message;
-    document.getElementById('site-report-content').innerHTML = `<div class="loading" style="color:#ff7070">Erro: ${msg}</div>`;
-  }
-  btn.textContent = '↻ Analisar Site';
-  btn.disabled = false;
+  }, 5000);
 }
 
 // Campaigns
