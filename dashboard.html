@@ -448,14 +448,24 @@
 <!-- ── ABA 1: SITE ── -->
 <div id="tab-site" class="tab-panel active">
 
-  <div style="display:flex;align-items:center;gap:8px;margin-bottom:20px;flex-wrap:wrap">
-    <span style="font-size:0.78rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.08em">Período:</span>
-    <div style="display:flex;gap:6px">
-      <button class="period-btn" data-days="1" onclick="setSitePeriod(1,this)">Hoje</button>
-      <button class="period-btn active" data-days="7" onclick="setSitePeriod(7,this)">7 dias</button>
-      <button class="period-btn" data-days="14" onclick="setSitePeriod(14,this)">14 dias</button>
-      <button class="period-btn" data-days="30" onclick="setSitePeriod(30,this)">30 dias</button>
-      <button class="period-btn" data-days="0" onclick="setSitePeriod(0,this)">Tudo</button>
+  <div style="display:flex;align-items:center;gap:16px;margin-bottom:20px;flex-wrap:wrap">
+    <div style="display:flex;align-items:center;gap:8px">
+      <span style="font-size:0.78rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.08em">Período:</span>
+      <div style="display:flex;gap:6px">
+        <button class="period-btn" data-days="1" onclick="setSitePeriod(1,this)">Hoje</button>
+        <button class="period-btn active" data-days="7" onclick="setSitePeriod(7,this)">7 dias</button>
+        <button class="period-btn" data-days="14" onclick="setSitePeriod(14,this)">14 dias</button>
+        <button class="period-btn" data-days="30" onclick="setSitePeriod(30,this)">30 dias</button>
+        <button class="period-btn" data-days="0" onclick="setSitePeriod(0,this)">Tudo</button>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <span style="font-size:0.78rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.08em">Página:</span>
+      <div style="display:flex;gap:6px">
+        <button class="period-btn active" id="url-all" onclick="setSiteUrlFilter(null,this)">Todas</button>
+        <button class="period-btn" id="url-en" onclick="setSiteUrlFilter('en',this)">EN</button>
+        <button class="period-btn" id="url-pt" onclick="setSiteUrlFilter('pt',this)">PT</button>
+      </div>
     </div>
   </div>
 
@@ -1076,10 +1086,22 @@ let visitChart, eventChart;
 async function loadAll() {
   const raw = await query('page_events', { select: '*', order: 'created_at.desc', limit: 1000 });
   if (!Array.isArray(raw)) return;
-  const all = sitePeriodDays === 0 ? raw : raw.filter(e => {
+  const periodFiltered = sitePeriodDays === 0 ? raw : raw.filter(e => {
     const cutoff = Date.now() - sitePeriodDays * 24 * 60 * 60 * 1000;
     return new Date(e.created_at).getTime() >= cutoff;
   });
+
+  // Filter sessions by landing page URL
+  const allPageViews = periodFiltered.filter(e => e.event_type === 'page_view');
+  let validSessions;
+  if (siteUrlFilter === 'pt') {
+    validSessions = new Set(allPageViews.filter(e => (e.metadata?.url || '').includes('/pt')).map(e => e.session_id));
+  } else if (siteUrlFilter === 'en') {
+    validSessions = new Set(allPageViews.filter(e => !(e.metadata?.url || '').includes('/pt')).map(e => e.session_id));
+  } else {
+    validSessions = new Set(allPageViews.map(e => e.session_id));
+  }
+  const all = periodFiltered.filter(e => validSessions.has(e.session_id));
 
   // KPIs
   const sessions = new Set(all.map(e => e.session_id));
@@ -1389,7 +1411,16 @@ async function runSiteReport() {
   btn.disabled = false;
 }
 
-// Site page filter (EN / PT / all)
+// Site URL filter (EN / PT / all) — shared across Tab 1 and AI Site Report
+let siteUrlFilter = null;
+function setSiteUrlFilter(filter, btn) {
+  siteUrlFilter = filter;
+  document.querySelectorAll('#url-all,#url-en,#url-pt').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  loadAll();
+}
+
+// AI Site Report page filter (independent — requires manual trigger)
 let sitePageFilter = null;
 function setSitePage(page, btn) {
   sitePageFilter = page;
