@@ -473,7 +473,29 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
   // CTA clicks
   document.querySelectorAll('.btn-primary, .nav-cta').forEach(btn => {
     btn.addEventListener('click', () => {
-      track('cta_click', btn.closest('section')?.className || 'nav', { text: btn.innerText.trim() });
+      const section = btn.closest('section')?.className || 'nav';
+      const text = btn.innerText.trim();
+
+      // 1. Facebook Pixel (client-side)
+      if (typeof fbq !== 'undefined') {
+        fbq('track', 'InitiateCheckout', { content_name: 'Shot Without Fear Ebook', value: 9, currency: 'USD' });
+      }
+
+      // 2. Conversions API (server-side — não perde por ad blocker)
+      fetch('/api/fb-event', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          event_name: 'InitiateCheckout',
+          event_source_url: location.href,
+          fbclid: _utms.fbclid || null,
+          client_user_agent: navigator.userAgent,
+          custom_data: { content_name: 'Shot Without Fear Ebook', value: 9, currency: 'USD', section, text }
+        })
+      }).catch(() => {});
+
+      // 3. Supabase
+      track('cta_click', section, { text });
     });
   });
 
