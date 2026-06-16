@@ -482,7 +482,7 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
       }
 
       // 2. Conversions API (server-side — não perde por ad blocker)
-      fetch('/api/fb-event', {
+      fetch('/api/daily-report?type=fb-event', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

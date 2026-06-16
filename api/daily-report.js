@@ -296,6 +296,46 @@ module.exports = async (req, res) => {
   const type = req.query.type || 'campaign';
 
   try {
+    // ── Facebook Conversions API ──
+    if (type === 'fb-event' && req.method === 'POST') {
+      const PIXEL_ID = '3387796061379965';
+      const token = process.env.META_ACCESS_TOKEN;
+      if (!token) return res.status(500).json({ ok: false, error: 'META_ACCESS_TOKEN not set' });
+
+      const {
+        event_name = 'InitiateCheckout',
+        event_source_url,
+        fbclid,
+        client_user_agent,
+        event_time,
+        custom_data = {}
+      } = req.body || {};
+
+      const ip = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket?.remoteAddress || null;
+      const userData = { client_user_agent: client_user_agent || null };
+      if (fbclid) userData.fbc = `fb.1.${Date.now()}.${fbclid}`;
+      if (ip) userData.client_ip_address = ip;
+
+      const payload = {
+        data: [{
+          event_name,
+          event_time: event_time || Math.floor(Date.now() / 1000),
+          event_source_url: event_source_url || 'https://caneta-rho.vercel.app/',
+          action_source: 'website',
+          user_data: userData,
+          custom_data
+        }]
+      };
+
+      const fbRes = await fetch(
+        `https://graph.facebook.com/v19.0/${PIXEL_ID}/events?access_token=${token}`,
+        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) }
+      );
+      const fbJson = await fbRes.json();
+      if (!fbRes.ok) return res.status(400).json({ ok: false, error: fbJson });
+      return res.status(200).json({ ok: true, result: fbJson });
+    }
+
     // ── Apply AI suggestion (read → Claude → commit → log) ──
     if (type === 'apply' && req.method === 'POST') {
       const { recommendation, reason } = req.body;
