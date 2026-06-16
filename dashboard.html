@@ -459,13 +459,9 @@
         <button class="period-btn" data-days="0" onclick="setSitePeriod(0,this)">Tudo</button>
       </div>
     </div>
-    <div style="display:flex;align-items:center;gap:8px">
+    <div style="display:flex;align-items:center;gap:8px" id="url-filter-wrap" style="display:none">
       <span style="font-size:0.78rem;color:var(--muted);font-weight:600;text-transform:uppercase;letter-spacing:.08em">Página:</span>
-      <div style="display:flex;gap:6px">
-        <button class="period-btn active" id="url-all" onclick="setSiteUrlFilter(null,this)">Todas</button>
-        <button class="period-btn" id="url-en" onclick="setSiteUrlFilter('en',this)">EN</button>
-        <button class="period-btn" id="url-pt" onclick="setSiteUrlFilter('pt',this)">PT</button>
-      </div>
+      <div style="display:flex;gap:6px" id="url-filter-btns"></div>
     </div>
   </div>
 
@@ -640,11 +636,7 @@
         <span class="ai-date" id="site-report-date"></span>
       </div>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <div style="display:flex;gap:4px">
-          <button class="period-btn active" id="sp-all" onclick="setSitePage(null,this)">Todas</button>
-          <button class="period-btn" id="sp-en" onclick="setSitePage('en',this)">EN</button>
-          <button class="period-btn" id="sp-pt" onclick="setSitePage('pt',this)">PT</button>
-        </div>
+        <span id="site-report-page-label" style="font-size:0.75rem;color:var(--muted);display:none"></span>
         <button class="btn-copy" onclick="copyReport('site-report-content')" title="Copiar análise">Copiar</button>
         <button class="btn-refresh" onclick="runSiteReport()" id="btn-run-site-report">↻ Analisar Site</button>
       </div>
@@ -1091,13 +1083,38 @@ async function loadAll() {
     return new Date(e.created_at).getTime() >= cutoff;
   });
 
-  // Filter sessions by landing page URL
+  // Detect unique landing page paths from page_view events
   const allPageViews = periodFiltered.filter(e => e.event_type === 'page_view');
+  const uniquePaths = [...new Set(allPageViews.map(e => {
+    try { return new URL(e.metadata?.url || '').pathname.replace(/\/$/, '') || '/'; }
+    catch { return '/'; }
+  }))].sort();
+
+  // Build filter buttons dynamically (only show if >1 page exists)
+  const wrap = document.getElementById('url-filter-wrap');
+  const btnContainer = document.getElementById('url-filter-btns');
+  if (wrap && btnContainer) {
+    if (uniquePaths.length > 1) {
+      wrap.style.display = 'flex';
+      btnContainer.innerHTML =
+        `<button class="period-btn ${!siteUrlFilter ? 'active' : ''}" onclick="setSiteUrlFilter(null,this)">Todas</button>` +
+        uniquePaths.map(p => {
+          const label = p === '/' ? 'EN' : p.split('/').filter(Boolean).pop().toUpperCase();
+          const active = siteUrlFilter === p ? 'active' : '';
+          return `<button class="period-btn ${active}" onclick="setSiteUrlFilter('${p}',this)">${label}</button>`;
+        }).join('');
+    } else {
+      wrap.style.display = 'none';
+    }
+  }
+
+  // Filter sessions by selected path
   let validSessions;
-  if (siteUrlFilter === 'pt') {
-    validSessions = new Set(allPageViews.filter(e => (e.metadata?.url || '').includes('/pt')).map(e => e.session_id));
-  } else if (siteUrlFilter === 'en') {
-    validSessions = new Set(allPageViews.filter(e => !(e.metadata?.url || '').includes('/pt')).map(e => e.session_id));
+  if (siteUrlFilter) {
+    validSessions = new Set(allPageViews.filter(e => {
+      try { return (new URL(e.metadata?.url || '').pathname.replace(/\/$/, '') || '/') === siteUrlFilter; }
+      catch { return false; }
+    }).map(e => e.session_id));
   } else {
     validSessions = new Set(allPageViews.map(e => e.session_id));
   }
@@ -1385,7 +1402,7 @@ async function runSiteReport() {
 
   try {
     // Passo 1: buscar dados (~2s)
-    const pageParam = sitePageFilter ? `&page=${sitePageFilter}` : '';
+    const pageParam = siteUrlFilter ? `&page=${encodeURIComponent(siteUrlFilter)}` : '';
     const dataRes = await fetch(`/api/daily-report?type=site-data${pageParam}`);
     const dataJson = await dataRes.json();
     if (!dataJson.ok) throw new Error(dataJson.error || 'Erro ao buscar dados');
@@ -1411,21 +1428,26 @@ async function runSiteReport() {
   btn.disabled = false;
 }
 
-// Site URL filter (EN / PT / all) — shared across Tab 1 and AI Site Report
+// Global page filter — shared across Tab 1 metrics and AI Site Report
+// siteUrlFilter is a URL pathname like '/pt', '/' or null (all pages)
 let siteUrlFilter = null;
 function setSiteUrlFilter(filter, btn) {
   siteUrlFilter = filter;
-  document.querySelectorAll('#url-all,#url-en,#url-pt').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
+  // Update active state on whichever buttons are currently rendered
+  document.querySelectorAll('#url-filter-btns .period-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  // Update AI report context label
+  const lbl = document.getElementById('site-report-page-label');
+  if (lbl) {
+    if (filter) {
+      const name = filter === '/' ? 'EN' : filter.split('/').filter(Boolean).pop().toUpperCase();
+      lbl.textContent = `Página: ${name}`;
+      lbl.style.display = 'inline';
+    } else {
+      lbl.style.display = 'none';
+    }
+  }
   loadAll();
-}
-
-// AI Site Report page filter (independent — requires manual trigger)
-let sitePageFilter = null;
-function setSitePage(page, btn) {
-  sitePageFilter = page;
-  document.querySelectorAll('#sp-all,#sp-en,#sp-pt').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
 }
 
 // Campaigns

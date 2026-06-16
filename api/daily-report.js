@@ -146,13 +146,12 @@ async function getSiteData(pageFilter) {
 
   if (!data) return { visits: 0, ctas: 0, purchases: 0, ctr: 0, countries: 'N/A', sources: {}, daily: {}, scrollDepth: {}, utmFunnel: {}, page: pageFilter || 'all' };
 
-  // Filter sessions by landing page URL if requested
+  // Filter sessions by landing page URL path (e.g. '/pt', '/')
+  const getPath = url => { try { return new URL(url).pathname.replace(/\/$/, '') || '/'; } catch { return '/'; } };
   const allPageViews = data.filter(e => e.event_type === 'page_view');
   let validSessions;
-  if (pageFilter === 'pt') {
-    validSessions = new Set(allPageViews.filter(e => (e.metadata?.url || '').includes('/pt')).map(e => e.session_id));
-  } else if (pageFilter === 'en') {
-    validSessions = new Set(allPageViews.filter(e => !(e.metadata?.url || '').includes('/pt')).map(e => e.session_id));
+  if (pageFilter) {
+    validSessions = new Set(allPageViews.filter(e => getPath(e.metadata?.url || '') === pageFilter).map(e => e.session_id));
   } else {
     validSessions = new Set(allPageViews.map(e => e.session_id));
   }
