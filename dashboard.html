@@ -1132,11 +1132,14 @@ async function loadAll() {
     return new Date(e.created_at).getTime() >= cutoff;
   });
 
-  // Filter events to the active site's url_path
+  // Identify valid sessions via page_view url (page_view always carried url from day 1)
+  // then include ALL events from those sessions — covers historical data where only page_view had url
   const urlPath = url => { try { return new URL(url).pathname.replace(/\/$/, '') || '/'; } catch { return null; } };
-  const all = activeSite
-    ? periodFiltered.filter(e => urlPath(e.metadata?.url) === activeSite.url_path)
-    : periodFiltered;
+  const pageViews = periodFiltered.filter(e => e.event_type === 'page_view');
+  const validSessions = activeSite
+    ? new Set(pageViews.filter(e => urlPath(e.metadata?.url) === activeSite.url_path).map(e => e.session_id))
+    : new Set(pageViews.map(e => e.session_id));
+  const all = periodFiltered.filter(e => validSessions.has(e.session_id));
 
   // KPIs
   const sessions = new Set(all.map(e => e.session_id));
