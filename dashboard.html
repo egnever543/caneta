@@ -1229,13 +1229,13 @@ async function loadAll() {
   ).join('') : '<tr><td colspan="3" style="color:var(--muted);padding:16px 0;">No data yet</td></tr>';
 
   // Traffic sources (utm_source, utm_campaign, utm_medium / fbclid)
-  const pageViews = all.filter(e => e.event_type === 'page_view');
+  const sourcePvs = all.filter(e => e.event_type === 'page_view');
   const ctasBySession = {};
   all.filter(e => e.event_type === 'cta_click').forEach(e => { ctasBySession[e.session_id] = true; });
 
   function buildSourceTable(key, fallback, elId) {
     const counts = {}, ctaCounts = {};
-    pageViews.forEach(e => {
+    sourcePvs.forEach(e => {
       const val = e.metadata?.[key] || (key === 'utm_medium' && e.metadata?.fbclid ? 'facebook (fbclid)' : null) || fallback(e);
       if (!val) return;
       counts[val] = (counts[val]||0) + 1;
