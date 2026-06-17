@@ -930,9 +930,10 @@ async function doLogin() {
 function showDashboard() {
   document.getElementById('login-overlay').classList.add('hidden');
   document.getElementById('page-wrap').style.display = '';
-  // loadSites is defined in the main script block below
+  window._dashboardShown = true;
+  // If second script already ran (login flow), call directly
   if (typeof loadSites === 'function') loadSites();
-  else window.addEventListener('load', () => loadSites());
+  // Otherwise the second script will call loadSites() when it finishes
 }
 
 // Allow Enter key on password field
@@ -2508,6 +2509,8 @@ function copyPrompt(btn) {
   });
 }
 
+// If session was restored before this script ran, load sites now
+if (window._dashboardShown) loadSites();
 setInterval(() => { if (activeSite) loadAll(); }, 30000);
 
 const PERSONA_DEFAULTS = {
