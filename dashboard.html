@@ -930,6 +930,9 @@ async function doLogin() {
 function showDashboard() {
   document.getElementById('login-overlay').classList.add('hidden');
   document.getElementById('page-wrap').style.display = '';
+  // loadSites is defined in the main script block below
+  if (typeof loadSites === 'function') loadSites();
+  else window.addEventListener('load', () => loadSites());
 }
 
 // Allow Enter key on password field
@@ -2505,7 +2508,6 @@ function copyPrompt(btn) {
   });
 }
 
-loadSites();
 setInterval(() => { if (activeSite) loadAll(); }, 30000);
 
 const PERSONA_DEFAULTS = {
