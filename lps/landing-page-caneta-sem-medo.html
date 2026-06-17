@@ -322,7 +322,7 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
 
       <div class="price-row">
         <span class="price-old">R$ 97</span>
-        <span class="price-new">R$ 45</span>
+        <span class="price-new">R$ 34,90</span>
       </div>
       <p class="price-cycle">pagamento único · acesso vitalício · bônus incluso</p>
       <ul class="offer-list">
@@ -418,7 +418,7 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
 
       // 1. Meta Pixel
       if (typeof fbq !== 'undefined') {
-        fbq('track', 'InitiateCheckout', { content_name: 'Caneta Sem Medo Ebook', value: 45, currency: 'BRL' });
+        fbq('track', 'InitiateCheckout', { content_name: 'Caneta Sem Medo Ebook', value: 34.90, currency: 'BRL' });
       }
 
       // 2. CAPI server-side
@@ -433,7 +433,7 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
           fbp: _fbp,
           external_id: SESSION_ID,
           client_user_agent: navigator.userAgent,
-          custom_data: { content_name: 'Caneta Sem Medo Ebook', value: 45, currency: 'BRL', section, text }
+          custom_data: { content_name: 'Caneta Sem Medo Ebook', value: 34.90, currency: 'BRL', section, text }
         })
       }).catch(() => {});
 
