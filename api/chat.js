@@ -53,6 +53,63 @@ module.exports = async function handler(req, res) {
     return;
   }
 
+  // ── GET /api/chat?type=analyze ──
+  if (req.method === 'GET' && req.query?.type === 'analyze') {
+    const supabase = getSupabase();
+    const { data, error } = await supabase
+      .from('chat_conversations')
+      .select('messages, message_count, reached_checkout, first_user_message, created_at')
+      .order('created_at', { ascending: false })
+      .limit(40);
+    if (error) {
+      res.writeHead(500, { ...CORS_HEADERS, 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: error.message }));
+      return;
+    }
+    if (!data || data.length === 0) {
+      res.writeHead(200, { ...CORS_HEADERS, 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Sem conversas suficientes para análise.' }));
+      return;
+    }
+    const summaries = data.map((c, i) => {
+      const userMsgs = (c.messages || []).filter(m => m.role === 'user').map(m => m.content).slice(0, 4).join(' | ');
+      const aiMsgs = (c.messages || []).filter(m => m.role === 'assistant').map(m => m.content).slice(0, 2).join(' | ').slice(0, 300);
+      return `[${i+1}] ${c.reached_checkout ? 'CONVERTEU' : 'ABANDONOU'} | ${c.message_count} msgs\nUsuário: ${userMsgs.slice(0,200)}\nIA: ${aiMsgs}`;
+    }).join('\n---\n');
+
+    const prompt = `Você é um analista de copywriting e funil de vendas. Analise as ${data.length} conversas abaixo de um chatbot de vendas de e-book sobre Ozempic/Mounjaro/emagrecimento (R$34,90).
+
+${summaries}
+
+Retorne APENAS um JSON válido com esta estrutura exata:
+{
+  "pain_points": ["top 5 dores/problemas mencionados pelos usuários"],
+  "best_copy": ["3 tipos de resposta da IA que mais levaram à conversão"],
+  "abandonment_triggers": ["3 padrões ou momentos que causaram abandono"],
+  "common_entries": ["5 formas mais comuns de o usuário iniciar a conversa"],
+  "recommendations": ["3 melhorias concretas e práticas para aumentar conversão"],
+  "conversion_insight": "uma frase sobre o perfil e motivação do usuário que converte"
+}`;
+
+    const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+    try {
+      const response = await client.messages.create({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 1200,
+        messages: [{ role: 'user', content: prompt }],
+      });
+      let insights;
+      try { insights = JSON.parse(response.content[0].text); }
+      catch { insights = { raw: response.content[0].text }; }
+      res.writeHead(200, { ...CORS_HEADERS, 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ insights, total: data.length }));
+    } catch (err) {
+      res.writeHead(500, { ...CORS_HEADERS, 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: err.message }));
+    }
+    return;
+  }
+
   // ── GET /api/chat?type=list ──
   if (req.method === 'GET' && req.query?.type === 'list') {
     const supabase = getSupabase();
