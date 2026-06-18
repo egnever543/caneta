@@ -182,9 +182,8 @@ module.exports = async function handler(req, res) {
     }
 
     res.write('data: [DONE]\n\n');
-    res.end();
 
-    // Upsert conversation to Supabase after response is sent — fire and forget
+    // Upsert before res.end() — Vercel kills the function after end()
     if (session_id) {
       const allMessages = [
         ...messages,
@@ -193,7 +192,7 @@ module.exports = async function handler(req, res) {
       const firstUserMessage = messages.find(m => m.role === 'user')?.content || null;
       const reached_checkout = fullAssistantText.includes('[[SHOW_CHECKOUT_BUTTON]]');
       const supabase = getSupabase();
-      supabase
+      const { error: dbError } = await supabase
         .from('chat_conversations')
         .upsert(
           {
@@ -205,9 +204,11 @@ module.exports = async function handler(req, res) {
             updated_at: new Date().toISOString(),
           },
           { onConflict: 'session_id' }
-        )
-        .catch(console.error);
+        );
+      if (dbError) console.error('Supabase error:', dbError.message);
     }
+
+    res.end();
   } catch (err) {
     console.error('Anthropic error:', err?.message, err?.stack);
     res.write(`data: ${JSON.stringify({ error: true })}\n\n`);
