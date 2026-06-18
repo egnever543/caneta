@@ -1,4 +1,5 @@
-const Anthropic = require('@anthropic-ai/sdk').default || require('@anthropic-ai/sdk');
+const sdk = require('@anthropic-ai/sdk');
+const Anthropic = sdk.Anthropic || sdk.default || sdk;
 const { createClient } = require('@supabase/supabase-js');
 
 const SYSTEM_PROMPT = `Você é a assistente virtual do guia "Caneta Sem Medo" — um e-book de R$ 34,90 que ajuda pessoas em tratamento com Ozempic, Mounjaro, Wegovy ou Saxenda a preservar músculo, controlar efeitos colaterais e evitar o efeito sanfona ao parar o medicamento.
@@ -208,7 +209,7 @@ module.exports = async function handler(req, res) {
         .catch(console.error);
     }
   } catch (err) {
-    console.error('Anthropic error:', err);
+    console.error('Anthropic error:', err?.message, err?.stack);
     res.write(`data: ${JSON.stringify({ error: true })}\n\n`);
     res.write('data: [DONE]\n\n');
     res.end();
