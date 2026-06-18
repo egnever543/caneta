@@ -529,8 +529,8 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
       // Pix inline flow
       bubble.innerHTML = `
         <p style="margin:0 0 10px;font-weight:600">Pagar via Pix — R$ 34,90 🔒</p>
-        <p style="margin:0 0 14px;font-size:0.82rem;color:rgba(255,255,255,0.7)">✉ Enviaremos o guia para: <strong>${userEmail}</strong></p>
-        <button id="btn-gerar-pix" style="width:100%;padding:13px;background:#5C9C8F;border:none;border-radius:10px;color:#fff;font-size:0.95rem;font-weight:700;cursor:pointer">Gerar código Pix →</button>
+        <p style="margin:0 0 14px;font-size:0.82rem;color:#111">✉ Enviaremos o guia para: <strong>${userEmail}</strong> <button id="btn-editar-email" style="background:none;border:none;color:#5C9C8F;font-size:0.78rem;cursor:pointer;text-decoration:underline;padding:0 0 0 6px">Editar</button></p>
+        <button id="btn-gerar-pix" style="width:100%;padding:13px;background:#5C9C8F;border:none;border-radius:10px;color:#fff;font-size:0.95rem;font-weight:700;cursor:pointer">Eu confirmo meu Email →</button>
         <div style="margin-top:10px;font-size:0.75rem;text-align:center;color:rgba(255,255,255,0.5)">✓ Pagamento seguro · ✓ Acesso imediato · ✓ Garantia 7 dias</div>`;
       wrapper.appendChild(bubble);
       messagesEl.appendChild(wrapper);
@@ -555,6 +555,12 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
           this.disabled = false;
           console.error(err);
         }
+      });
+
+      document.getElementById('btn-editar-email').addEventListener('click', function() {
+        wrapper.remove();
+        userEmail = null;
+        requestEmail();
       });
     } else {
       // Fallback: link externo
