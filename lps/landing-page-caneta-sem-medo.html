@@ -432,6 +432,7 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
   let isResponding = false;
   let userEmail = null;
   let awaitingEmail = false;
+  let editingEmail = false;
   let pixPollInterval = null;
 
   function scrollToBottom() {
@@ -515,7 +516,12 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
     chatHistory.push({ role: 'assistant', content: `Oi! 👋 Para começar, qual é o seu email? Assim garanto que você recebe o acesso mesmo que a gente se perca aqui. 📩` });
     chatHistory.push({ role: 'user', content: val });
     track('email_captured', 'chat', {});
-    setTimeout(() => startConversation(), 400);
+    if (editingEmail) {
+      editingEmail = false;
+      setTimeout(() => addCheckoutMessage(), 400);
+    } else {
+      setTimeout(() => startConversation(), 400);
+    }
   }
 
   function addCheckoutMessage() {
@@ -560,6 +566,7 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
       document.getElementById('btn-editar-email').addEventListener('click', function() {
         wrapper.remove();
         userEmail = null;
+        editingEmail = true;
         requestEmail();
       });
     } else {
