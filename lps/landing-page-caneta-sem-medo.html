@@ -48,34 +48,24 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
 
   *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
 
-  html {
-    height: 100%;
-    height: 100dvh;
-  }
-
-  body {
-    position: fixed;
-    inset: 0;
-    overflow: hidden;
+  html, body {
+    margin: 0; padding: 0; height: 100%;
     font-family: 'Manrope', sans-serif;
     background: var(--bg);
     color: var(--ink);
     font-size: 16px;
     -webkit-font-smoothing: antialiased;
-    width: 100%;
   }
 
   /* ── LAYOUT ─────────────────────────────── */
   #app {
-    position: absolute;
-    inset: 0;
     display: flex;
     flex-direction: column;
+    height: 100vh;
+    height: 100dvh;
     max-width: 720px;
     margin: 0 auto;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 100%;
+    background: var(--bg);
   }
 
   /* ── TOPBAR ─────────────────────────────── */
@@ -675,16 +665,6 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
     }, 900);
   }, 800);
 
-  // ── Mobile keyboard fix ────────────────────────────────────────
-  if (window.visualViewport) {
-    function onViewportResize() {
-      const app = document.getElementById('app');
-      app.style.height = window.visualViewport.height + 'px';
-      scrollToBottom();
-    }
-    window.visualViewport.addEventListener('resize', onViewportResize);
-    onViewportResize();
-  }
 </script>
 </body>
 </html>
