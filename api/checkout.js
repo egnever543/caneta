@@ -56,7 +56,7 @@ module.exports = async (req, res) => {
         headers: {
           Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}`,
           'Content-Type': 'application/json',
-          'X-Idempotency-Key': session_id || (email + '-' + Date.now()),
+          'X-Idempotency-Key': (session_id || email) + '-' + Date.now(),
         },
         body: JSON.stringify({
           transaction_amount: 34.90,
