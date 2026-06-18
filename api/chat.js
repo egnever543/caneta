@@ -159,11 +159,12 @@ module.exports = async function handler(req, res) {
   });
 
   try {
-    const stream = client.messages.stream({
+    const stream = await client.messages.create({
       model: 'claude-haiku-4-5-20251001',
       max_tokens: 512,
       system: SYSTEM_PROMPT,
       messages: messages.map(m => ({ role: m.role, content: m.content })),
+      stream: true,
     });
 
     let fullAssistantText = '';
