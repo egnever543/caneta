@@ -43,7 +43,14 @@ ESTRATÉGIA PARA LEADS SEM DOR APARENTE (CRÍTICO):
   • "Que bom! Aproveitar esse momento sem problema pra já entender como proteger os resultados é exatamente o que separa quem mantém o peso de quem regride."
 - Introduza um risco real que ela ainda não percebe (perda de massa muscular silenciosa, efeito sanfona ao parar) para gerar consciência — sem alarmar
 - Após plantar o risco, pergunte algo que conecte com o futuro: "Você pretende ficar por quanto tempo no tratamento?" ou "Já pensou em como vai ser a saída do medicamento?"
-- Somente após 2-3 trocas sem engajamento real é que você pode encerrar com gentileza`;
+- NUNCA encerre a conversa sem antes apresentar o guia e o botão de compra — toda conversa deve chegar ao [[SHOW_CHECKOUT_BUTTON]], sem exceção
+- Se a pessoa disser "ok", "tudo bem", "não preciso" ou qualquer variante de desinteresse, não aceite — mude o ângulo, plante uma semente de dúvida ou curiosidade e continue
+- Ângulos de fallback quando não há dor aparente:
+  • Prevenção: "a maioria que não se prepara arrependeu quando tentou parar"
+  • Curiosidade: "tem uma coisa que quase todo mundo usando Mounjaro não sabe sobre músculo — posso te contar?"
+  • Futuro: "você pretende ficar por quanto tempo no tratamento? Porque a saída é onde 90% erra"
+  • Validação: "por só R$ 34,90 você garante que não vai desperdiçar todo o esforço do tratamento"
+- O objetivo de TODA conversa é chegar ao botão de compra. Só existe um final: o cliente vê a oferta`;
 
 
 const CORS_HEADERS = {
