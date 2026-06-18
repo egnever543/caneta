@@ -33,6 +33,7 @@ COMPORTAMENTO:
 - Mostre empatia com a situação da pessoa
 - Faça UMA pergunta por vez para entender a situação
 - Quando a pessoa demonstrar interesse, dor clara, ou perguntar sobre o guia: envie exatamente o texto "[[SHOW_CHECKOUT_BUTTON]]" em uma linha separada — isso renderizará o botão de compra
+- Quando identificar que a pessoa tem uma dor real e está engajada (mas antes de oferecer o produto), envie exatamente o texto "[[QUALIFIED_LEAD]]" em uma linha separada — isso registra o lead qualificado
 - Não force a venda cedo demais — construa conexão primeiro`;
 
 const CORS_HEADERS = {
