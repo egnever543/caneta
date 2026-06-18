@@ -916,7 +916,7 @@
       </div>
       <div style="display:flex;gap:10px;align-items:center">
         <button class="btn-refresh" onclick="loadConversations()">↻ Atualizar</button>
-        <button id="btn-analyze" onclick="runChatAnalysis()" style="background:var(--teal);border:none;color:#0F1923;padding:9px 18px;border-radius:8px;cursor:pointer;font-size:0.84rem;font-weight:700">🤖 Analisar com IA</button>
+        <button id="btn-analyze-chat" onclick="runChatAnalysis()" style="background:var(--teal);border:none;color:#0F1923;padding:9px 18px;border-radius:8px;cursor:pointer;font-size:0.84rem;font-weight:700">🤖 Analisar com IA</button>
       </div>
     </div>
   </div>
@@ -1374,7 +1374,7 @@ async function loadConversations() {
 }
 
 async function runChatAnalysis() {
-  const btn = document.getElementById('btn-analyze');
+  const btn = document.getElementById('btn-analyze-chat');
   const card = document.getElementById('conv-insights-card');
   btn.textContent = '⏳ Analisando…';
   btn.disabled = true;
@@ -1382,18 +1382,20 @@ async function runChatAnalysis() {
     const res = await fetch('/api/chat?type=analyze');
     const { insights, total, error } = await res.json();
     if (error || !insights) { alert(error || 'Erro na análise.'); return; }
+    if (insights.raw) { alert('A IA não retornou JSON válido. Tente novamente com mais conversas.'); return; }
 
     document.getElementById('insights-sample').textContent = `(${total} conversas analisadas)`;
 
     const renderList = (id, items) => {
       const el = document.getElementById(id);
-      el.innerHTML = (items || []).map(t => `<li style="font-size:0.83rem;color:var(--text);padding:5px 8px;background:rgba(255,255,255,0.04);border-radius:6px">${t}</li>`).join('');
+      const list = Array.isArray(items) && items.length > 0 ? items : ['Dados insuficientes — acumule mais conversas'];
+      el.innerHTML = list.map(t => `<li style="font-size:0.83rem;color:var(--text);padding:5px 8px;background:rgba(255,255,255,0.04);border-radius:6px">${t}</li>`).join('');
     };
     renderList('ins-pain', insights.pain_points);
     renderList('ins-copy', insights.best_copy);
     renderList('ins-abandon', insights.abandonment_triggers);
     renderList('ins-recs', insights.recommendations);
-    document.getElementById('ins-profile').innerHTML = `<strong style="color:var(--teal)">Perfil do comprador:</strong> ${insights.conversion_insight || '—'}`;
+    document.getElementById('ins-profile').innerHTML = `<strong style="color:var(--teal)">Perfil do comprador:</strong> ${insights.conversion_insight || 'Dados insuficientes — acumule mais conversas'}`;
 
     card.style.display = 'block';
     card.scrollIntoView({ behavior: 'smooth', block: 'start' });
