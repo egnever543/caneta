@@ -75,6 +75,27 @@ async function sendEbookEmailPT(email) {
 }
 
 module.exports = async (req, res) => {
+  // ── Admin reprocess ──
+  if (req.method === 'GET' && req.query?.type === 'reprocess') {
+    const id = req.query.id;
+    if (!id) return res.status(400).json({ error: 'id required' });
+    try {
+      const r = await fetch(`https://api.mercadopago.com/v1/payments/${id}`, {
+        headers: { Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}` },
+      });
+      const payment = await r.json();
+      const email = payment.metadata?.email || payment.payer?.email;
+      console.log('Reprocess:', payment.status, email);
+      if (payment.status === 'approved' && email) {
+        await sendEbookEmailPT(email);
+        return res.status(200).json({ ok: true, email, status: payment.status });
+      }
+      return res.status(200).json({ ok: false, status: payment.status, email });
+    } catch (err) {
+      return res.status(500).json({ error: err.message });
+    }
+  }
+
   if (req.method !== 'POST') return res.status(405).end('Method Not Allowed');
 
   // ── Mercado Pago webhook ──
