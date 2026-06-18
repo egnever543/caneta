@@ -371,7 +371,14 @@
   .tabs-page-filter { display:none; align-items:center; gap:6px; margin-left:auto; padding-bottom:6px; }
   .tabs-page-filter span { font-size:0.72rem; color:var(--muted); font-weight:600; text-transform:uppercase; letter-spacing:.08em; }
   .tabs-page-filter.visible { display:flex; }
+  /* Project switcher */
+  .project-switcher { display:flex; gap:10px; margin-bottom:20px; }
+  .proj-btn { padding:9px 22px; border-radius:99px; font-size:0.84rem; font-weight:600; cursor:pointer; border:1px solid var(--border); background:transparent; color:var(--muted); transition:all .15s; }
+  .proj-btn:hover { color:var(--text); border-color:rgba(255,255,255,0.2); }
+  .proj-btn.active { background:var(--teal); border-color:var(--teal); color:#0F1923; }
+
   .tab-btn { padding:10px 24px; border-radius:10px 10px 0 0; font-size:0.88rem; font-weight:600; cursor:pointer; border:1px solid transparent; border-bottom:none; background:transparent; color:var(--muted); transition:all .15s; position:relative; bottom:-1px; }
+  .tab-btn.proj-hidden { display:none; }
   .tab-btn:hover { color:var(--text); }
   .tab-btn.active { background:var(--card); border-color:var(--border); color:var(--text); border-bottom-color:var(--card); }
   .tab-btn .tab-badge { font-size:0.6rem; background:rgba(92,156,143,0.2); color:var(--teal); padding:2px 6px; border-radius:99px; margin-left:6px; vertical-align:middle; }
@@ -490,13 +497,18 @@
     </div>
   </div>
 
+  <div class="project-switcher">
+    <button class="proj-btn active" onclick="switchProject('ads',this)">📊 Tráfego & Ads</button>
+    <button class="proj-btn" onclick="switchProject('caneta',this)">💬 Caneta Sem Medo</button>
+  </div>
+
   <nav class="tabs-nav">
-    <button class="tab-btn active" onclick="switchTab('site',this)">Análise de Site</button>
-    <button class="tab-btn" onclick="switchTab('campanha',this)">Análise de Campanha</button>
-    <button class="tab-btn" onclick="switchTab('ia',this)">IA Analytics <span class="tab-badge">Claude</span></button>
-    <button class="tab-btn" onclick="switchTab('persona',this)">Persona</button>
-    <button class="tab-btn" onclick="switchTab('historico',this)">Histórico</button>
-    <button class="tab-btn" onclick="switchTab('conversas',this)">Conversas 💬</button>
+    <button class="tab-btn active" data-proj="ads" onclick="switchTab('site',this)">Análise de Site</button>
+    <button class="tab-btn" data-proj="ads" onclick="switchTab('campanha',this)">Análise de Campanha</button>
+    <button class="tab-btn" data-proj="ads" onclick="switchTab('ia',this)">IA Analytics <span class="tab-badge">Claude</span></button>
+    <button class="tab-btn" data-proj="ads" onclick="switchTab('persona',this)">Persona</button>
+    <button class="tab-btn" data-proj="ads" onclick="switchTab('historico',this)">Histórico</button>
+    <button class="tab-btn proj-hidden" data-proj="caneta" onclick="switchTab('conversas',this)">Conversas 💬</button>
   </nav>
 
 <!-- ── ABA 1: SITE ── -->
@@ -1190,9 +1202,24 @@ async function query(table, params) {
   return r.json();
 }
 
+function switchProject(proj, btn) {
+  document.querySelectorAll('.proj-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  // Show/hide tab buttons by project
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    if (b.dataset.proj === proj) b.classList.remove('proj-hidden');
+    else b.classList.add('proj-hidden');
+  });
+  // Auto-click first visible tab
+  const first = document.querySelector(`.tab-btn[data-proj="${proj}"]`);
+  if (first) first.click();
+  // Load conversations when switching to caneta
+  if (proj === 'caneta') loadConversations();
+}
+
 function switchTab(id, btn) {
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-btn:not(.proj-hidden)').forEach(b => b.classList.remove('active'));
   document.getElementById('tab-' + id).classList.add('active');
   btn.classList.add('active');
   if (id === 'conversas') loadConversations();
