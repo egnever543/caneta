@@ -56,6 +56,9 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
     line-height:1.6;
     font-size:17px;
     -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
   }
   h1,h2,h3{ font-family:'Fraunces', serif; font-weight:600; color:var(--teal-deep); line-height:1.15; letter-spacing:-0.01em; }
   .wrap{ max-width:var(--maxw); margin:0 auto; padding:0 24px; }
@@ -70,104 +73,216 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
   .nav-cta:hover{ background:var(--teal); transform:translateY(-1px); }
 
   /* ---------- HERO ---------- */
-  .hero{ padding:64px 0 56px; }
-  .hero-grid{ display:grid; grid-template-columns:1.15fr 0.85fr; gap:56px; align-items:center; }
-  .eyebrow{ display:inline-flex; align-items:center; gap:8px; font-size:0.8rem; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--teal); background:var(--sage-soft); padding:7px 14px; border-radius:999px; margin-bottom:22px; }
-  .eyebrow svg{ width:14px; height:14px; }
-  .hero h1{ font-size:3.1rem; margin-bottom:20px; }
+  .hero{ padding:48px 0 32px; text-align:center; }
+  .hero h1{ font-size:2.2rem; margin-bottom:12px; max-width:600px; margin-left:auto; margin-right:auto; }
   .hero h1 em{ font-style:italic; color:var(--sage); }
-  .hero p.lead{ font-size:1.15rem; color:var(--ink-soft); max-width:520px; margin-bottom:28px; }
-  .cta-row{ display:flex; flex-wrap:wrap; align-items:center; gap:16px; }
-  .btn-primary{ display:inline-flex; align-items:center; gap:10px; padding:17px 32px; background:var(--gold); color:var(--teal-deep); border-radius:999px; font-weight:800; font-size:1.02rem; text-decoration:none; box-shadow:0 8px 24px -8px rgba(206,155,76,0.65); transition:transform .15s ease, box-shadow .2s ease; }
-  .btn-primary:hover{ transform:translateY(-2px); box-shadow:0 12px 28px -8px rgba(206,155,76,0.75); }
-  .micro{ font-size:0.85rem; color:var(--ink-soft); }
-  .hero-note{ display:flex; align-items:center; gap:10px; font-size:0.88rem; color:var(--ink-soft); margin-top:18px; }
-  .hero-note svg{ flex-shrink:0; width:18px; height:18px; color:var(--sage); }
+  .hero p.lead{ font-size:1rem; color:var(--ink-soft); max-width:520px; margin:0 auto; }
 
-  /* ---------- DIAL (signature element) ---------- */
-  .dial-card{ background:#fff; border:1px solid var(--line); border-radius:24px; padding:32px; box-shadow:0 24px 60px -32px rgba(30,46,44,0.25); }
-  .dial-card h3{ font-size:1.05rem; margin-bottom:4px; }
-  .dial-card .sub{ font-size:0.85rem; color:var(--ink-soft); margin-bottom:22px; }
-  .dial-wrap{ position:relative; width:220px; height:220px; margin:0 auto 22px; }
-  .dial-wrap svg{ width:100%; height:100%; transform:rotate(-90deg); }
-  .dial-center{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
-  .dial-center .big{ font-family:'Fraunces', serif; font-size:2.1rem; font-weight:700; color:var(--teal-deep); }
-  .dial-center .small{ font-size:0.78rem; color:var(--ink-soft); max-width:120px; }
-  .dial-legend{ display:grid; grid-template-columns:1fr 1fr; gap:10px 16px; }
-  .dial-legend div{ display:flex; align-items:center; gap:8px; font-size:0.86rem; color:var(--ink-soft); }
-  .dot{ width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+  /* ---------- CHAT SECTION ---------- */
+  .chat-section{ flex:1; padding:24px 16px 40px; }
+  .chat-outer{ max-width:680px; margin:0 auto; }
 
-  /* ---------- SECTION GENERIC ---------- */
-  section{ padding:64px 0; }
-  .section-head{ max-width:680px; margin:0 auto 44px; text-align:center; }
-  .section-head .eyebrow{ margin-bottom:14px; }
-  .section-head h2{ font-size:2.2rem; margin-bottom:14px; }
-  .section-head p{ color:var(--ink-soft); font-size:1.05rem; }
+  .chat-window{
+    background:#fff;
+    border:1px solid var(--line);
+    border-radius:20px;
+    overflow:hidden;
+    box-shadow:0 16px 48px -16px rgba(30,46,44,0.2);
+    display:flex;
+    flex-direction:column;
+    height:480px;
+  }
 
-  /* ---------- PROBLEM ---------- */
-  .problem{ background:var(--teal-deep); color:#F4F1E8; }
-  .problem .section-head h2{ color:#fff; }
-  .problem .section-head p{ color:rgba(244,241,232,0.75); }
-  .problem .eyebrow{ background:rgba(255,255,255,0.1); color:#F4E6CC; }
-  .cards3{ display:grid; grid-template-columns:repeat(3,1fr); gap:24px; }
-  .pcard{ background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.12); border-radius:var(--radius); padding:28px; }
-  .pcard .tag{ display:inline-block; font-size:0.78rem; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--gold); margin-bottom:12px; }
-  .pcard h3{ color:#fff; font-size:1.2rem; margin-bottom:10px; }
-  .pcard p{ color:rgba(244,241,232,0.78); font-size:0.95rem; }
+  .chat-header{
+    background:var(--teal-deep);
+    color:#fff;
+    padding:14px 20px;
+    display:flex;
+    align-items:center;
+    gap:12px;
+    flex-shrink:0;
+  }
+  .chat-header-avatar{
+    width:36px; height:36px; border-radius:50%;
+    background:var(--gold);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Fraunces', serif;
+    font-weight:700; font-size:0.82rem;
+    color:var(--teal-deep);
+    flex-shrink:0;
+  }
+  .chat-header-info{ flex:1; }
+  .chat-header-name{ font-weight:700; font-size:0.95rem; }
+  .chat-header-status{ font-size:0.78rem; color:rgba(255,255,255,0.7); display:flex; align-items:center; gap:5px; }
+  .chat-header-status::before{ content:''; width:7px; height:7px; border-radius:50%; background:#4ade80; display:inline-block; }
 
-  /* ---------- INSIDE ---------- */
-  .inside-grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-  .chap{ display:flex; gap:16px; align-items:flex-start; background:#fff; border:1px solid var(--line); border-radius:14px; padding:18px 20px; }
-  .chap .num{ font-family:'Fraunces', serif; font-weight:700; font-size:1.3rem; color:var(--sage); flex-shrink:0; width:34px; }
-  .chap h4{ font-family:'Manrope', sans-serif; font-weight:800; font-size:1rem; color:var(--teal-deep); margin-bottom:4px; }
-  .chap p{ font-size:0.9rem; color:var(--ink-soft); }
+  .chat-messages{
+    flex:1;
+    overflow-y:auto;
+    padding:20px 16px;
+    display:flex;
+    flex-direction:column;
+    gap:12px;
+    scroll-behavior:smooth;
+  }
+  .chat-messages::-webkit-scrollbar{ width:4px; }
+  .chat-messages::-webkit-scrollbar-track{ background:transparent; }
+  .chat-messages::-webkit-scrollbar-thumb{ background:var(--line); border-radius:4px; }
 
-  /* ---------- WHO FOR ---------- */
-  .who{ background:var(--bg-soft); }
-  .who-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:18px; }
-  .who-card{ background:#fff; border-radius:14px; padding:22px 18px; text-align:center; border:1px solid var(--line); }
-  .who-card .icon{ width:40px; height:40px; margin:0 auto 14px; color:var(--teal); }
-  .who-card p{ font-size:0.92rem; color:var(--ink-soft); }
+  /* Message bubbles */
+  .msg{ display:flex; gap:8px; max-width:88%; }
+  .msg.ai{ align-self:flex-start; }
+  .msg.user{ align-self:flex-end; flex-direction:row-reverse; }
 
-  /* ---------- OFFER ---------- */
-  .offer{ padding:70px 0; }
-  .offer-card{ max-width:760px; margin:0 auto; background:linear-gradient(135deg, var(--teal) 0%, var(--teal-deep) 100%); border-radius:28px; padding:48px; color:#fff; text-align:center; position:relative; overflow:hidden; }
-  .offer-card::before{ content:''; position:absolute; top:-60px; right:-60px; width:220px; height:220px; border-radius:50%; background:radial-gradient(circle, rgba(206,155,76,0.35), transparent 70%); }
-  .offer-card h2{ color:#fff; font-size:2rem; margin-bottom:10px; }
-  .offer-card .desc{ color:rgba(255,255,255,0.8); max-width:520px; margin:0 auto 28px; font-size:1rem; }
-  .price-row{ display:flex; align-items:baseline; justify-content:center; gap:14px; margin-bottom:6px; flex-wrap:wrap; }
-  .price-old{ font-size:1.2rem; color:rgba(255,255,255,0.55); text-decoration:line-through; }
-  .price-new{ font-family:'Fraunces', serif; font-size:3rem; font-weight:700; color:var(--gold); }
-  .price-cycle{ font-size:0.9rem; color:rgba(255,255,255,0.7); margin-bottom:30px; }
-  .offer-list{ list-style:none; display:grid; gap:10px; max-width:420px; margin:0 auto 32px; text-align:left; }
-  .offer-list li{ display:flex; gap:10px; align-items:flex-start; font-size:0.95rem; color:rgba(255,255,255,0.92); }
-  .offer-list svg{ flex-shrink:0; width:18px; height:18px; margin-top:2px; color:var(--gold); }
-  .offer .btn-primary{ font-size:1.1rem; padding:18px 40px; }
-  .offer .micro{ color:rgba(255,255,255,0.65); margin-top:14px; }
+  .msg-avatar{
+    width:28px; height:28px; border-radius:50%;
+    background:var(--sage-soft);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Fraunces', serif;
+    font-weight:700; font-size:0.65rem;
+    color:var(--teal-deep);
+    flex-shrink:0;
+    margin-top:2px;
+  }
 
-  /* ---------- FAQ ---------- */
-  .faq-item{ border-bottom:1px solid var(--line); padding:20px 0; }
-  .faq-q{ display:flex; align-items:center; justify-content:space-between; cursor:pointer; font-weight:700; color:var(--teal-deep); font-size:1.02rem; gap:16px; }
-  .faq-q .plus{ flex-shrink:0; width:22px; height:22px; border:1.5px solid var(--sage); border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.1rem; color:var(--sage); transition:transform .2s ease; }
-  .faq-item.open .plus{ transform:rotate(45deg); }
-  .faq-a{ max-height:0; overflow:hidden; transition:max-height .25s ease; }
-  .faq-a p{ padding-top:12px; color:var(--ink-soft); font-size:0.96rem; max-width:640px; }
+  .msg-bubble{
+    padding:10px 14px;
+    border-radius:16px;
+    font-size:0.95rem;
+    line-height:1.55;
+    word-break:break-word;
+  }
+  .msg.ai .msg-bubble{
+    background:var(--bg-soft);
+    color:var(--ink);
+    border-bottom-left-radius:4px;
+  }
+  .msg.user .msg-bubble{
+    background:var(--teal-deep);
+    color:#fff;
+    border-bottom-right-radius:4px;
+  }
 
-  /* ---------- FOOTER / DISCLAIMER ---------- */
-  footer{ background:var(--bg-soft); padding:48px 0 36px; }
-  .disclaimer{ max-width:760px; margin:0 auto; font-size:0.82rem; color:var(--ink-soft); text-align:center; line-height:1.7; border-top:1px solid var(--line); padding-top:28px; }
-  .footer-cta{ text-align:center; margin-bottom:40px; }
-  .footer-cta h2{ font-size:1.9rem; margin-bottom:18px; }
+  /* Checkout bubble */
+  .checkout-bubble{
+    background:var(--bg-soft);
+    border-radius:16px;
+    border-bottom-left-radius:4px;
+    padding:14px 16px;
+    font-size:0.95rem;
+    line-height:1.55;
+    color:var(--ink);
+  }
+  .checkout-bubble p{ margin-bottom:12px; }
+  .btn-checkout{
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    width:100%; padding:14px 20px;
+    background:var(--gold);
+    color:var(--teal-deep);
+    border-radius:12px;
+    font-weight:800; font-size:0.95rem;
+    text-decoration:none;
+    box-shadow:0 6px 20px -6px rgba(206,155,76,0.6);
+    transition:transform .15s ease, box-shadow .2s ease;
+    margin-bottom:10px;
+  }
+  .btn-checkout:hover{ transform:translateY(-1px); box-shadow:0 8px 24px -6px rgba(206,155,76,0.75); }
+  .checkout-badges{ font-size:0.8rem; color:var(--ink-soft); text-align:center; }
+
+  /* Typing indicator */
+  .typing-indicator{
+    display:flex; gap:8px; align-items:flex-start;
+    align-self:flex-start;
+  }
+  .typing-dots{
+    background:var(--bg-soft);
+    border-radius:16px;
+    border-bottom-left-radius:4px;
+    padding:10px 14px;
+    display:flex; gap:4px; align-items:center;
+  }
+  .typing-dots span{
+    width:7px; height:7px; border-radius:50%;
+    background:var(--ink-soft);
+    animation:bounce 1.2s infinite;
+    display:inline-block;
+  }
+  .typing-dots span:nth-child(2){ animation-delay:.2s; }
+  .typing-dots span:nth-child(3){ animation-delay:.4s; }
+  @keyframes bounce{
+    0%,80%,100%{ transform:translateY(0); opacity:.4; }
+    40%{ transform:translateY(-6px); opacity:1; }
+  }
+
+  /* Chat input area */
+  .chat-input-area{
+    border-top:1px solid var(--line);
+    padding:12px 16px;
+    display:flex; gap:10px; align-items:flex-end;
+    flex-shrink:0;
+    background:#fff;
+  }
+  .chat-input{
+    flex:1;
+    border:1.5px solid var(--line);
+    border-radius:24px;
+    padding:10px 16px;
+    font-family:'Manrope', sans-serif;
+    font-size:0.95rem;
+    color:var(--ink);
+    background:var(--bg);
+    resize:none;
+    outline:none;
+    max-height:100px;
+    overflow-y:auto;
+    line-height:1.4;
+    transition:border-color .2s;
+  }
+  .chat-input:focus{ border-color:var(--sage); }
+  .chat-input::placeholder{ color:var(--ink-soft); opacity:.7; }
+  .chat-input:disabled{ opacity:.5; cursor:not-allowed; }
+  .btn-send{
+    width:40px; height:40px;
+    border-radius:50%;
+    background:var(--teal-deep);
+    color:#fff;
+    border:none;
+    cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    flex-shrink:0;
+    transition:background .2s, transform .15s;
+  }
+  .btn-send:hover:not(:disabled){ background:var(--teal); transform:scale(1.05); }
+  .btn-send:disabled{ opacity:.4; cursor:not-allowed; }
+
+  /* Quick reply chips */
+  .quick-replies{
+    display:flex; flex-wrap:wrap; gap:8px;
+    margin-top:12px;
+  }
+  .chip{
+    padding:8px 16px;
+    border:1.5px solid var(--sage);
+    border-radius:999px;
+    font-size:0.88rem;
+    font-weight:600;
+    color:var(--teal-deep);
+    background:#fff;
+    cursor:pointer;
+    transition:background .15s, color .15s, transform .1s;
+  }
+  .chip:hover{ background:var(--sage); color:#fff; transform:translateY(-1px); }
+
+  /* ---------- FOOTER ---------- */
+  footer{ background:var(--bg-soft); padding:32px 0 28px; }
+  .disclaimer{ max-width:760px; margin:0 auto; font-size:0.82rem; color:var(--ink-soft); text-align:center; line-height:1.7; border-top:1px solid var(--line); padding-top:24px; }
 
   /* ---------- RESPONSIVE ---------- */
-  @media (max-width:880px){
-    .hero-grid{ grid-template-columns:1fr; gap:40px; }
-    .hero h1{ font-size:2.3rem; }
-    .cards3{ grid-template-columns:1fr; }
-    .inside-grid{ grid-template-columns:1fr; }
-    .who-grid{ grid-template-columns:1fr 1fr; }
-    .offer-card{ padding:32px 24px; }
-    .price-new{ font-size:2.3rem; }
+  @media (max-width:600px){
+    .hero{ padding:32px 0 20px; }
+    .hero h1{ font-size:1.65rem; }
+    .chat-window{ height:420px; }
+    .chat-section{ padding:16px 8px 32px; }
   }
 </style>
 </head>
@@ -176,200 +291,53 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
 <header>
   <div class="nav wrap">
     <div class="logo"><span class="mark"></span> Caneta Sem Medo</div>
-    <a class="nav-cta" href="#oferta">Quero o guia</a>
+    <a class="nav-cta" href="https://pay.kiwify.com.br/xJg2KaV" id="nav-cta-btn">Quero o guia</a>
   </div>
 </header>
 
 <!-- ================= HERO ================= -->
 <section class="hero">
-  <div class="wrap hero-grid">
-    <div>
-      <span class="eyebrow">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-        Para quem usa Ozempic, Mounjaro, Wegovy ou similares
-      </span>
-      <h1>O plano de saída que seu<br>médico do emagrecedor injetável<br><em>não te deu.</em></h1>
-      <p class="lead">Quando você para o Ozempic ou Mounjaro, o apetite volta — e o peso também, a não ser que você tenha um plano. Este guia te dá o caminho para sair do tratamento sem efeito sanfona, baseado em evidências científicas.</p>
-      <div class="cta-row">
-        <a class="btn-primary" href="#oferta">
-          Quero o guia
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-        </a>
-        <span class="micro">Acesso imediato em PDF · Leitura de ~1h</span>
-      </div>
-      <div class="hero-note">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-        Confiado por mais de 500 leitores. Conteúdo educacional — não substitui seu médico.
-      </div>
-    </div>
+  <div class="wrap">
+    <h1>Tem dúvidas sobre o seu tratamento<br>com <em>Ozempic ou Mounjaro?</em></h1>
+    <p class="lead">Converse com nossa assistente — tire suas dúvidas e descubra se o guia é para você.</p>
+  </div>
+</section>
 
-    <div class="dial-card">
-      <h3>O painel de hábitos que sustenta o resultado</h3>
-      <p class="sub">As 4 doses diárias que decidem se o peso que sai é gordura — ou músculo.</p>
-      <div class="dial-wrap">
-        <svg viewBox="0 0 200 200">
-          <circle cx="100" cy="100" r="86" fill="none" stroke="#EFE7D8" stroke-width="16"/>
-          <circle cx="100" cy="100" r="86" fill="none" stroke="#CE9B4C" stroke-width="16" stroke-dasharray="135 405" stroke-linecap="round"/>
-          <circle cx="100" cy="100" r="86" fill="none" stroke="#5C9C8F" stroke-width="16" stroke-dasharray="100 405" stroke-dashoffset="-135" stroke-linecap="round"/>
-          <circle cx="100" cy="100" r="86" fill="none" stroke="#1F4E5A" stroke-width="16" stroke-dasharray="90 405" stroke-dashoffset="-235" stroke-linecap="round"/>
-          <circle cx="100" cy="100" r="86" fill="none" stroke="#A9C9C0" stroke-width="16" stroke-dasharray="80 405" stroke-dashoffset="-325" stroke-linecap="round"/>
-        </svg>
-        <div class="dial-center">
-          <div class="big">9</div>
-          <div class="small">capítulos práticos, direto ao ponto</div>
+<!-- ================= CHAT ================= -->
+<section class="chat-section">
+  <div class="chat-outer">
+    <div class="chat-window">
+      <!-- Header -->
+      <div class="chat-header">
+        <div class="chat-header-avatar">CSM</div>
+        <div class="chat-header-info">
+          <div class="chat-header-name">Assistente Caneta Sem Medo</div>
+          <div class="chat-header-status">Online agora</div>
         </div>
       </div>
-      <div class="dial-legend">
-        <div><span class="dot" style="background:#CE9B4C"></span> Proteína por refeição</div>
-        <div><span class="dot" style="background:#5C9C8F"></span> Treino de força (2x/sem)</div>
-        <div><span class="dot" style="background:#1F4E5A"></span> Hidratação e digestão</div>
-        <div><span class="dot" style="background:#A9C9C0"></span> Plano de saída sem sanfona</div>
-      </div>
-    </div>
-  </div>
-</section>
 
-<!-- ================= PROBLEM ================= -->
-<section class="problem">
-  <div class="wrap">
-    <div class="section-head">
-      <span class="eyebrow">O que ninguém te conta</span>
-      <h2>Parar o medicamento é a parte que ninguém te prepara.</h2>
-      <p>Quem usa essas medicações descobre rápido que a parte mais difícil não é "comer menos" — é o que acontece quando você para.</p>
-    </div>
-    <div class="cards3">
-      <div class="pcard">
-        <span class="tag">Risco 1</span>
-        <h3>O efeito sanfona, de novo</h3>
-        <p>Quando o tratamento termina e o apetite volta, sem hábitos construídos o peso costuma voltar também — e a frustração junto.</p>
-      </div>
-      <div class="pcard">
-        <span class="tag">Risco 2</span>
-        <h3>Perda de massa muscular</h3>
-        <p>Sem ajustar a alimentação, parte significativa do peso perdido pode vir de músculo, não só de gordura — e isso desacelera seu metabolismo a longo prazo.</p>
-      </div>
-      <div class="pcard">
-        <span class="tag">Risco 3</span>
-        <h3>Efeitos colaterais sem manual</h3>
-        <p>Náusea, constipação, refluxo, queda de energia. A bula avisa que existem — mas raramente diz o que fazer no dia a dia para amenizar.</p>
-      </div>
-    </div>
-  </div>
-</section>
+      <!-- Messages -->
+      <div class="chat-messages" id="chat-messages"></div>
 
-<!-- ================= INSIDE ================= -->
-<section>
-  <div class="wrap">
-    <div class="section-head">
-      <span class="eyebrow">Dentro do guia</span>
-      <h2>9 capítulos. Zero enrolação.</h2>
-      <p>Cada capítulo resolve um problema específico que aparece nas primeiras semanas de tratamento — e nos meses depois dele.</p>
+      <!-- Input -->
+      <div class="chat-input-area">
+        <textarea
+          class="chat-input"
+          id="chat-input"
+          placeholder="Digite sua mensagem..."
+          rows="1"
+        ></textarea>
+        <button class="btn-send" id="btn-send" aria-label="Enviar">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z"/></svg>
+        </button>
+      </div>
     </div>
-    <div class="inside-grid">
-      <div class="chap"><span class="num">01</span><div><h4>Como as canetas funcionam</h4><p>O mecanismo explicado sem jargão, e por que ele afeta seu apetite do jeito que afeta.</p></div></div>
-      <div class="chap"><span class="num">02</span><div><h4>O risco real: perda muscular</h4><p>Por que parte do peso que você perde pode ser músculo — e por que isso importa.</p></div></div>
-      <div class="chap"><span class="num">03</span><div><h4>Proteína: a base de tudo</h4><p>Quanto comer, em que ordem, e o que fazer nos dias em que a fome é quase zero. Inclui metas específicas de proteína pelo seu peso — e estratégias para bater a meta mesmo quando 800 calorias já parecem demais.</p></div></div>
-      <div class="chap"><span class="num">04</span><div><h4>O treino mínimo eficaz</h4><p>Um plano de 2x por semana, 30-40 min, sem precisar de academia.</p></div></div>
-      <div class="chap"><span class="num">05</span><div><h4>Efeitos colaterais, na prática</h4><p>O capítulo que a maioria lê primeiro. Cobre timing da injeção, os alimentos que pioram a náusea, o que comer quando você mal consegue engolir nada, e como reconhecer quando os sintomas precisam de atenção médica.</p></div></div>
-      <div class="chap"><span class="num">06</span><div><h4>Suplementação essencial</h4><p>O que vale considerar (e o que não é necessário) — sempre com seu médico.</p></div></div>
-      <div class="chap"><span class="num">07</span><div><h4>Cardápios modelo</h4><p>Dois modelos prontos para dias de pouco apetite e dias de apetite moderado.</p></div></div>
-      <div class="chap"><span class="num">08</span><div><h4>A estratégia de saída</h4><p>O capítulo que mais evita o efeito sanfona: o que fazer antes, durante e depois do tratamento.</p></div></div>
-      <div class="chap"><span class="num">09</span><div><h4>Mitos e verdades + checklist</h4><p>Separe o que é fato do que é medo — e um checklist semanal para acompanhar seu progresso.</p></div></div>
-    </div>
-  </div>
-</section>
 
-<!-- ================= WHO ================= -->
-<section class="who">
-  <div class="wrap">
-    <div class="section-head">
-      <span class="eyebrow">Para quem é</span>
-      <h2>Esse guia é para você se...</h2>
-    </div>
-    <div class="who-grid">
-      <div class="who-card">
-        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 2v6m0 0a4 4 0 0 1 4 4v2a4 4 0 0 1-8 0v-2a4 4 0 0 1 4-4z"/><path d="M8 22h8"/></svg>
-        <p>Já está em tratamento e quer aproveitar melhor essa fase</p>
-      </div>
-      <div class="who-card">
-        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M9 12l2 2 4-4"/></svg>
-        <p>Está pensando em começar e quer chegar preparado(a)</p>
-      </div>
-      <div class="who-card">
-        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12a9 9 0 1 0 9-9"/><path d="M3 12l4-2m-4 2l4 2"/></svg>
-        <p>Já terminou e não quer ver o peso voltar</p>
-      </div>
-      <div class="who-card">
-        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/></svg>
-        <p>Quer ajudar alguém da família com as refeições do dia a dia</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ================= OFFER ================= -->
-<section class="offer" id="oferta">
-  <div class="wrap">
-    <div class="offer-card">
-      <h2>Caneta Sem Medo</h2>
-      <p class="desc">Guia completo em PDF, organizado em 9 capítulos práticos, com tabelas de proteína, modelo de treino, cardápios e o plano de saída para evitar o efeito sanfona.</p>
-
-      <div style="background:rgba(206,155,76,0.12);border:1.5px solid #CE9B4C;border-radius:12px;padding:14px 18px;margin:18px 0 14px;">
-        <p style="margin:0 0 8px;font-size:0.78rem;font-weight:700;letter-spacing:.08em;color:#CE9B4C;text-transform:uppercase;">🎁 Bônus exclusivo incluso</p>
-        <p style="margin:0 0 4px;font-weight:700;color:#fff;font-size:1rem;">Plano de 30 Dias Pós-Tratamento</p>
-        <p style="margin:0;font-size:0.88rem;color:rgba(255,255,255,0.75);">O roteiro semana a semana para parar o Ozempic sem ver o peso voltar — com tabelas de proteína, treino e ações diárias para cada fase da saída.</p>
-      </div>
-
-      <div class="price-row">
-        <span class="price-old">R$ 97</span>
-        <span class="price-new">R$ 34,90</span>
-      </div>
-      <p class="price-cycle">pagamento único · acesso vitalício · bônus incluso</p>
-      <ul class="offer-list">
-        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 6"/></svg> E-book completo em PDF (entrega imediata)</li>
-        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 6"/></svg> Tabelas de proteína e modelo de treino prontos para usar</li>
-        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 6"/></svg> Cardápios para dias de pouco e de moderado apetite</li>
-        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 6"/></svg> Checklist semanal de hábitos</li>
-        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 6"/></svg> <strong>🎁 Bônus: Plano de 30 Dias Pós-Tratamento (PDF)</strong></li>
-        <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5L20 6"/></svg> Garantia incondicional de 7 dias</li>
-      </ul>
-      <a class="btn-primary" href="https://pay.kiwify.com.br/xJg2KaV">
-        Quero o guia + bônus
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-      </a>
-      <p class="micro">Pagamento processado em ambiente seguro. Acesso liberado na hora.</p>
-    </div>
-  </div>
-</section>
-
-<!-- ================= FAQ ================= -->
-<section>
-  <div class="wrap" style="max-width:760px;">
-    <div class="section-head">
-      <span class="eyebrow">Dúvidas comuns</span>
-      <h2>Perguntas frequentes</h2>
-    </div>
-    <div class="faq-list">
-      <div class="faq-item">
-        <div class="faq-q">Esse guia substitui meu médico ou nutricionista? <span class="plus">+</span></div>
-        <div class="faq-a"><p>Não. É um material educacional para te ajudar a organizar alimentação, treino e expectativas durante o tratamento. Qualquer decisão sobre dose, medicamento ou suplementos deve ser feita com seu médico.</p></div>
-      </div>
-      <div class="faq-item">
-        <div class="faq-q">Funciona para Ozempic, Mounjaro, Wegovy e Saxenda? <span class="plus">+</span></div>
-        <div class="faq-a"><p>Sim. Os princípios de proteína, treino de força, manejo de efeitos colaterais e prevenção do efeito sanfona se aplicam a todos os remédios emagrecedores injetáveis (como Ozempic, Mounjaro, Wegovy e Saxenda), independentemente da marca.</p></div>
-      </div>
-      <div class="faq-item">
-        <div class="faq-q">Preciso de academia ou equipamentos? <span class="plus">+</span></div>
-        <div class="faq-a"><p>Não. O capítulo de treino traz um plano de 2 a 3 sessões por semana que pode ser feito em casa, com o peso do próprio corpo ou itens simples como elásticos.</p></div>
-      </div>
-      <div class="faq-item">
-        <div class="faq-q">Como recebo o e-book? <span class="plus">+</span></div>
-        <div class="faq-a"><p>Depois da confirmação do pagamento, o acesso ao PDF é liberado imediatamente para download.</p></div>
-      </div>
-      <div class="faq-item">
-        <div class="faq-q">E se eu não gostar? <span class="plus">+</span></div>
-        <div class="faq-a"><p>Você tem 7 dias de garantia incondicional. Se não fizer sentido para você, é só solicitar o reembolso.</p></div>
-      </div>
+    <!-- Quick reply chips (shown after opening message) -->
+    <div class="quick-replies" id="quick-replies" style="display:none;">
+      <button class="chip" data-text="Já uso e quero parar">Já uso e quero parar</button>
+      <button class="chip" data-text="Ainda vou começar">Ainda vou começar</button>
+      <button class="chip" data-text="Quero evitar o efeito sanfona">Quero evitar o efeito sanfona</button>
     </div>
   </div>
 </section>
@@ -377,13 +345,6 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
 <!-- ================= FOOTER ================= -->
 <footer>
   <div class="wrap">
-    <div class="footer-cta">
-      <h2>Pare o Ozempic nos seus termos.<br>Mantenha o peso para sempre.</h2>
-      <a class="btn-primary" href="#oferta">
-        Quero o guia
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-      </a>
-    </div>
     <div class="disclaimer">
       Este produto é um material educacional sobre nutrição, treino e hábitos de vida para pessoas em tratamento (ou que pretendem iniciar tratamento) com remédios emagrecedores injetáveis (agonistas de GLP-1). Não é um produto médico, não diagnostica, não trata e não substitui consulta, acompanhamento ou prescrição de profissionais de saúde habilitados. Resultados individuais variam de pessoa para pessoa. Antes de iniciar, ajustar ou interromper qualquer medicamento ou suplemento, ou iniciar um programa de exercícios, consulte um médico, nutricionista e/ou educador físico.
     </div>
@@ -410,39 +371,34 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
   });
   track('page_view', null, { referrer: document.referrer, ..._utms });
 
-  // CTA clicks — Pixel + CAPI + Supabase
-  document.querySelectorAll('.btn-primary, .nav-cta').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const section = btn.closest('section')?.className?.split(' ')[0] || 'nav';
-      const text = btn.innerText.trim();
+  function fireCheckoutTracking(source) {
+    // 1. Meta Pixel
+    if (typeof fbq !== 'undefined') {
+      fbq('track', 'InitiateCheckout', { content_name: 'Caneta Sem Medo Ebook', value: 34.90, currency: 'BRL' });
+    }
+    // 2. CAPI server-side
+    const _fbp = document.cookie.split(';').map(c => c.trim()).find(c => c.startsWith('_fbp='))?.split('=')[1] || null;
+    fetch('/api/daily-report?type=fb-event', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        event_name: 'InitiateCheckout',
+        event_source_url: location.href,
+        fbclid: _utms.fbclid || null,
+        fbp: _fbp,
+        external_id: SESSION_ID,
+        client_user_agent: navigator.userAgent,
+        custom_data: { content_name: 'Caneta Sem Medo Ebook', value: 34.90, currency: 'BRL', section: source }
+      })
+    }).catch(() => {});
+    // 3. Supabase
+    track('cta_click', source, { text: 'Quero o guia + bônus — R$ 34,90' });
+  }
 
-      // 1. Meta Pixel
-      if (typeof fbq !== 'undefined') {
-        fbq('track', 'InitiateCheckout', { content_name: 'Caneta Sem Medo Ebook', value: 34.90, currency: 'BRL' });
-      }
+  // Nav CTA click
+  document.getElementById('nav-cta-btn').addEventListener('click', () => fireCheckoutTracking('nav'));
 
-      // 2. CAPI server-side
-      const _fbp = document.cookie.split(';').map(c => c.trim()).find(c => c.startsWith('_fbp='))?.split('=')[1] || null;
-      fetch('/api/daily-report?type=fb-event', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          event_name: 'InitiateCheckout',
-          event_source_url: location.href,
-          fbclid: _utms.fbclid || null,
-          fbp: _fbp,
-          external_id: SESSION_ID,
-          client_user_agent: navigator.userAgent,
-          custom_data: { content_name: 'Caneta Sem Medo Ebook', value: 34.90, currency: 'BRL', section, text }
-        })
-      }).catch(() => {});
-
-      // 3. Supabase
-      track('cta_click', section, { text });
-    });
-  });
-
-  // Scroll depth — fires once per threshold
+  // Scroll depth
   const scrollThresholds = [25, 50, 75, 90, 100];
   const firedThresholds = new Set();
   window.addEventListener('scroll', () => {
@@ -457,19 +413,6 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
     });
   }, { passive: true });
 
-  // Section visibility
-  const sectionMap = { hero: 'hero', problem: 'problema', who: 'para_quem', offer: 'oferta' };
-  const observer = new IntersectionObserver(entries => {
-    entries.forEach(e => {
-      if (e.isIntersecting) {
-        const key = Object.keys(sectionMap).find(k => e.target.classList.contains(k));
-        if (key) track('section_viewed', sectionMap[key], {});
-        observer.unobserve(e.target);
-      }
-    });
-  }, { threshold: 0.3 });
-  document.querySelectorAll('section').forEach(s => observer.observe(s));
-
   // Page exit
   const pageStart = Date.now();
   window.addEventListener('beforeunload', () => {
@@ -477,19 +420,272 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
   });
   // ────────────────────────────────────────────────────────────────
 
-  document.querySelectorAll('.faq-item').forEach(item => {
-    const q = item.querySelector('.faq-q');
-    const a = item.querySelector('.faq-a');
-    q.addEventListener('click', () => {
-      const isOpen = item.classList.contains('open');
-      document.querySelectorAll('.faq-item').forEach(i => { i.classList.remove('open'); i.querySelector('.faq-a').style.maxHeight = null; });
-      if (!isOpen) {
-        item.classList.add('open');
-        a.style.maxHeight = a.scrollHeight + 'px';
+  // ── Chat Logic ───────────────────────────────────────────────────
+  const messagesEl = document.getElementById('chat-messages');
+  const inputEl = document.getElementById('chat-input');
+  const sendBtn = document.getElementById('btn-send');
+  const quickRepliesEl = document.getElementById('quick-replies');
+
+  // Full chat history sent to API (role: user/assistant)
+  const chatHistory = [];
+
+  let isResponding = false;
+
+  function scrollToBottom() {
+    messagesEl.scrollTop = messagesEl.scrollHeight;
+  }
+
+  function createAvatar() {
+    const el = document.createElement('div');
+    el.className = 'msg-avatar';
+    el.textContent = 'CSM';
+    return el;
+  }
+
+  function addUserMessage(text) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'msg user';
+    const bubble = document.createElement('div');
+    bubble.className = 'msg-bubble';
+    bubble.textContent = text;
+    wrapper.appendChild(bubble);
+    messagesEl.appendChild(wrapper);
+    scrollToBottom();
+  }
+
+  function showTypingIndicator() {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'typing-indicator';
+    wrapper.id = 'typing-indicator';
+    wrapper.appendChild(createAvatar());
+    const dots = document.createElement('div');
+    dots.className = 'typing-dots';
+    dots.innerHTML = '<span></span><span></span><span></span>';
+    wrapper.appendChild(dots);
+    messagesEl.appendChild(wrapper);
+    scrollToBottom();
+  }
+
+  function hideTypingIndicator() {
+    const el = document.getElementById('typing-indicator');
+    if (el) el.remove();
+  }
+
+  function addAIMessage(text) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'msg ai';
+    wrapper.appendChild(createAvatar());
+    const bubble = document.createElement('div');
+    bubble.className = 'msg-bubble';
+    bubble.textContent = text;
+    wrapper.appendChild(bubble);
+    messagesEl.appendChild(wrapper);
+    scrollToBottom();
+  }
+
+  function addStreamingAIMessage() {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'msg ai';
+    wrapper.appendChild(createAvatar());
+    const bubble = document.createElement('div');
+    bubble.className = 'msg-bubble';
+    wrapper.appendChild(bubble);
+    messagesEl.appendChild(wrapper);
+    scrollToBottom();
+    return bubble;
+  }
+
+  function addCheckoutMessage() {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'msg ai';
+    wrapper.appendChild(createAvatar());
+
+    const bubble = document.createElement('div');
+    bubble.className = 'checkout-bubble';
+
+    const p = document.createElement('p');
+    p.textContent = 'Aqui está o link para garantir o seu guia com bônus incluso 👇';
+    bubble.appendChild(p);
+
+    const link = document.createElement('a');
+    link.className = 'btn-checkout';
+    link.href = 'https://pay.kiwify.com.br/xJg2KaV';
+    link.target = '_blank';
+    link.rel = 'noopener';
+    link.innerHTML = 'Quero o guia + bônus — R$&nbsp;34,90 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
+    link.addEventListener('click', () => fireCheckoutTracking('chat'));
+    bubble.appendChild(link);
+
+    const badges = document.createElement('div');
+    badges.className = 'checkout-badges';
+    badges.textContent = '✓ Acesso imediato · ✓ Garantia 7 dias · ✓ Bônus incluso';
+    bubble.appendChild(badges);
+
+    wrapper.appendChild(bubble);
+    messagesEl.appendChild(wrapper);
+    scrollToBottom();
+  }
+
+  function setInputEnabled(enabled) {
+    inputEl.disabled = !enabled;
+    sendBtn.disabled = !enabled;
+  }
+
+  async function sendMessage(text) {
+    if (!text.trim() || isResponding) return;
+    isResponding = true;
+    setInputEnabled(false);
+    quickRepliesEl.style.display = 'none';
+
+    // Add to history and UI
+    chatHistory.push({ role: 'user', content: text });
+    addUserMessage(text);
+
+    showTypingIndicator();
+
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: chatHistory }),
+      });
+
+      if (!response.ok) throw new Error('Network response not ok');
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let fullText = '';
+      let bubbleEl = null;
+      let firstChunk = true;
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop(); // keep incomplete line
+
+        for (const line of lines) {
+          if (!line.startsWith('data: ')) continue;
+          const data = line.slice(6).trim();
+          if (data === '[DONE]') break;
+
+          let parsed;
+          try { parsed = JSON.parse(data); } catch { continue; }
+
+          if (parsed.error) {
+            hideTypingIndicator();
+            addAIMessage('Desculpe, tive um problema. Pode tentar de novo?');
+            break;
+          }
+
+          if (parsed.text) {
+            if (firstChunk) {
+              hideTypingIndicator();
+              bubbleEl = addStreamingAIMessage();
+              firstChunk = false;
+            }
+            fullText += parsed.text;
+            scrollToBottom();
+
+            // Check if checkout signal is complete in buffer
+            if (bubbleEl) {
+              const displayText = fullText.replace('[[SHOW_CHECKOUT_BUTTON]]', '').trim();
+              bubbleEl.textContent = displayText;
+            }
+          }
+        }
       }
+
+      // After stream complete, check for checkout signal
+      if (fullText.includes('[[SHOW_CHECKOUT_BUTTON]]')) {
+        // Remove the bubble if it was just the signal or mostly empty
+        const textWithout = fullText.replace('[[SHOW_CHECKOUT_BUTTON]]', '').trim();
+        if (bubbleEl) {
+          if (textWithout) {
+            bubbleEl.textContent = textWithout;
+          } else {
+            // Remove the empty bubble wrapper
+            bubbleEl.closest('.msg')?.remove();
+          }
+        }
+        addCheckoutMessage();
+        chatHistory.push({ role: 'assistant', content: textWithout || 'Aqui está o link para garantir o seu guia com bônus incluso 👇' });
+        track('checkout_shown', 'chat', {});
+      } else {
+        chatHistory.push({ role: 'assistant', content: fullText });
+        if (!bubbleEl) {
+          // Fallback if no text came through
+          hideTypingIndicator();
+          addAIMessage('Desculpe, tive um problema. Pode tentar de novo?');
+        }
+      }
+
+    } catch (err) {
+      console.error(err);
+      hideTypingIndicator();
+      addAIMessage('Desculpe, tive um problema. Pode tentar de novo?');
+    }
+
+    isResponding = false;
+    setInputEnabled(true);
+    inputEl.focus();
+  }
+
+  // Send on button click
+  sendBtn.addEventListener('click', () => {
+    const text = inputEl.value.trim();
+    if (text) {
+      inputEl.value = '';
+      inputEl.style.height = 'auto';
+      sendMessage(text);
+    }
+  });
+
+  // Send on Enter (Shift+Enter for newline)
+  inputEl.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      const text = inputEl.value.trim();
+      if (text) {
+        inputEl.value = '';
+        inputEl.style.height = 'auto';
+        sendMessage(text);
+      }
+    }
+  });
+
+  // Auto-resize textarea
+  inputEl.addEventListener('input', () => {
+    inputEl.style.height = 'auto';
+    inputEl.style.height = Math.min(inputEl.scrollHeight, 100) + 'px';
+  });
+
+  // Quick reply chips
+  quickRepliesEl.querySelectorAll('.chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const text = chip.dataset.text;
+      quickRepliesEl.style.display = 'none';
+      sendMessage(text);
     });
   });
-</script>
 
+  // Auto-start: show opening message after 800ms (hardcoded, no API call)
+  const OPENING_MESSAGE = 'Oi! 👋 Sou a assistente do *Caneta Sem Medo*. Você está usando Ozempic, Mounjaro ou algum remédio similar — ou está pensando em começar?';
+
+  setTimeout(() => {
+    // Show typing briefly then show message
+    showTypingIndicator();
+    setTimeout(() => {
+      hideTypingIndicator();
+      addAIMessage(OPENING_MESSAGE);
+      chatHistory.push({ role: 'assistant', content: OPENING_MESSAGE });
+      quickRepliesEl.style.display = 'flex';
+      track('chat_opened', 'chat', {});
+    }, 900);
+  }, 800);
+</script>
 </body>
 </html>
