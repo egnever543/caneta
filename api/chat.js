@@ -1,4 +1,4 @@
-import Anthropic from '@anthropic-ai/sdk';
+const Anthropic = require('@anthropic-ai/sdk').default || require('@anthropic-ai/sdk');
 
 const SYSTEM_PROMPT = `Você é a assistente virtual do guia "Caneta Sem Medo" — um e-book de R$ 34,90 que ajuda pessoas em tratamento com Ozempic, Mounjaro, Wegovy ou Saxenda a preservar músculo, controlar efeitos colaterais e evitar o efeito sanfona ao parar o medicamento.
 
@@ -39,7 +39,7 @@ const CORS_HEADERS = {
   'Access-Control-Allow-Headers': 'Content-Type',
 };
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
     res.writeHead(204, CORS_HEADERS);
