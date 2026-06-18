@@ -431,6 +431,7 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
   const chatHistory = [];
   let isResponding = false;
   let userEmail = null;
+  let awaitingEmail = false;
   let pixPollInterval = null;
 
   function scrollToBottom() {
@@ -498,40 +499,24 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
     return bubble;
   }
 
-  function showEmailCapture() {
-    const wrapper = document.createElement('div');
-    wrapper.className = 'msg ai';
-    wrapper.id = 'email-capture-msg';
-    wrapper.appendChild(createAvatar());
-    const bubble = document.createElement('div');
-    bubble.className = 'msg-bubble';
-    bubble.style.cssText = 'display:flex;flex-direction:column;gap:10px;min-width:220px';
-    bubble.innerHTML = `
-      <span style="font-size:0.9rem">Para eu te enviar o acesso caso precise, qual é o seu email? 📩</span>
-      <div style="display:flex;gap:8px">
-        <input id="email-capture-input" type="email" placeholder="seu@email.com"
-          style="flex:1;padding:9px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.07);color:#fff;font-size:0.88rem;outline:none"/>
-        <button id="email-capture-btn"
-          style="padding:9px 14px;background:#5C9C8F;border:none;border-radius:8px;color:#fff;font-weight:700;cursor:pointer;font-size:0.88rem;white-space:nowrap">→</button>
-      </div>`;
-    wrapper.appendChild(bubble);
-    messagesEl.appendChild(wrapper);
-    scrollToBottom();
+  function requestEmail() {
+    awaitingEmail = true;
+    inputEl.placeholder = 'Seu email para receber o acesso...';
+    inputEl.disabled = false;
+    sendBtn.disabled = false;
+    inputEl.focus();
+  }
 
-    const input = document.getElementById('email-capture-input');
-    const btn = document.getElementById('email-capture-btn');
-    const submit = () => {
-      const val = input.value.trim();
-      if (!val || !val.includes('@')) { input.style.borderColor = '#f87171'; return; }
-      userEmail = val;
-      bubble.innerHTML = `<span style="font-size:0.88rem;color:rgba(255,255,255,0.7)">✓ ${val}</span>`;
-      chatHistory.push({ role: 'assistant', content: `Para eu te enviar o acesso caso precise, qual é o seu email? 📩` });
-      chatHistory.push({ role: 'user', content: val });
-      track('email_captured', 'chat', { email: val });
-    };
-    btn.addEventListener('click', submit);
-    input.addEventListener('keydown', e => { if (e.key === 'Enter') submit(); });
-    input.focus();
+  function captureEmail(val) {
+    userEmail = val;
+    awaitingEmail = false;
+    inputEl.placeholder = 'Digite sua mensagem...';
+    addUserMessage(val);
+    addAIMessage(`Anotei! ✓ Vou enviar tudo para ${val}.`);
+    chatHistory.push({ role: 'assistant', content: `Para receber o acesso, qual é seu email? 📩` });
+    chatHistory.push({ role: 'user', content: val });
+    chatHistory.push({ role: 'assistant', content: `Anotei! ✓ Vou enviar tudo para ${val}.` });
+    track('email_captured', 'chat', {});
   }
 
   function addCheckoutMessage() {
@@ -668,6 +653,17 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
 
   async function sendMessage(text) {
     if (!text.trim() || isResponding) return;
+
+    // Email capture mode
+    if (awaitingEmail) {
+      if (!text.includes('@') || !text.includes('.')) {
+        inputEl.style.borderColor = '#f87171';
+        setTimeout(() => inputEl.style.borderColor = '', 1200);
+        return;
+      }
+      captureEmail(text.trim());
+      return;
+    }
     isResponding = true;
     setInputEnabled(false);
     quickRepliesEl.style.display = 'none';
@@ -792,6 +788,7 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
 
   quickRepliesEl.querySelectorAll('.chip').forEach(chip => {
     chip.addEventListener('click', () => {
+      if (awaitingEmail) return;
       quickRepliesEl.style.display = 'none';
       sendMessage(chip.dataset.text);
     });
@@ -808,8 +805,10 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
       chatHistory.push({ role: 'assistant', content: OPENING_MESSAGE });
       quickRepliesEl.style.display = 'flex';
       track('chat_opened', 'chat', {});
-      // Ask email after welcome
-      setTimeout(() => showEmailCapture(), 1200);
+      setTimeout(() => {
+        addAIMessage('Para eu te enviar o acesso caso precise, qual é o seu email? 📩');
+        requestEmail();
+      }, 1200);
     }, 900);
   }, 800);
 
