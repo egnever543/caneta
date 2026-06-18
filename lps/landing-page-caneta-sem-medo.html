@@ -546,7 +546,7 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: chatHistory }),
+        body: JSON.stringify({ messages: chatHistory, session_id: SESSION_ID }),
       });
 
       if (!response.ok) throw new Error('Network error');
@@ -607,6 +607,11 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
         addCheckoutMessage();
         chatHistory.push({ role: 'assistant', content: textWithout || 'Aqui está o link para garantir o seu guia com bônus incluso 👇' });
         track('checkout_shown', 'chat', {});
+        fetch('/api/chat?type=mark-checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ session_id: SESSION_ID }),
+        }).catch(() => {});
       } else {
         chatHistory.push({ role: 'assistant', content: fullText });
         if (!bubbleEl) {

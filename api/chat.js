@@ -1,4 +1,5 @@
 const Anthropic = require('@anthropic-ai/sdk').default || require('@anthropic-ai/sdk');
+const { createClient } = require('@supabase/supabase-js');
 
 const SYSTEM_PROMPT = `Você é a assistente virtual do guia "Caneta Sem Medo" — um e-book de R$ 34,90 que ajuda pessoas em tratamento com Ozempic, Mounjaro, Wegovy ou Saxenda a preservar músculo, controlar efeitos colaterais e evitar o efeito sanfona ao parar o medicamento.
 
@@ -35,9 +36,13 @@ COMPORTAMENTO:
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type',
 };
+
+function getSupabase() {
+  return createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
+}
 
 module.exports = async function handler(req, res) {
   // Handle CORS preflight
@@ -47,6 +52,80 @@ module.exports = async function handler(req, res) {
     return;
   }
 
+  // ── GET /api/chat?type=list ──
+  if (req.method === 'GET' && req.query?.type === 'list') {
+    const supabase = getSupabase();
+    const { data, error } = await supabase
+      .from('chat_conversations')
+      .select('id, session_id, message_count, reached_checkout, first_user_message, created_at, updated_at')
+      .order('updated_at', { ascending: false })
+      .limit(100);
+    if (error) {
+      res.writeHead(500, { ...CORS_HEADERS, 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: error.message }));
+      return;
+    }
+    res.writeHead(200, { ...CORS_HEADERS, 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(data));
+    return;
+  }
+
+  // ── GET /api/chat?type=get&id=SESSION_ID ──
+  if (req.method === 'GET' && req.query?.type === 'get') {
+    const sessionId = req.query.id;
+    if (!sessionId) {
+      res.writeHead(400, { ...CORS_HEADERS, 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'id required' }));
+      return;
+    }
+    const supabase = getSupabase();
+    const { data, error } = await supabase
+      .from('chat_conversations')
+      .select('session_id, messages, reached_checkout, updated_at')
+      .eq('session_id', sessionId)
+      .single();
+    if (error) {
+      res.writeHead(404, { ...CORS_HEADERS, 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: error.message }));
+      return;
+    }
+    res.writeHead(200, { ...CORS_HEADERS, 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(data));
+    return;
+  }
+
+  // ── POST /api/chat?type=mark-checkout ──
+  if (req.method === 'POST' && req.query?.type === 'mark-checkout') {
+    let body;
+    try {
+      body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+    } catch {
+      res.writeHead(400, { ...CORS_HEADERS, 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'Invalid JSON' }));
+      return;
+    }
+    const { session_id } = body || {};
+    if (!session_id) {
+      res.writeHead(400, { ...CORS_HEADERS, 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'session_id required' }));
+      return;
+    }
+    const supabase = getSupabase();
+    const { error } = await supabase
+      .from('chat_conversations')
+      .update({ reached_checkout: true, updated_at: new Date().toISOString() })
+      .eq('session_id', session_id);
+    if (error) {
+      res.writeHead(500, { ...CORS_HEADERS, 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: error.message }));
+      return;
+    }
+    res.writeHead(200, { ...CORS_HEADERS, 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ ok: true }));
+    return;
+  }
+
+  // ── POST /api/chat (streaming chat) ──
   if (req.method !== 'POST') {
     res.writeHead(405, { ...CORS_HEADERS, 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ error: 'Method not allowed' }));
@@ -62,7 +141,7 @@ module.exports = async function handler(req, res) {
     return;
   }
 
-  const { messages } = body || {};
+  const { messages, session_id } = body || {};
 
   if (!messages || !Array.isArray(messages)) {
     res.writeHead(400, { ...CORS_HEADERS, 'Content-Type': 'application/json' });
@@ -87,18 +166,46 @@ module.exports = async function handler(req, res) {
       messages: messages.map(m => ({ role: m.role, content: m.content })),
     });
 
+    let fullAssistantText = '';
+
     for await (const chunk of stream) {
       if (
         chunk.type === 'content_block_delta' &&
         chunk.delta?.type === 'text_delta'
       ) {
         const text = chunk.delta.text;
+        fullAssistantText += text;
         res.write(`data: ${JSON.stringify({ text })}\n\n`);
       }
     }
 
     res.write('data: [DONE]\n\n');
     res.end();
+
+    // Upsert conversation to Supabase after response is sent — fire and forget
+    if (session_id) {
+      const allMessages = [
+        ...messages,
+        { role: 'assistant', content: fullAssistantText },
+      ];
+      const firstUserMessage = messages.find(m => m.role === 'user')?.content || null;
+      const reached_checkout = fullAssistantText.includes('[[SHOW_CHECKOUT_BUTTON]]');
+      const supabase = getSupabase();
+      supabase
+        .from('chat_conversations')
+        .upsert(
+          {
+            session_id,
+            messages: allMessages,
+            message_count: allMessages.length,
+            reached_checkout,
+            first_user_message: firstUserMessage,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'session_id' }
+        )
+        .catch(console.error);
+    }
   } catch (err) {
     console.error('Anthropic error:', err);
     res.write(`data: ${JSON.stringify({ error: true })}\n\n`);
