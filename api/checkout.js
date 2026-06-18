@@ -67,8 +67,11 @@ module.exports = async (req, res) => {
         }),
       });
       const payment = await r.json();
-      if (payment.error) throw new Error(payment.message || payment.error);
-      const pix = payment.point_of_interaction?.transaction_data;
+      console.log('MP response:', JSON.stringify(payment).slice(0, 400));
+      if (!r.ok || payment.error || !payment.point_of_interaction) {
+        throw new Error(payment.message || payment.cause?.[0]?.description || `MP status ${r.status}`);
+      }
+      const pix = payment.point_of_interaction.transaction_data;
       res.writeHead(200, { ...CORS, 'Content-Type': 'application/json' });
       res.end(JSON.stringify({
         payment_id: payment.id,
