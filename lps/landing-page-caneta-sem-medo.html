@@ -512,11 +512,10 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
     awaitingEmail = false;
     inputEl.placeholder = 'Digite sua mensagem...';
     addUserMessage(val);
-    addAIMessage(`Anotei! ✓ Vou enviar tudo para ${val}.`);
-    chatHistory.push({ role: 'assistant', content: `Para receber o acesso, qual é seu email? 📩` });
+    chatHistory.push({ role: 'assistant', content: `Oi! 👋 Para começar, qual é o seu email? Assim garanto que você recebe o acesso mesmo que a gente se perca aqui. 📩` });
     chatHistory.push({ role: 'user', content: val });
-    chatHistory.push({ role: 'assistant', content: `Anotei! ✓ Vou enviar tudo para ${val}.` });
     track('email_captured', 'chat', {});
+    setTimeout(() => startConversation(), 400);
   }
 
   function addCheckoutMessage() {
@@ -797,18 +796,23 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
   // Auto-start
   const OPENING_MESSAGE = 'Oi! 👋 Sou a assistente do *Caneta Sem Medo*. Você está usando Ozempic, Mounjaro ou algum remédio similar — ou está pensando em começar?';
 
-  setTimeout(() => {
+  function startConversation() {
     showTypingIndicator();
     setTimeout(() => {
       hideTypingIndicator();
       addAIMessage(OPENING_MESSAGE);
       chatHistory.push({ role: 'assistant', content: OPENING_MESSAGE });
       quickRepliesEl.style.display = 'flex';
+    }, 900);
+  }
+
+  setTimeout(() => {
+    showTypingIndicator();
+    setTimeout(() => {
+      hideTypingIndicator();
+      addAIMessage('Oi! 👋 Para começar, qual é o seu email? Assim garanto que você recebe o acesso mesmo que a gente se perca aqui. 📩');
+      requestEmail();
       track('chat_opened', 'chat', {});
-      setTimeout(() => {
-        addAIMessage('Para eu te enviar o acesso caso precise, qual é o seu email? 📩');
-        requestEmail();
-      }, 1200);
     }, 900);
   }, 800);
 
