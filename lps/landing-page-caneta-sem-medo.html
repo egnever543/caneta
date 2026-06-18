@@ -9,7 +9,7 @@
     })(window, document, "clarity", "script", "x7g1sytn1m");
 </script>
 <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, interactive-widget=resizes-visual-viewport" />
 <title>Caneta Sem Medo — Guia para preservar músculo e evitar o efeito sanfona</title>
 <!-- Meta Pixel Code -->
 <script>
@@ -91,6 +91,13 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
     display:flex;
     flex-direction:column;
     height:480px;
+  }
+
+  /* Mobile: ocupa o espaço disponível sem o teclado */
+  @media (max-width:600px){
+    .chat-section{ padding:0; flex:1; display:flex; flex-direction:column; }
+    .chat-outer{ flex:1; display:flex; flex-direction:column; padding:0 8px; }
+    .chat-window{ flex:1; height:auto; min-height:0; border-radius:0; border-left:none; border-right:none; box-shadow:none; }
   }
 
   .chat-header{
@@ -279,10 +286,8 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
 
   /* ---------- RESPONSIVE ---------- */
   @media (max-width:600px){
-    .hero{ padding:32px 0 20px; }
-    .hero h1{ font-size:1.65rem; }
-    .chat-window{ height:420px; }
-    .chat-section{ padding:16px 8px 32px; }
+    .hero{ padding:24px 0 16px; }
+    .hero h1{ font-size:1.5rem; }
   }
 </style>
 </head>
@@ -686,6 +691,21 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
       track('chat_opened', 'chat', {});
     }, 900);
   }, 800);
+
+  // ── Mobile keyboard: mantém chat fixo sem pular ───────────────
+  if (window.visualViewport && /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)) {
+    const chatSection = document.querySelector('.chat-section');
+    function onViewportResize() {
+      const vh = window.visualViewport.height;
+      const headerH = document.querySelector('header').offsetHeight;
+      chatSection.style.height = (vh - headerH) + 'px';
+      chatSection.style.flex = 'none';
+      messagesEl.scrollTop = messagesEl.scrollHeight;
+    }
+    window.visualViewport.addEventListener('resize', onViewportResize);
+    window.visualViewport.addEventListener('scroll', onViewportResize);
+    onViewportResize();
+  }
 </script>
 </body>
 </html>
