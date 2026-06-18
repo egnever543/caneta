@@ -18,6 +18,17 @@ module.exports = async (req, res) => {
   if (req.method === 'GET' && req.query?.type === 'pix-status') {
     const id = req.query.id;
     if (!id) { res.writeHead(400, { ...CORS, 'Content-Type': 'application/json' }); res.end(JSON.stringify({ error: 'id required' })); return; }
+
+    // Simulação: aprova após ~10s (2-3 polls de 4s)
+    if (id.startsWith('sim-')) {
+      const created = parseInt(id.split('-')[1], 10);
+      const elapsed = Date.now() - created;
+      const status = elapsed >= 10000 ? 'approved' : 'pending';
+      res.writeHead(200, { ...CORS, 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ status }));
+      return;
+    }
+
     try {
       const r = await fetch(`${MP_URL}/${id}`, {
         headers: { Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}` },
@@ -42,12 +53,25 @@ module.exports = async (req, res) => {
 
   // ── POST /api/checkout?type=pix ──
   if (req.query?.type === 'pix') {
-    const { email, session_id } = body;
+    const { email, session_id, simulate } = body;
     if (!email) {
       res.writeHead(400, { ...CORS, 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: 'email obrigatório' }));
       return;
     }
+
+    // ── Modo simulação ──
+    if (simulate) {
+      res.writeHead(200, { ...CORS, 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({
+        payment_id: 'sim-' + Date.now(),
+        pix_code: '00020126580014br.gov.bcb.pix013636c3b4f0-4e9a-4f2b-8c3a-SIMULACAO520400005303986540534.905802BR5913Caneta Sem Medo6009SAO PAULO62070503***6304ABCD',
+        qr_base64: '',
+        simulate: true,
+      }));
+      return;
+    }
+
     try {
       const r = await fetch(MP_URL, {
         method: 'POST',

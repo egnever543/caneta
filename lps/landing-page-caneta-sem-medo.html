@@ -536,6 +536,24 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
       messagesEl.appendChild(wrapper);
       scrollToBottom();
 
+      // Botão de simulação (remover em produção)
+      const simBtn = document.createElement('button');
+      simBtn.textContent = '🧪 Simular pagamento';
+      simBtn.style.cssText = 'width:100%;padding:8px;background:transparent;border:1px dashed rgba(255,255,255,0.2);border-radius:8px;color:rgba(255,255,255,0.4);font-size:0.75rem;cursor:pointer;margin-top:6px';
+      simBtn.addEventListener('click', async function() {
+        this.textContent = '⏳ Simulando...';
+        this.disabled = true;
+        const r = await fetch('/api/checkout?type=pix', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: userEmail, session_id: SESSION_ID, simulate: true }),
+        });
+        const data = await r.json();
+        showPixCode(data);
+        bubble.closest('.msg')?.remove();
+      });
+      bubble.appendChild(simBtn);
+
       document.getElementById('btn-gerar-pix').addEventListener('click', async function() {
         this.textContent = '⏳ Gerando Pix...';
         this.disabled = true;
