@@ -82,8 +82,15 @@ module.exports = async (req, res) => {
     const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body || {};
     console.log('MP webhook:', JSON.stringify(body).slice(0, 200));
 
-    const paymentId = body.data?.id;
-    if (body.type === 'payment' && paymentId) {
+    // Suporte ao formato IPN antigo: {resource: "...id", topic: "payment"}
+    // e ao formato Webhook novo: {type: "payment", data: {id: "..."}}
+    let paymentId = body.data?.id;
+    if (!paymentId && body.topic === 'payment') {
+      // resource pode ser URL ou ID direto
+      const resource = body.resource || '';
+      paymentId = resource.toString().split('/').pop();
+    }
+    if ((body.type === 'payment' || body.topic === 'payment') && paymentId) {
       try {
         const r = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
           headers: { Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}` },
