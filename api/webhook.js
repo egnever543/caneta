@@ -79,18 +79,17 @@ module.exports = async (req, res) => {
 
   // ── Mercado Pago webhook ──
   if (req.query?.type === 'mp') {
-    let body;
-    try {
-      const raw = await getRawBody(req);
-      body = JSON.parse(raw.toString());
-    } catch { return res.status(400).end('Invalid JSON'); }
+    const body = typeof req.body === 'string' ? JSON.parse(req.body) : req.body || {};
+    console.log('MP webhook:', JSON.stringify(body).slice(0, 200));
 
-    if (body.type === 'payment' && body.data?.id) {
+    const paymentId = body.data?.id;
+    if (body.type === 'payment' && paymentId) {
       try {
-        const r = await fetch(`https://api.mercadopago.com/v1/payments/${body.data.id}`, {
+        const r = await fetch(`https://api.mercadopago.com/v1/payments/${paymentId}`, {
           headers: { Authorization: `Bearer ${process.env.MP_ACCESS_TOKEN}` },
         });
         const payment = await r.json();
+        console.log('MP payment status:', payment.status, '| email:', payment.metadata?.email || payment.payer?.email);
         if (payment.status === 'approved') {
           const email = payment.metadata?.email || payment.payer?.email;
           if (email) {
