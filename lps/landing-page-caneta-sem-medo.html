@@ -430,6 +430,8 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
   const quickRepliesEl = document.getElementById('quick-replies');
   const chatHistory = [];
   let isResponding = false;
+  let userEmail = null;
+  let pixPollInterval = null;
 
   function scrollToBottom() {
     messagesEl.scrollTop = messagesEl.scrollHeight;
@@ -496,35 +498,167 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
     return bubble;
   }
 
+  function showEmailCapture() {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'msg ai';
+    wrapper.id = 'email-capture-msg';
+    wrapper.appendChild(createAvatar());
+    const bubble = document.createElement('div');
+    bubble.className = 'msg-bubble';
+    bubble.style.cssText = 'display:flex;flex-direction:column;gap:10px;min-width:220px';
+    bubble.innerHTML = `
+      <span style="font-size:0.9rem">Para eu te enviar o acesso caso precise, qual é o seu email? 📩</span>
+      <div style="display:flex;gap:8px">
+        <input id="email-capture-input" type="email" placeholder="seu@email.com"
+          style="flex:1;padding:9px 12px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.07);color:#fff;font-size:0.88rem;outline:none"/>
+        <button id="email-capture-btn"
+          style="padding:9px 14px;background:#5C9C8F;border:none;border-radius:8px;color:#fff;font-weight:700;cursor:pointer;font-size:0.88rem;white-space:nowrap">→</button>
+      </div>`;
+    wrapper.appendChild(bubble);
+    messagesEl.appendChild(wrapper);
+    scrollToBottom();
+
+    const input = document.getElementById('email-capture-input');
+    const btn = document.getElementById('email-capture-btn');
+    const submit = () => {
+      const val = input.value.trim();
+      if (!val || !val.includes('@')) { input.style.borderColor = '#f87171'; return; }
+      userEmail = val;
+      bubble.innerHTML = `<span style="font-size:0.88rem;color:rgba(255,255,255,0.7)">✓ ${val}</span>`;
+      chatHistory.push({ role: 'assistant', content: `Para eu te enviar o acesso caso precise, qual é o seu email? 📩` });
+      chatHistory.push({ role: 'user', content: val });
+      track('email_captured', 'chat', { email: val });
+    };
+    btn.addEventListener('click', submit);
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') submit(); });
+    input.focus();
+  }
+
   function addCheckoutMessage() {
     const wrapper = document.createElement('div');
     wrapper.className = 'msg ai';
     wrapper.appendChild(createAvatar());
-
     const bubble = document.createElement('div');
     bubble.className = 'checkout-bubble';
 
-    const p = document.createElement('p');
-    p.textContent = 'Aqui está o link para garantir o seu guia com bônus incluso 👇';
-    bubble.appendChild(p);
+    if (userEmail) {
+      // Pix inline flow
+      bubble.innerHTML = `
+        <p style="margin:0 0 10px;font-weight:600">Pagar via Pix — R$ 34,90 🔒</p>
+        <p style="margin:0 0 14px;font-size:0.82rem;color:rgba(255,255,255,0.7)">✉ Enviaremos o guia para: <strong>${userEmail}</strong></p>
+        <button id="btn-gerar-pix" style="width:100%;padding:13px;background:#5C9C8F;border:none;border-radius:10px;color:#fff;font-size:0.95rem;font-weight:700;cursor:pointer">Gerar código Pix →</button>
+        <div style="margin-top:10px;font-size:0.75rem;text-align:center;color:rgba(255,255,255,0.5)">✓ Pagamento seguro · ✓ Acesso imediato · ✓ Garantia 7 dias</div>`;
+      wrapper.appendChild(bubble);
+      messagesEl.appendChild(wrapper);
+      scrollToBottom();
 
-    const link = document.createElement('a');
-    link.className = 'btn-checkout';
-    link.href = 'https://pay.kiwify.com.br/xJg2KaV';
-    link.target = '_blank';
-    link.rel = 'noopener';
-    link.innerHTML = 'Quero o guia + bônus — R$&nbsp;34,90 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
-    link.addEventListener('click', () => fireCheckoutTracking('chat'));
-    bubble.appendChild(link);
+      document.getElementById('btn-gerar-pix').addEventListener('click', async function() {
+        this.textContent = '⏳ Gerando Pix...';
+        this.disabled = true;
+        try {
+          const r = await fetch('/api/checkout?type=pix', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: userEmail, session_id: SESSION_ID }),
+          });
+          const data = await r.json();
+          if (data.error) throw new Error(data.error);
+          showPixCode(data);
+          bubble.remove();
+          wrapper.remove();
+        } catch (err) {
+          this.textContent = 'Erro — tentar novamente';
+          this.disabled = false;
+          console.error(err);
+        }
+      });
+    } else {
+      // Fallback: link externo
+      const p = document.createElement('p');
+      p.textContent = 'Aqui está o link para garantir o seu guia com bônus incluso 👇';
+      bubble.appendChild(p);
+      const link = document.createElement('a');
+      link.className = 'btn-checkout';
+      link.href = 'https://pay.kiwify.com.br/xJg2KaV';
+      link.target = '_blank'; link.rel = 'noopener';
+      link.innerHTML = 'Quero o guia + bônus — R$&nbsp;34,90 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
+      link.addEventListener('click', () => fireCheckoutTracking('chat'));
+      bubble.appendChild(link);
+      const badges = document.createElement('div');
+      badges.className = 'checkout-badges';
+      badges.textContent = '✓ Acesso imediato · ✓ Garantia 7 dias · ✓ Bônus incluso';
+      bubble.appendChild(badges);
+      wrapper.appendChild(bubble);
+      messagesEl.appendChild(wrapper);
+      scrollToBottom();
+    }
+  }
 
-    const badges = document.createElement('div');
-    badges.className = 'checkout-badges';
-    badges.textContent = '✓ Acesso imediato · ✓ Garantia 7 dias · ✓ Bônus incluso';
-    bubble.appendChild(badges);
+  function showPixCode({ payment_id, pix_code, qr_base64 }) {
+    const wrapper = document.createElement('div');
+    wrapper.className = 'msg ai';
+    wrapper.appendChild(createAvatar());
+    const bubble = document.createElement('div');
+    bubble.className = 'checkout-bubble';
+    bubble.style.maxWidth = '320px';
+
+    let expiresAt = Date.now() + 30 * 60 * 1000;
+
+    bubble.innerHTML = `
+      ${qr_base64 ? `<img src="data:image/png;base64,${qr_base64}" style="width:100%;max-width:200px;display:block;margin:0 auto 12px;border-radius:8px" alt="QR Code Pix"/>` : ''}
+      <p style="margin:0 0 6px;font-size:0.8rem;color:rgba(255,255,255,0.6);text-align:center">— ou Pix Copia e Cola —</p>
+      <div style="display:flex;gap:8px;margin-bottom:12px">
+        <input id="pix-code-input" value="${pix_code}" readonly
+          style="flex:1;padding:8px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.15);background:rgba(255,255,255,0.05);color:rgba(255,255,255,0.8);font-size:0.72rem;font-family:monospace"/>
+        <button id="btn-copy-pix" style="padding:8px 12px;background:#5C9C8F;border:none;border-radius:8px;color:#fff;font-size:0.8rem;cursor:pointer;white-space:nowrap">📋 Copiar</button>
+      </div>
+      <div style="text-align:center;font-size:0.78rem;color:rgba(255,255,255,0.5);margin-bottom:8px">⏱ Expira em <span id="pix-timer">30:00</span></div>
+      <div id="pix-status" style="text-align:center;font-size:0.88rem;color:rgba(255,255,255,0.7)">⏳ Aguardando pagamento…</div>`;
 
     wrapper.appendChild(bubble);
     messagesEl.appendChild(wrapper);
     scrollToBottom();
+
+    document.getElementById('btn-copy-pix').addEventListener('click', function() {
+      navigator.clipboard.writeText(pix_code).then(() => {
+        this.textContent = '✓ Copiado!';
+        setTimeout(() => { this.textContent = '📋 Copiar'; }, 2000);
+      });
+    });
+
+    // Timer
+    const timerEl = document.getElementById('pix-timer');
+    const timerInt = setInterval(() => {
+      const left = Math.max(0, expiresAt - Date.now());
+      const m = Math.floor(left / 60000);
+      const s = Math.floor((left % 60000) / 1000);
+      timerEl.textContent = `${m}:${s.toString().padStart(2,'0')}`;
+      if (left === 0) clearInterval(timerInt);
+    }, 1000);
+
+    // Poll payment status
+    const statusEl = document.getElementById('pix-status');
+    if (pixPollInterval) clearInterval(pixPollInterval);
+    pixPollInterval = setInterval(async () => {
+      try {
+        const r = await fetch(`/api/checkout?type=pix-status&id=${payment_id}`);
+        const { status } = await r.json();
+        if (status === 'approved') {
+          clearInterval(pixPollInterval);
+          clearInterval(timerInt);
+          statusEl.innerHTML = '✅ Pagamento confirmado!';
+          bubble.style.borderColor = '#4ade80';
+          setTimeout(() => {
+            addAIMessage(`🎉 Pagamento confirmado! Enviamos o guia para ${userEmail}. Verifique sua caixa de entrada (e o spam, só por garantia).`);
+            if (typeof fbq !== 'undefined') fbq('track', 'Purchase', { value: 34.90, currency: 'BRL', content_name: 'Caneta Sem Medo' });
+            track('purchase', 'pix', { email: userEmail });
+          }, 500);
+        } else if (status === 'rejected' || status === 'cancelled') {
+          clearInterval(pixPollInterval);
+          statusEl.innerHTML = '❌ Pagamento não aprovado. Tente novamente.';
+        }
+      } catch {}
+    }, 4000);
   }
 
   function setInputEnabled(enabled) {
@@ -674,6 +808,8 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
       chatHistory.push({ role: 'assistant', content: OPENING_MESSAGE });
       quickRepliesEl.style.display = 'flex';
       track('chat_opened', 'chat', {});
+      // Ask email after welcome
+      setTimeout(() => showEmailCapture(), 1200);
     }, 900);
   }, 800);
 
