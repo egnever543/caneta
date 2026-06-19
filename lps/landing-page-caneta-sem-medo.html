@@ -1044,15 +1044,24 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
   });
 
   // Auto-start
-  const OPENING_MESSAGE = 'Oi! 👋 Antes de te apresentar o *Caneta Sem Medo*, quero fazer algumas perguntas rápidas pra entender se ele realmente serve pra você. Pode ser?\n\nVocê está usando Ozempic, Mounjaro ou algum remédio similar — ou está pensando em começar?';
+  const OPENING_MSG_1 = 'Oi! 👋 Antes de te apresentar o *Caneta Sem Medo*, quero fazer algumas perguntas rápidas pra entender se ele realmente serve pra você. Pode ser?';
+  const OPENING_MSG_2 = 'Você está usando Ozempic, Mounjaro ou algum remédio similar — ou está pensando em começar?';
 
   function startConversation() {
     showTypingIndicator();
     setTimeout(() => {
       hideTypingIndicator();
-      addAIMessage(OPENING_MESSAGE);
-      chatHistory.push({ role: 'assistant', content: OPENING_MESSAGE });
-      quickRepliesEl.style.display = 'flex';
+      addAIMessage(OPENING_MSG_1);
+      setTimeout(() => {
+        showTypingIndicator();
+        setTimeout(() => {
+          hideTypingIndicator();
+          addAIMessage(OPENING_MSG_2, true);
+          const fullOpening = OPENING_MSG_1 + ' ' + OPENING_MSG_2;
+          chatHistory.push({ role: 'assistant', content: fullOpening });
+          quickRepliesEl.style.display = 'flex';
+        }, 700);
+      }, 500);
     }, 900);
   }
 
