@@ -513,7 +513,7 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
         <button id="btn-gerar-pix" style="width:100%;padding:13px;background:#5C9C8F;border:none;border-radius:10px;color:#fff;font-size:0.95rem;font-weight:700;cursor:pointer">Eu confirmo meu Email →</button>
         <div style="margin-top:10px;font-size:0.75rem;text-align:center;color:rgba(255,255,255,0.5)">✓ Pagamento seguro · ✓ Acesso imediato · ✓ Garantia 7 dias</div>`;
 
-      document.getElementById('btn-gerar-pix').addEventListener('click', async function() {
+      bubble.querySelector('#btn-gerar-pix').addEventListener('click', async function() {
         this.textContent = '⏳ Gerando Pix...';
         this.disabled = true;
         try {
@@ -534,7 +534,7 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
         }
       });
 
-      document.getElementById('btn-editar-email').addEventListener('click', function() {
+      bubble.querySelector('#btn-editar-email').addEventListener('click', function() {
         userEmail = null;
         showEmailCapture();
       });
@@ -549,10 +549,10 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
         <button id="btn-confirmar-email" style="width:100%;padding:13px;background:#5C9C8F;border:none;border-radius:10px;color:#fff;font-size:0.95rem;font-weight:700;cursor:pointer">Confirmar e gerar Pix →</button>
         <div style="margin-top:10px;font-size:0.75rem;text-align:center;color:rgba(255,255,255,0.5)">✓ Pagamento seguro · ✓ Acesso imediato · ✓ Garantia 7 dias</div>`;
 
-      const emailInput = document.getElementById('pix-email-input');
+      const emailInput = bubble.querySelector('#pix-email-input');
       emailInput.focus();
 
-      document.getElementById('btn-confirmar-email').addEventListener('click', function() {
+      bubble.querySelector('#btn-confirmar-email').addEventListener('click', function() {
         const val = emailInput.value.trim();
         if (!val.includes('@') || !val.includes('.')) {
           emailInput.style.borderColor = '#f87171';
@@ -565,7 +565,7 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
       });
 
       emailInput.addEventListener('keydown', e => {
-        if (e.key === 'Enter') document.getElementById('btn-confirmar-email').click();
+        if (e.key === 'Enter') bubble.querySelector('#btn-confirmar-email').click();
       });
     }
 
