@@ -538,22 +538,19 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
     });
   }
 
-  // Exibe texto dividido em 2 bolhas com typing delay entre elas
-  async function deliverSplit(cleanText, existingBubble, afterDone) {
+  // Entrega texto em fila: divide, typewriter em cada parte, typing indicator entre elas
+  async function deliverSplit(cleanText, _unused, afterDone) {
+    if (!cleanText) { if (afterDone) afterDone(); return; }
+
     const parts = splitMessage(cleanText);
 
-    if (existingBubble) {
-      existingBubble.textContent = parts[0];
-    } else {
-      addAIMessage(parts[0]);
-    }
-    scrollToBottom();
+    await typewriterMessage(parts[0], false);
 
     if (parts.length > 1) {
-      const readDelay = Math.min(1000, 300 + parts[0].length * 12);
+      const readDelay = Math.min(900, 300 + parts[0].length * 10);
       await new Promise(r => setTimeout(r, readDelay));
       showTypingIndicator();
-      await new Promise(r => setTimeout(r, 700));
+      await new Promise(r => setTimeout(r, 650));
       hideTypingIndicator();
       await typewriterMessage(parts[1], true);
     }
@@ -748,14 +745,14 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
 
       if (!response.ok) throw new Error('Network error');
 
+      // Bufferiza resposta completa silenciosamente (typing indicator já está ativo)
       const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let buffer = '';
       let fullText = '';
-      let bubbleEl = null;
-      let firstChunk = true;
+      let hadError = false;
 
-      while (true) {
+      outer: while (true) {
         const { done, value } = await reader.read();
         if (done) break;
 
@@ -766,30 +763,22 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
         for (const line of lines) {
           if (!line.startsWith('data: ')) continue;
           const data = line.slice(6).trim();
-          if (data === '[DONE]') break;
+          if (data === '[DONE]') break outer;
 
           let parsed;
           try { parsed = JSON.parse(data); } catch { continue; }
 
-          if (parsed.error) {
-            hideTypingIndicator();
-            addAIMessage('Desculpe, tive um problema. Pode tentar de novo?');
-            break;
-          }
-
-          if (parsed.text) {
-            if (firstChunk) {
-              hideTypingIndicator();
-              bubbleEl = addStreamingAIMessage();
-              firstChunk = false;
-            }
-            fullText += parsed.text;
-            if (bubbleEl) {
-              bubbleEl.textContent = fullText.replace('[[SHOW_CHECKOUT_BUTTON]]', '').replace('[[QUALIFIED_LEAD]]', '').trim();
-            }
-            scrollToBottom();
-          }
+          if (parsed.error) { hadError = true; break outer; }
+          if (parsed.text) fullText += parsed.text;
         }
+      }
+
+      hideTypingIndicator();
+
+      if (hadError || !fullText.trim()) {
+        addAIMessage('Desculpe, tive um problema. Pode tentar de novo?');
+        isResponding = false; setInputEnabled(true); inputEl.focus();
+        return;
       }
 
       // Fire Pixel: Lead qualificado (antes do checkout)
@@ -801,42 +790,24 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
       const hasCheckout = fullText.includes('[[SHOW_CHECKOUT_BUTTON]]');
       const cleanText = fullText.replace('[[SHOW_CHECKOUT_BUTTON]]', '').replace('[[QUALIFIED_LEAD]]', '').trim();
 
-      if (hasCheckout) {
-        // Remove bolha de streaming se texto vazio, senão divide
-        if (!cleanText && bubbleEl) {
-          bubbleEl.closest('.msg')?.remove();
-        }
-        const afterCheckout = () => {
-          addCheckoutMessage();
-          chatHistory.push({ role: 'assistant', content: cleanText || '[[SHOW_CHECKOUT_BUTTON]]' });
-          track('checkout_shown', 'chat', {});
-          if (typeof fbq !== 'undefined') fbq('track', 'InitiateCheckout', { content_name: 'Caneta Sem Medo Ebook', value: 34.90, currency: 'BRL' });
-          fetch('/api/chat?type=mark-checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ session_id: SESSION_ID }) }).catch(() => {});
-          isResponding = false;
-          setInputEnabled(true);
-          inputEl.focus();
-        };
-        if (cleanText) {
-          await deliverSplit(cleanText, bubbleEl, afterCheckout);
-        } else {
-          afterCheckout();
-        }
-      } else {
-        chatHistory.push({ role: 'assistant', content: cleanText || fullText });
-        if (!bubbleEl) {
-          hideTypingIndicator();
-          addAIMessage('Desculpe, tive um problema. Pode tentar de novo?');
-          isResponding = false;
-          setInputEnabled(true);
-          inputEl.focus();
-        } else {
-          await deliverSplit(cleanText || fullText, bubbleEl, () => {
-            isResponding = false;
-            setInputEnabled(true);
-            inputEl.focus();
-          });
-        }
+      if (fullText.includes('[[QUALIFIED_LEAD]]')) {
+        if (typeof fbq !== 'undefined') fbq('track', 'Lead', { content_name: 'Caneta Sem Medo' });
+        track('qualified_lead', 'chat', {});
       }
+
+      const afterDeliver = hasCheckout ? () => {
+        addCheckoutMessage();
+        chatHistory.push({ role: 'assistant', content: cleanText || '[[SHOW_CHECKOUT_BUTTON]]' });
+        track('checkout_shown', 'chat', {});
+        if (typeof fbq !== 'undefined') fbq('track', 'InitiateCheckout', { content_name: 'Caneta Sem Medo Ebook', value: 34.90, currency: 'BRL' });
+        fetch('/api/chat?type=mark-checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ session_id: SESSION_ID }) }).catch(() => {});
+        isResponding = false; setInputEnabled(true); inputEl.focus();
+      } : () => {
+        chatHistory.push({ role: 'assistant', content: cleanText });
+        isResponding = false; setInputEnabled(true); inputEl.focus();
+      };
+
+      await deliverSplit(cleanText, null, afterDeliver);
 
     } catch (err) {
       console.error(err);
