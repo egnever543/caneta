@@ -431,8 +431,6 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
   const chatHistory = [];
   let isResponding = false;
   let userEmail = null;
-  let awaitingEmail = false;
-  let editingEmail = false;
   let pixPollInterval = null;
 
   function scrollToBottom() {
@@ -500,29 +498,6 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
     return bubble;
   }
 
-  function requestEmail() {
-    awaitingEmail = true;
-    inputEl.placeholder = 'Seu email para receber o acesso...';
-    inputEl.disabled = false;
-    sendBtn.disabled = false;
-    inputEl.focus();
-  }
-
-  function captureEmail(val) {
-    userEmail = val;
-    awaitingEmail = false;
-    inputEl.placeholder = 'Digite sua mensagem...';
-    addUserMessage(val);
-    chatHistory.push({ role: 'assistant', content: `Oi! 👋 Para começar, qual é o seu email? Assim garanto que você recebe o acesso mesmo que a gente se perca aqui. 📩` });
-    chatHistory.push({ role: 'user', content: val });
-    track('email_captured', 'chat', {});
-    if (editingEmail) {
-      editingEmail = false;
-      setTimeout(() => addCheckoutMessage(), 400);
-    } else {
-      setTimeout(() => startConversation(), 400);
-    }
-  }
 
   function addCheckoutMessage() {
     const wrapper = document.createElement('div');
@@ -531,16 +506,12 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
     const bubble = document.createElement('div');
     bubble.className = 'checkout-bubble';
 
-    if (userEmail) {
-      // Pix inline flow
+    function showPixConfirm() {
       bubble.innerHTML = `
         <p style="margin:0 0 10px;font-weight:600">Pagar via Pix — R$ 34,90 🔒</p>
         <p style="margin:0 0 14px;font-size:0.82rem;color:#111">✉ Enviaremos o guia para: <strong>${userEmail}</strong> <button id="btn-editar-email" style="background:none;border:none;color:#5C9C8F;font-size:0.78rem;cursor:pointer;text-decoration:underline;padding:0 0 0 6px">Editar</button></p>
         <button id="btn-gerar-pix" style="width:100%;padding:13px;background:#5C9C8F;border:none;border-radius:10px;color:#fff;font-size:0.95rem;font-weight:700;cursor:pointer">Eu confirmo meu Email →</button>
         <div style="margin-top:10px;font-size:0.75rem;text-align:center;color:rgba(255,255,255,0.5)">✓ Pagamento seguro · ✓ Acesso imediato · ✓ Garantia 7 dias</div>`;
-      wrapper.appendChild(bubble);
-      messagesEl.appendChild(wrapper);
-      scrollToBottom();
 
       document.getElementById('btn-gerar-pix').addEventListener('click', async function() {
         this.textContent = '⏳ Gerando Pix...';
@@ -564,31 +535,50 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
       });
 
       document.getElementById('btn-editar-email').addEventListener('click', function() {
-        wrapper.remove();
         userEmail = null;
-        editingEmail = true;
-        requestEmail();
+        showEmailCapture();
       });
-    } else {
-      // Fallback: link externo
-      const p = document.createElement('p');
-      p.textContent = 'Aqui está o link para garantir o seu guia com bônus incluso 👇';
-      bubble.appendChild(p);
-      const link = document.createElement('a');
-      link.className = 'btn-checkout';
-      link.href = 'https://pay.kiwify.com.br/xJg2KaV';
-      link.target = '_blank'; link.rel = 'noopener';
-      link.innerHTML = 'Quero o guia + bônus — R$&nbsp;34,90 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 6l6 6-6 6"/></svg>';
-      link.addEventListener('click', () => fireCheckoutTracking('chat'));
-      bubble.appendChild(link);
-      const badges = document.createElement('div');
-      badges.className = 'checkout-badges';
-      badges.textContent = '✓ Acesso imediato · ✓ Garantia 7 dias · ✓ Bônus incluso';
-      bubble.appendChild(badges);
-      wrapper.appendChild(bubble);
-      messagesEl.appendChild(wrapper);
-      scrollToBottom();
     }
+
+    function showEmailCapture() {
+      bubble.innerHTML = `
+        <p style="margin:0 0 10px;font-weight:600">Pagar via Pix — R$ 34,90 🔒</p>
+        <p style="margin:0 0 12px;font-size:0.85rem;color:rgba(255,255,255,0.75)">Para onde enviamos o guia após o pagamento?</p>
+        <input id="pix-email-input" type="email" placeholder="seu@email.com"
+          style="width:100%;padding:11px 14px;border-radius:10px;border:1px solid rgba(255,255,255,0.2);background:rgba(255,255,255,0.08);color:#fff;font-size:0.95rem;margin-bottom:10px;box-sizing:border-box;outline:none"/>
+        <button id="btn-confirmar-email" style="width:100%;padding:13px;background:#5C9C8F;border:none;border-radius:10px;color:#fff;font-size:0.95rem;font-weight:700;cursor:pointer">Confirmar e gerar Pix →</button>
+        <div style="margin-top:10px;font-size:0.75rem;text-align:center;color:rgba(255,255,255,0.5)">✓ Pagamento seguro · ✓ Acesso imediato · ✓ Garantia 7 dias</div>`;
+
+      const emailInput = document.getElementById('pix-email-input');
+      emailInput.focus();
+
+      document.getElementById('btn-confirmar-email').addEventListener('click', function() {
+        const val = emailInput.value.trim();
+        if (!val.includes('@') || !val.includes('.')) {
+          emailInput.style.borderColor = '#f87171';
+          setTimeout(() => emailInput.style.borderColor = 'rgba(255,255,255,0.2)', 1200);
+          return;
+        }
+        userEmail = val;
+        track('email_captured', 'chat', {});
+        showPixConfirm();
+      });
+
+      emailInput.addEventListener('keydown', e => {
+        if (e.key === 'Enter') document.getElementById('btn-confirmar-email').click();
+      });
+    }
+
+    if (userEmail) {
+      showPixConfirm();
+    } else {
+      showEmailCapture();
+    }
+
+    wrapper.appendChild(bubble);
+    messagesEl.appendChild(wrapper);
+    scrollToBottom();
+
   }
 
   function showPixCode({ payment_id, pix_code, qr_base64 }) {
@@ -666,16 +656,6 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
   async function sendMessage(text) {
     if (!text.trim() || isResponding) return;
 
-    // Email capture mode
-    if (awaitingEmail) {
-      if (!text.includes('@') || !text.includes('.')) {
-        inputEl.style.borderColor = '#f87171';
-        setTimeout(() => inputEl.style.borderColor = '', 1200);
-        return;
-      }
-      captureEmail(text.trim());
-      return;
-    }
     isResponding = true;
     setInputEnabled(false);
     quickRepliesEl.style.display = 'none';
@@ -800,7 +780,7 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
 
   quickRepliesEl.querySelectorAll('.chip').forEach(chip => {
     chip.addEventListener('click', () => {
-      if (awaitingEmail) return;
+
       quickRepliesEl.style.display = 'none';
       sendMessage(chip.dataset.text);
     });
@@ -820,13 +800,8 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
   }
 
   setTimeout(() => {
-    showTypingIndicator();
-    setTimeout(() => {
-      hideTypingIndicator();
-      addAIMessage('Oi! 👋 Para começar, qual é o seu email? Assim garanto que você recebe o acesso mesmo que a gente se perca aqui. 📩');
-      requestEmail();
-      track('chat_opened', 'chat', {});
-    }, 900);
+    track('chat_opened', 'chat', {});
+    startConversation();
   }, 800);
 
 </script>
