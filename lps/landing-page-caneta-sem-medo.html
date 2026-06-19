@@ -1064,20 +1064,20 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
     showTypingIndicator();
     setTimeout(() => {
       hideTypingIndicator();
-      addGifMessage('https://media0.giphy.com/media/9Ai5dIk8xvBm0/giphy.gif');
+      addAIMessage(OPENING_MSG_1);
       setTimeout(() => {
-        addAIMessage(OPENING_MSG_1, true);
+        showTypingIndicator();
         setTimeout(() => {
-          showTypingIndicator();
+          hideTypingIndicator();
+          addAIMessage(OPENING_MSG_2, true);
+          const fullOpening = OPENING_MSG_1 + ' ' + OPENING_MSG_2;
+          chatHistory.push({ role: 'assistant', content: fullOpening });
           setTimeout(() => {
-            hideTypingIndicator();
-            addAIMessage(OPENING_MSG_2, true);
-            const fullOpening = OPENING_MSG_1 + ' ' + OPENING_MSG_2;
-            chatHistory.push({ role: 'assistant', content: fullOpening });
+            addGifMessage('https://media0.giphy.com/media/9Ai5dIk8xvBm0/giphy.gif');
             quickRepliesEl.style.display = 'flex';
-          }, 2200);
-        }, 800);
-      }, 600);
+          }, 500);
+        }, 2200);
+      }, 800);
     }, 900);
   }
 
