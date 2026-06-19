@@ -482,10 +482,17 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
     if (el) el.remove();
   }
 
-  function addAIMessage(text) {
+  function splitMessage(text) {
+    // Divide no primeiro . ! ? após 30 chars seguido de espaço + letra maiúscula/emoji
+    const m = text.match(/^([\s\S]{30,}?[.!?])\s+([\s\S]+)$/);
+    if (m) return [m[1].trim(), m[2].trim()];
+    return [text];
+  }
+
+  function addAIMessage(text, opts = {}) {
     const wrapper = document.createElement('div');
     wrapper.className = 'msg ai';
-    wrapper.appendChild(createAvatar());
+    if (!opts.noAvatar) wrapper.appendChild(createAvatar());
     const bubble = document.createElement('div');
     bubble.className = 'msg-bubble';
     bubble.textContent = text;
@@ -493,6 +500,35 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
     messagesEl.appendChild(wrapper);
     scrollToBottom();
     return bubble;
+  }
+
+  // Exibe texto dividido em 2 bolhas com typing delay entre elas
+  // existingBubble: bolha de streaming já visível (reaproveitada para part[0])
+  // afterDone: callback chamado após todas as partes aparecerem
+  async function deliverSplit(cleanText, existingBubble, afterDone) {
+    const parts = splitMessage(cleanText);
+
+    // Parte 1 — vai para a bolha de streaming existente (ou cria nova)
+    if (existingBubble) {
+      existingBubble.textContent = parts[0];
+    } else {
+      addAIMessage(parts[0]);
+    }
+    scrollToBottom();
+
+    if (parts.length > 1) {
+      // Delay proporcional ao tamanho da parte 1 (simula leitura + digitação)
+      const delay = Math.min(1200, 400 + parts[0].length * 14);
+      await new Promise(r => setTimeout(r, delay));
+      showTypingIndicator();
+      const typingDelay = Math.min(1000, 500 + parts[1].length * 12);
+      await new Promise(r => setTimeout(r, typingDelay));
+      hideTypingIndicator();
+      addAIMessage(parts[1], { noAvatar: true });
+      scrollToBottom();
+    }
+
+    if (afterDone) afterDone();
   }
 
   function addStreamingAIMessage() {
@@ -732,29 +768,43 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
         track('qualified_lead', 'chat', {});
       }
 
-      if (fullText.includes('[[SHOW_CHECKOUT_BUTTON]]')) {
-        const textWithout = fullText.replace('[[SHOW_CHECKOUT_BUTTON]]', '').replace('[[QUALIFIED_LEAD]]', '').trim();
-        if (bubbleEl) {
-          if (textWithout) {
-            bubbleEl.textContent = textWithout;
-          } else {
-            bubbleEl.closest('.msg')?.remove();
-          }
+      const hasCheckout = fullText.includes('[[SHOW_CHECKOUT_BUTTON]]');
+      const cleanText = fullText.replace('[[SHOW_CHECKOUT_BUTTON]]', '').replace('[[QUALIFIED_LEAD]]', '').trim();
+
+      if (hasCheckout) {
+        // Remove bolha de streaming se texto vazio, senão divide
+        if (!cleanText && bubbleEl) {
+          bubbleEl.closest('.msg')?.remove();
         }
-        addCheckoutMessage();
-        chatHistory.push({ role: 'assistant', content: textWithout || 'Aqui está o link para garantir o seu guia com bônus incluso 👇' });
-        track('checkout_shown', 'chat', {});
-        if (typeof fbq !== 'undefined') fbq('track', 'InitiateCheckout', { content_name: 'Caneta Sem Medo Ebook', value: 34.90, currency: 'BRL' });
-        fetch('/api/chat?type=mark-checkout', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ session_id: SESSION_ID }),
-        }).catch(() => {});
+        const afterCheckout = () => {
+          addCheckoutMessage();
+          chatHistory.push({ role: 'assistant', content: cleanText || '[[SHOW_CHECKOUT_BUTTON]]' });
+          track('checkout_shown', 'chat', {});
+          if (typeof fbq !== 'undefined') fbq('track', 'InitiateCheckout', { content_name: 'Caneta Sem Medo Ebook', value: 34.90, currency: 'BRL' });
+          fetch('/api/chat?type=mark-checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ session_id: SESSION_ID }) }).catch(() => {});
+          isResponding = false;
+          setInputEnabled(true);
+          inputEl.focus();
+        };
+        if (cleanText) {
+          await deliverSplit(cleanText, bubbleEl, afterCheckout);
+        } else {
+          afterCheckout();
+        }
       } else {
-        chatHistory.push({ role: 'assistant', content: fullText });
+        chatHistory.push({ role: 'assistant', content: cleanText || fullText });
         if (!bubbleEl) {
           hideTypingIndicator();
           addAIMessage('Desculpe, tive um problema. Pode tentar de novo?');
+          isResponding = false;
+          setInputEnabled(true);
+          inputEl.focus();
+        } else {
+          await deliverSplit(cleanText || fullText, bubbleEl, () => {
+            isResponding = false;
+            setInputEnabled(true);
+            inputEl.focus();
+          });
         }
       }
 
@@ -762,11 +812,10 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
       console.error(err);
       hideTypingIndicator();
       addAIMessage('Desculpe, tive um problema. Pode tentar de novo?');
+      isResponding = false;
+      setInputEnabled(true);
+      inputEl.focus();
     }
-
-    isResponding = false;
-    setInputEnabled(true);
-    inputEl.focus();
   }
 
   sendBtn.addEventListener('click', () => {
