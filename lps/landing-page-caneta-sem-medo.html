@@ -33,17 +33,17 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg: #0D1F24;
-    --bg-soft: #162B33;
-    --ink: #EEF2F0;
-    --ink-soft: #8AABA4;
+    --bg: #FAF6EF;
+    --bg-soft: #F1EBDF;
+    --ink: #1E2E2C;
+    --ink-soft: #54625F;
     --teal: #1F4E5A;
     --teal-deep: #163840;
     --sage: #5C9C8F;
-    --sage-soft: #1E3D38;
+    --sage-soft: #DCEDE7;
     --gold: #CE9B4C;
-    --gold-soft: #3A2A10;
-    --line: rgba(255,255,255,0.10);
+    --gold-soft: #F4E6CC;
+    --line: rgba(30,46,44,0.12);
   }
 
   *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
@@ -160,8 +160,8 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
     gap: 10px;
     align-items: flex-end;
     padding: 10px 16px 12px;
-    background: var(--bg-soft);
-    border-top: 1px solid var(--line);
+    background: #163840;
+    border-top: none;
   }
   .chat-input {
     flex: 1;
@@ -170,8 +170,8 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
     padding: 10px 16px;
     font-family: 'Manrope', sans-serif;
     font-size: 0.95rem;
-    color: var(--ink);
-    background: var(--bg);
+    color: #EEF2F0;
+    background: rgba(255,255,255,0.07);
     resize: none;
     outline: none;
     max-height: 96px;
@@ -189,7 +189,7 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
     box-shadow: 0 0 0 4px rgba(92,156,143,0.3);
     animation: none;
   }
-  .chat-input::placeholder { color: var(--ink-soft); opacity: .7; }
+  .chat-input::placeholder { color: rgba(255,255,255,0.4); }
   .chat-input:disabled { opacity: .4; cursor: not-allowed; animation: none; }
 
   .btn-send {
@@ -554,7 +554,7 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
     function showPixConfirm() {
       bubble.innerHTML = `
         <p style="margin:0 0 10px;font-weight:600">Pagar via Pix — R$ 34,90 🔒</p>
-        <p style="margin:0 0 14px;font-size:0.82rem;color:var(--ink-soft)">✉ Enviaremos o guia para: <strong style="color:var(--ink)">${userEmail}</strong> <button id="btn-editar-email" style="background:none;border:none;color:#5C9C8F;font-size:0.78rem;cursor:pointer;text-decoration:underline;padding:0 0 0 6px">Editar</button></p>
+        <p style="margin:0 0 14px;font-size:0.82rem;color:rgba(255,255,255,0.7)">✉ Enviaremos o guia para: <strong style="color:#fff">${userEmail}</strong> <button id="btn-editar-email" style="background:none;border:none;color:#5C9C8F;font-size:0.78rem;cursor:pointer;text-decoration:underline;padding:0 0 0 6px">Editar</button></p>
         <button id="btn-gerar-pix" style="width:100%;padding:13px;background:#5C9C8F;border:none;border-radius:10px;color:#fff;font-size:0.95rem;font-weight:700;cursor:pointer">Eu confirmo meu Email →</button>
         <div style="margin-top:10px;font-size:0.75rem;text-align:center;color:rgba(255,255,255,0.5)">✓ Pagamento seguro · ✓ Acesso imediato · ✓ Garantia 7 dias</div>`;
 
