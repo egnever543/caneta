@@ -228,6 +228,7 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
     max-width: min(78%, 480px);
   }
   .msg.ai   { align-self: flex-start; }
+  .msg.ai.no-avatar { padding-left: 36px; } /* 28px avatar + 8px gap */
   .msg.user { align-self: flex-end; flex-direction: row-reverse; }
 
   .msg-avatar {
@@ -514,7 +515,7 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
   function typewriterMessage(text, noAvatar = false) {
     return new Promise(resolve => {
       const wrapper = document.createElement('div');
-      wrapper.className = 'msg ai';
+      wrapper.className = noAvatar ? 'msg ai no-avatar' : 'msg ai';
       if (!noAvatar) wrapper.appendChild(createAvatar());
       const bubble = document.createElement('div');
       bubble.className = 'msg-bubble';
