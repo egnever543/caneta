@@ -502,13 +502,37 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
     return bubble;
   }
 
+  function typewriterMessage(text, noAvatar = false) {
+    return new Promise(resolve => {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'msg ai';
+      if (!noAvatar) wrapper.appendChild(createAvatar());
+      const bubble = document.createElement('div');
+      bubble.className = 'msg-bubble';
+      bubble.textContent = '';
+      wrapper.appendChild(bubble);
+      messagesEl.appendChild(wrapper);
+      scrollToBottom();
+
+      let i = 0;
+      const speed = Math.max(18, Math.min(38, 1400 / text.length)); // 18-38ms por char
+      const tick = () => {
+        if (i < text.length) {
+          bubble.textContent += text[i++];
+          scrollToBottom();
+          setTimeout(tick, speed);
+        } else {
+          resolve();
+        }
+      };
+      tick();
+    });
+  }
+
   // Exibe texto dividido em 2 bolhas com typing delay entre elas
-  // existingBubble: bolha de streaming já visível (reaproveitada para part[0])
-  // afterDone: callback chamado após todas as partes aparecerem
   async function deliverSplit(cleanText, existingBubble, afterDone) {
     const parts = splitMessage(cleanText);
 
-    // Parte 1 — vai para a bolha de streaming existente (ou cria nova)
     if (existingBubble) {
       existingBubble.textContent = parts[0];
     } else {
@@ -517,15 +541,12 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
     scrollToBottom();
 
     if (parts.length > 1) {
-      // Delay proporcional ao tamanho da parte 1 (simula leitura + digitação)
-      const delay = Math.min(1200, 400 + parts[0].length * 14);
-      await new Promise(r => setTimeout(r, delay));
+      const readDelay = Math.min(1000, 300 + parts[0].length * 12);
+      await new Promise(r => setTimeout(r, readDelay));
       showTypingIndicator();
-      const typingDelay = Math.min(1000, 500 + parts[1].length * 12);
-      await new Promise(r => setTimeout(r, typingDelay));
+      await new Promise(r => setTimeout(r, 700));
       hideTypingIndicator();
-      addAIMessage(parts[1], { noAvatar: true });
-      scrollToBottom();
+      await typewriterMessage(parts[1], true);
     }
 
     if (afterDone) afterDone();
