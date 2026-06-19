@@ -760,7 +760,7 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
 
   // Extrai todos os triggers de um texto e retorna {cleanText, triggers[]}
   function extractTriggers(text) {
-    const triggerRe = /\[\[SHOW_(?:TESTIMONIAL|BENEFIT:\w+|URGENCY|GUARANTEE|VIDEO|CHECKOUT_BUTTON|QUALIFIED_LEAD)\]\]/g;
+    const triggerRe = /\[\[(?:SHOW_(?:TESTIMONIAL|BENEFIT:\w+|URGENCY|GUARANTEE|VIDEO|CHECKOUT_BUTTON)|QUALIFIED_LEAD)\]\]/g;
     const triggers = text.match(triggerRe) || [];
     const cleanText = text.replace(triggerRe, '').replace(/\n{3,}/g, '\n\n').trim();
     return { cleanText, triggers };
