@@ -257,6 +257,84 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
     .msg-bubble { font-size: 0.88rem; padding: 9px 12px; }
   }
 
+  /* ── TOOL CARDS ─────────────────────────── */
+  .tool-card {
+    max-width: min(78%, 480px);
+    align-self: flex-start;
+    padding-left: 36px;
+    width: 100%;
+  }
+  .tool-card-inner {
+    border-radius: 16px;
+    border-bottom-left-radius: 4px;
+    overflow: hidden;
+    font-size: 0.88rem;
+    line-height: 1.55;
+    box-shadow: 0 2px 12px rgba(30,46,44,0.10);
+  }
+  /* Testimonial */
+  .tc-testimonial { background: #fff; }
+  .tc-testimonial .tc-header {
+    background: var(--teal-deep);
+    padding: 10px 14px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .tc-testimonial .tc-avatar {
+    width: 32px; height: 32px; border-radius: 50%;
+    background: var(--sage); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 0.75rem; flex-shrink: 0;
+  }
+  .tc-testimonial .tc-name { color: #fff; font-weight: 600; font-size: 0.82rem; }
+  .tc-testimonial .tc-meta { color: rgba(255,255,255,0.6); font-size: 0.72rem; }
+  .tc-testimonial .tc-body { padding: 12px 14px; color: var(--ink); }
+  .tc-testimonial .tc-stars { color: #F59E0B; font-size: 0.8rem; margin-bottom: 6px; }
+  .tc-testimonial .tc-text { font-style: italic; color: var(--ink-soft); }
+
+  /* Benefit */
+  .tc-benefit { background: #fff; }
+  .tc-benefit .tc-header {
+    padding: 12px 14px 10px;
+    border-bottom: 1px solid var(--line);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .tc-benefit .tc-icon {
+    width: 38px; height: 38px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.2rem; flex-shrink: 0;
+  }
+  .tc-benefit .tc-tag {
+    font-size: 0.65rem; font-weight: 700; letter-spacing: 0.1em;
+    text-transform: uppercase; margin-bottom: 2px;
+  }
+  .tc-benefit .tc-title { font-weight: 700; color: var(--ink); font-size: 0.88rem; }
+  .tc-benefit .tc-items { padding: 10px 14px; display: flex; flex-direction: column; gap: 5px; }
+  .tc-benefit .tc-item { display: flex; gap: 7px; align-items: flex-start; color: var(--ink-soft); font-size: 0.82rem; }
+  .tc-benefit .tc-item span:first-child { flex-shrink: 0; }
+
+  /* Urgency */
+  .tc-urgency { background: linear-gradient(135deg, #163840, #1F4E5A); color: #fff; }
+  .tc-urgency .tc-body { padding: 14px; }
+  .tc-urgency .tc-label { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gold); margin-bottom: 6px; }
+  .tc-urgency .tc-price-old { font-size: 0.82rem; color: rgba(255,255,255,0.45); text-decoration: line-through; }
+  .tc-urgency .tc-price-new { font-size: 1.6rem; font-weight: 800; color: var(--gold); line-height: 1.1; }
+  .tc-urgency .tc-price-desc { font-size: 0.75rem; color: rgba(255,255,255,0.6); margin-top: 2px; }
+  .tc-urgency .tc-perks { margin-top: 10px; display: flex; flex-direction: column; gap: 3px; }
+  .tc-urgency .tc-perk { font-size: 0.78rem; color: rgba(255,255,255,0.8); }
+
+  /* Guarantee */
+  .tc-guarantee { background: #fff; }
+  .tc-guarantee .tc-body { padding: 14px; display: flex; gap: 12px; align-items: flex-start; }
+  .tc-guarantee .tc-shield { font-size: 2rem; flex-shrink: 0; line-height: 1; }
+  .tc-guarantee .tc-gtitle { font-weight: 700; color: var(--ink); font-size: 0.88rem; margin-bottom: 4px; }
+  .tc-guarantee .tc-gdesc { color: var(--ink-soft); font-size: 0.8rem; line-height: 1.5; }
+
+  /* Video card */
+  .tc-video { background: #0f0f0f; overflow: hidden; }
+  .tc-video-label { padding: 10px 12px; font-size: 0.78rem; color: rgba(255,255,255,0.7); font-family: 'Manrope', sans-serif; font-weight: 600; }
+  .tc-video-wrap { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; }
+  .tc-video-wrap iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none; }
+
   /* checkout bubble */
   .checkout-bubble {
     background: var(--bg-soft);
@@ -572,6 +650,122 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
   }
 
 
+  // ── Tool cards ──────────────────────────────────────────────────
+
+  const TESTIMONIALS = [
+    { name: 'Ana Paula M.', meta: 'Ozempic · 4 meses', initials: 'AP', text: 'Tava com medo de perder músculo e ficar flácida. Segui as dicas do guia sobre proteína e treino leve e mantive minha massa. Diferença total!' },
+    { name: 'Carla Regina S.', meta: 'Mounjaro · 6 meses', initials: 'CR', text: 'A parte da estratégia de saída me salvou. Parei o Mounjaro sem recuperar nada do peso — exatamente o que eu mais temia. Recomendo demais.' },
+    { name: 'Fernanda T.', meta: 'Wegovy · 3 meses', initials: 'FT', text: 'Os primeiros meses foram difíceis com a náusea. O capítulo de efeitos colaterais me ajudou a entender o que comer e quando aplicar. Muito prático.' },
+    { name: 'Juliana K.', meta: 'Saxenda · 5 meses', initials: 'JK', text: 'Comprei achando que era mais do mesmo, mas o plano de 30 dias pós-tratamento é ouro. Tô há 2 meses sem o remédio e sem efeito sanfona.' },
+  ];
+  let lastTestimonialIdx = -1;
+
+  const BENEFITS = {
+    musculo: {
+      icon: '💪', bg: '#EEF5F3', color: '#1F4E5A', tag: 'Cap. 2 & 3 — Músculo & Proteína',
+      title: 'Como preservar massa magra durante o tratamento',
+      items: ['Quanto de proteína você precisa por kg de peso', 'Plano de treino 2×/semana sem precisar de academia', 'O que comer nos dias de quase zero apetite', 'Suplementos que realmente valem a pena'],
+    },
+    saida: {
+      icon: '🔄', bg: '#EEF0FA', color: '#3730A3', tag: 'Cap. 8 & Bônus — Estratégia de Saída',
+      title: 'Como parar o remédio sem recuperar o peso',
+      items: ['O que fazer 30 dias antes de parar', 'Como reintroduzir alimentos sem culpa', 'Plano semana a semana pós-tratamento', 'Por que 90% regride (e como você não vai ser estatística)'],
+    },
+    efeitos: {
+      icon: '🤢', bg: '#FEF3EB', color: '#92400E', tag: 'Cap. 5 — Efeitos Colaterais',
+      title: 'Náusea, constipação e enjoo: o que fazer',
+      items: ['Melhor horário para aplicar a injeção', 'Alimentos que pioram e que aliviam', 'Como lidar com refluxo e mal-estar', 'Quando os sintomas costumam melhorar'],
+    },
+  };
+
+  function renderToolCard(trigger) {
+    const wrap = document.createElement('div');
+    wrap.className = 'tool-card';
+
+    if (trigger === '[[SHOW_TESTIMONIAL]]') {
+      let idx;
+      do { idx = Math.floor(Math.random() * TESTIMONIALS.length); } while (idx === lastTestimonialIdx && TESTIMONIALS.length > 1);
+      lastTestimonialIdx = idx;
+      const t = TESTIMONIALS[idx];
+      wrap.innerHTML = `<div class="tool-card-inner tc-testimonial">
+        <div class="tc-header">
+          <div class="tc-avatar">${t.initials}</div>
+          <div><div class="tc-name">${t.name}</div><div class="tc-meta">${t.meta}</div></div>
+        </div>
+        <div class="tc-body">
+          <div class="tc-stars">★★★★★</div>
+          <div class="tc-text">"${t.text}"</div>
+        </div>
+      </div>`;
+    }
+
+    else if (trigger.startsWith('[[SHOW_BENEFIT:')) {
+      const key = trigger.match(/\[\[SHOW_BENEFIT:(\w+)\]\]/)?.[1];
+      const b = BENEFITS[key];
+      if (!b) return null;
+      wrap.innerHTML = `<div class="tool-card-inner tc-benefit">
+        <div class="tc-header">
+          <div class="tc-icon" style="background:${b.bg}">${b.icon}</div>
+          <div><div class="tc-tag" style="color:${b.color}">${b.tag}</div><div class="tc-title">${b.title}</div></div>
+        </div>
+        <div class="tc-items">
+          ${b.items.map(i => `<div class="tc-item"><span>✓</span><span>${i}</span></div>`).join('')}
+        </div>
+      </div>`;
+    }
+
+    else if (trigger === '[[SHOW_URGENCY]]') {
+      wrap.innerHTML = `<div class="tool-card-inner tc-urgency">
+        <div class="tc-body">
+          <div class="tc-label">🔥 Oferta especial</div>
+          <div class="tc-price-old">De R$ 97,00</div>
+          <div class="tc-price-new">R$ 34,90</div>
+          <div class="tc-price-desc">pagamento único · acesso vitalício</div>
+          <div class="tc-perks">
+            <div class="tc-perk">✓ Guia completo em PT + EN</div>
+            <div class="tc-perk">✓ Bônus: Plano 30 Dias Pós-Tratamento</div>
+            <div class="tc-perk">✓ Garantia de 7 dias — sem perguntas</div>
+          </div>
+        </div>
+      </div>`;
+    }
+
+    else if (trigger === '[[SHOW_GUARANTEE]]') {
+      wrap.innerHTML = `<div class="tool-card-inner tc-guarantee">
+        <div class="tc-body">
+          <div class="tc-shield">🛡️</div>
+          <div>
+            <div class="tc-gtitle">Garantia incondicional de 7 dias</div>
+            <div class="tc-gdesc">Se por qualquer motivo você não ficar satisfeita, basta me responder dentro de 7 dias e devolvemos 100% do seu dinheiro. Sem burocracia, sem perguntas.</div>
+          </div>
+        </div>
+      </div>`;
+    }
+
+    else if (trigger === '[[SHOW_VIDEO]]') {
+      wrap.innerHTML = `<div class="tool-card-inner tc-video">
+        <div class="tc-video-label">🎬 Review em vídeo — veja o que estão falando</div>
+        <div class="tc-video-wrap">
+          <iframe src="https://www.youtube.com/embed/n7jZU3C1ago" title="Review Caneta Sem Medo" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+        </div>
+      </div>`;
+    }
+
+    else return null;
+
+    messagesEl.appendChild(wrap);
+    scrollToBottom();
+    return wrap;
+  }
+
+  // Extrai todos os triggers de um texto e retorna {cleanText, triggers[]}
+  function extractTriggers(text) {
+    const triggerRe = /\[\[SHOW_(?:TESTIMONIAL|BENEFIT:\w+|URGENCY|GUARANTEE|VIDEO|CHECKOUT_BUTTON|QUALIFIED_LEAD)\]\]/g;
+    const triggers = text.match(triggerRe) || [];
+    const cleanText = text.replace(triggerRe, '').replace(/\n{3,}/g, '\n\n').trim();
+    return { cleanText, triggers };
+  }
+
   function addCheckoutMessage() {
     const wrapper = document.createElement('div');
     wrapper.className = 'msg ai';
@@ -782,29 +976,32 @@ src="https://www.facebook.com/tr?id=3387796061379965&ev=PageView&noscript=1"
         return;
       }
 
-      // Fire Pixel: Lead qualificado (antes do checkout)
-      if (fullText.includes('[[QUALIFIED_LEAD]]')) {
+      const { cleanText, triggers } = extractTriggers(fullText);
+
+      const hasCheckout = triggers.includes('[[SHOW_CHECKOUT_BUTTON]]');
+      const hasQualified = triggers.includes('[[QUALIFIED_LEAD]]');
+      const toolTriggers = triggers.filter(t => t !== '[[SHOW_CHECKOUT_BUTTON]]' && t !== '[[QUALIFIED_LEAD]]');
+
+      if (hasQualified) {
         if (typeof fbq !== 'undefined') fbq('track', 'Lead', { content_name: 'Caneta Sem Medo' });
         track('qualified_lead', 'chat', {});
       }
 
-      const hasCheckout = fullText.includes('[[SHOW_CHECKOUT_BUTTON]]');
-      const cleanText = fullText.replace('[[SHOW_CHECKOUT_BUTTON]]', '').replace('[[QUALIFIED_LEAD]]', '').trim();
+      const afterDeliver = () => {
+        // Render tool cards after text is delivered
+        for (const trigger of toolTriggers) {
+          renderToolCard(trigger);
+        }
 
-      if (fullText.includes('[[QUALIFIED_LEAD]]')) {
-        if (typeof fbq !== 'undefined') fbq('track', 'Lead', { content_name: 'Caneta Sem Medo' });
-        track('qualified_lead', 'chat', {});
-      }
-
-      const afterDeliver = hasCheckout ? () => {
-        addCheckoutMessage();
-        chatHistory.push({ role: 'assistant', content: cleanText || '[[SHOW_CHECKOUT_BUTTON]]' });
-        track('checkout_shown', 'chat', {});
-        if (typeof fbq !== 'undefined') fbq('track', 'InitiateCheckout', { content_name: 'Caneta Sem Medo Ebook', value: 34.90, currency: 'BRL' });
-        fetch('/api/chat?type=mark-checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ session_id: SESSION_ID }) }).catch(() => {});
-        isResponding = false; setInputEnabled(true); inputEl.focus();
-      } : () => {
-        chatHistory.push({ role: 'assistant', content: cleanText });
+        if (hasCheckout) {
+          addCheckoutMessage();
+          chatHistory.push({ role: 'assistant', content: cleanText || '[[SHOW_CHECKOUT_BUTTON]]' });
+          track('checkout_shown', 'chat', {});
+          if (typeof fbq !== 'undefined') fbq('track', 'InitiateCheckout', { content_name: 'Caneta Sem Medo Ebook', value: 34.90, currency: 'BRL' });
+          fetch('/api/chat?type=mark-checkout', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ session_id: SESSION_ID }) }).catch(() => {});
+        } else {
+          chatHistory.push({ role: 'assistant', content: cleanText });
+        }
         isResponding = false; setInputEnabled(true); inputEl.focus();
       };
 
